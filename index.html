@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
+    <title>Centro de Informações — Suporte</title>
+</head>
+<body>
+    <header class="header">
+        <div class="container header-inner">
+            <h1 class="logo">Centro de Informações <span>— Suporte</span></h1>
+
+            <form action="" class="form-busca" role="search" id="busca-global-form">
+                <label for="busca-global" class="sr-only">Pesquisar em tudo</label>
+                <div class="busca-wrapper">
+                    <span class="busca-icone" aria-hidden="true">🔍</span>
+                    <input
+                        id="busca-global"
+                        type="search"
+                        placeholder="Pesquisar..."
+                        autocomplete="off"
+                    >
+                </div>
+            </form>
+
+            <div class="container-buttons">
+                <button type="button" id="tema" class="btn btn-secundario" aria-label="Alternar tema">
+                    Claro
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <aside id="sidebar" class="sidebar" aria-label="Lista de módulos" hidden>
+            <h2 class="sidebar-titulo">Módulos</h2>
+            <div id="lista-modulos" class="lista-modulos"></div>
+        </aside>
+
+        <main class="conteudo">
+            <div class="conteudo-toolbar" id="toolbar-admin">
+                <button type="button" id="criar-publicacao" class="btn btn-primario">
+                    Criar Publicação
+                </button>
+                <button type="button" id="criar-modulo" class="btn btn-outline">
+                    Novo Módulo +
+                </button>
+            </div>
+
+            <section id="painel-modulo" class="painel-modulo" hidden>
+                <header class="modulo-header">
+                    <div class="modulo-header-esquerda">
+                        <button type="button" id="voltar-modulos" class="btn btn-secundario btn-sm">
+                            ← Módulos
+                        </button>
+                        <h2 id="modulo-titulo" class="modulo-titulo"></h2>
+                    </div>
+                <button type="button" id="editar-modulo" class="btn btn-outline btn-sm">
+                    Editar Módulo
+                </button>
+                </header>
+
+                <form action="" class="form-busca form-busca-item" role="search" id="busca-item-form">
+                    <label for="busca-item" class="sr-only">Buscar publicação no módulo</label>
+                    <div class="busca-wrapper">
+                        <span class="busca-icone" aria-hidden="true">🔍</span>
+                        <input
+                            id="busca-item"
+                            type="search"
+                            placeholder="Buscar por item"
+                            autocomplete="off"
+                        >
+                    </div>
+                </form>
+
+                <div id="lista-publicacoes" class="lista-publicacoes"></div>
+            </section>
+
+            <section id="painel-explorar" class="painel-explorar">
+                <header class="explorar-header">
+                    <p class="explorar-rotulo">Explorar</p>
+                    <h2 class="explorar-titulo">Módulos</h2>
+                    <p class="explorar-descricao">Organize e gerencie seus conteúdos por módulos.</p>
+                </header>
+                <div id="grid-modulos" class="grid-modulos"></div>
+            </section>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 Centro de Informações — Suporte. Vai te ajudar.</p>
+        <p>© Direitos Reservados a Miguel Tobias e Caio Lucas</p>
+    </footer>
+
+    <div id="modal-overlay" class="modal-overlay" hidden>
+        <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+            <div class="modal-cabecalho">
+                <h2 id="modal-titulo"></h2>
+                <button type="button" id="modal-fechar" class="btn-modal-fechar" aria-label="Fechar">×</button>
+            </div>
+
+            <form id="form-modulo" class="modal-form" hidden>
+                <label for="modulo-nome">Nome do módulo</label>
+                <input type="text" id="modulo-nome" required placeholder="Ex: Links Importantes">
+
+                <div class="modal-acoes">
+                    <button type="button" class="btn btn-secundario" data-acao="cancelar">Cancelar</button>
+                    <button type="button" class="btn btn-perigo" id="excluir-modulo" hidden>Excluir</button>
+                    <button type="submit" class="btn btn-primario">Salvar</button>
+                </div>
+            </form>
+
+            <form id="form-publicacao" class="modal-form" hidden>
+                <label for="publicacao-titulo-input">Título</label>
+                <input type="text" id="publicacao-titulo-input" required placeholder="Título da publicação">
+
+                <label>Conteúdo</label>
+                <div class="editor-wrapper">
+                    <div id="editor-conteudo"></div>
+                </div>
+
+                <div class="modal-acoes">
+                    <button type="button" class="btn btn-secundario" data-acao="cancelar">Cancelar</button>
+                    <button type="button" class="btn btn-perigo" id="excluir-publicacao" hidden>Excluir</button>
+                    <button type="submit" class="btn btn-primario">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" hidden>
+        <p>Carregando...</p>
+    </div>
+
+    <div id="erro-config" class="erro-config" hidden>
+        <p>Configure o Supabase em <code>config.js</code> com a URL e a chave anon do seu projeto.</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
