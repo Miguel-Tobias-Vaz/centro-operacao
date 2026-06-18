@@ -26,6 +26,10 @@
             </form>
 
             <div class="container-buttons">
+                <label class="seletor-cor" for="cor-destaque" title="Cor de destaque">
+                    <span class="seletor-cor-amostra" id="cor-destaque-amostra" aria-hidden="true"></span>
+                    <input type="color" id="cor-destaque" value="#c4ad93" aria-label="Escolher cor de destaque">
+                </label>
                 <button type="button" id="tema" class="btn btn-secundario" aria-label="Alternar tema">
                     Claro
                 </button>
@@ -55,6 +59,7 @@
                         <button type="button" id="voltar-modulos" class="btn btn-secundario btn-sm">
                             ← Módulos
                         </button>
+                        <div id="modulo-avatar-header" class="modulo-avatar modulo-avatar-header" hidden aria-hidden="true"></div>
                         <h2 id="modulo-titulo" class="modulo-titulo"></h2>
                     </div>
                 <button type="button" id="editar-modulo" class="btn btn-outline btn-sm">
@@ -105,6 +110,20 @@
                 <label for="modulo-nome">Nome do módulo</label>
                 <input type="text" id="modulo-nome" required placeholder="Ex: Links Importantes">
 
+                <label>Imagem <span class="label-opcional">(opcional)</span></label>
+                <p class="campo-ajuda">Ícone circular para identificar o módulo na grade.</p>
+                <input type="file" id="modulo-imagem-input" class="sr-only" accept="image/*">
+
+                <div class="modulo-imagem-editor">
+                    <button type="button" id="modulo-imagem-preview" class="modulo-imagem-circulo" aria-label="Escolher imagem">
+                        <span id="modulo-imagem-placeholder" class="modulo-imagem-placeholder">+</span>
+                        <img id="modulo-imagem-img" class="modulo-imagem-preview" alt="" hidden>
+                    </button>
+                    <button type="button" id="btn-remover-imagem-modulo" class="btn btn-outline btn-sm" hidden>
+                        Remover imagem
+                    </button>
+                </div>
+
                 <div class="modal-acoes">
                     <button type="button" class="btn btn-secundario" data-acao="cancelar">Cancelar</button>
                     <button type="button" class="btn btn-perigo" id="excluir-modulo" hidden>Excluir</button>
@@ -119,6 +138,21 @@
                 <label>Conteúdo</label>
                 <div class="editor-wrapper">
                     <div id="editor-conteudo"></div>
+                </div>
+
+                <label>Arquivo <span class="label-opcional">(opcional)</span></label>
+                <p class="campo-ajuda">Anexe código, PDF, planilha ou outro documento para download.</p>
+                <input type="file" id="publicacao-arquivo-input" class="sr-only" accept="*/*">
+
+                <div id="zona-upload-arquivo" class="zona-upload" tabindex="0" role="button" aria-label="Selecionar arquivo para upload">
+                    <span class="zona-upload-icone" aria-hidden="true">📎</span>
+                    <span id="zona-upload-texto">Clique ou arraste um arquivo aqui</span>
+                    <span class="zona-upload-limite">Máximo 10 MB</span>
+                </div>
+
+                <div id="arquivo-publicacao-info" class="arquivo-publicacao-info" hidden>
+                    <span id="arquivo-publicacao-nome" class="arquivo-publicacao-nome"></span>
+                    <button type="button" id="btn-remover-arquivo" class="btn btn-outline btn-sm">Remover arquivo</button>
                 </div>
 
                 <div class="modal-acoes">
