@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
     <title>Centro de Informações — Suporte</title>
 </head>
@@ -26,6 +26,9 @@
             </form>
 
             <div class="container-buttons">
+                <a href="tratamento.html" class="btn btn-outline btn-sm btn-header-ferramenta" title="Normalizar nomes de documentos em ZIP">
+                    Tratamento de nomes
+                </a>
                 <label class="seletor-cor" for="cor-destaque" title="Cor de destaque">
                     <span class="seletor-cor-amostra" id="cor-destaque-amostra" aria-hidden="true"></span>
                     <input type="color" id="cor-destaque" value="#c4ad93" aria-label="Escolher cor de destaque">
@@ -176,6 +179,6 @@
     <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script src="assets/js/main.js"></script>
 </body>
 </html>
