@@ -47,6 +47,9 @@ body.tema-claro {
     --vidro-borda-sutil: rgba(0, 0, 0, 0.06);
     --sombra: 0 8px 32px rgba(0, 0, 0, 0.08);
     --sombra-card: 0 4px 16px rgba(0, 0, 0, 0.06);
+    --modulo-card-fundo: #ffffff;
+    --modulo-card-borda: color-mix(in srgb, var(--cor-destaque) 20%, #b8c5d0);
+    --modulo-card-sombra: 0 1px 2px rgba(0, 40, 70, 0.06), 0 4px 16px rgba(0, 88, 143, 0.1);
 }
 
 html {
@@ -1573,6 +1576,49 @@ a {
 
 .card-modulo-grid .btn-selecionar {
     margin-top: auto;
+}
+
+/* Módulos — modo claro: cards com mais contraste */
+
+body.tema-claro .painel-explorar {
+    background: color-mix(in srgb, var(--cor-destaque) 7%, #e4e2dd);
+    border-color: color-mix(in srgb, var(--cor-destaque) 16%, rgba(0, 0, 0, 0.1));
+    box-shadow:
+        0 8px 28px rgba(0, 88, 143, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+body.tema-claro .card-modulo,
+body.tema-claro .card-modulo-grid {
+    background: var(--modulo-card-fundo);
+    border-color: var(--modulo-card-borda);
+    box-shadow: var(--modulo-card-sombra);
+}
+
+body.tema-claro .card-modulo:hover,
+body.tema-claro .card-modulo-grid:hover {
+    background: color-mix(in srgb, var(--cor-destaque) 5%, #ffffff);
+    border-color: color-mix(in srgb, var(--cor-destaque) 38%, transparent);
+    box-shadow:
+        0 4px 20px rgba(0, 88, 143, 0.14),
+        0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+body.tema-claro .card-modulo.ativo {
+    background: color-mix(in srgb, var(--cor-destaque) 11%, #ffffff);
+    border-color: color-mix(in srgb, var(--cor-destaque) 48%, transparent);
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--cor-destaque) 22%, transparent),
+        0 4px 18px rgba(0, 88, 143, 0.13);
+}
+
+body.tema-claro .modulo-avatar {
+    background: color-mix(in srgb, var(--cor-destaque) 14%, #ffffff);
+    border-color: color-mix(in srgb, var(--cor-destaque) 28%, transparent);
+}
+
+body.tema-claro .card-modulo-grid.sobre-arrasto {
+    background: color-mix(in srgb, var(--cor-destaque) 8%, #ffffff);
 }
 
 /* Painel do módulo selecionado */
