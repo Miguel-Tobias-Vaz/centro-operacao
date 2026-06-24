@@ -965,17 +965,17 @@ a {
 }
 
 .pdf-preview-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 100px;
-    color: var(--cor-fonte-suave);
-    opacity: 0.5;
+    width: 72%;
+    min-height: 96px;
+    margin: 8px auto;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--cor-fonte-suave) 12%, transparent);
+    animation: pdf-preview-pulse 1.4s ease-in-out infinite;
 }
 
-.pdf-preview-placeholder-icone {
-    font-size: 1.5rem;
+@keyframes pdf-preview-pulse {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.7; }
 }
 
 .pdf-pagina-card.aguardando-preview .pdf-pagina-preview-wrap {

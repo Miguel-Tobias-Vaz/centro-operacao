@@ -15,7 +15,6 @@ function criarPlaceholderPreview() {
     const el = document.createElement("div");
     el.className = "pdf-preview-placeholder";
     el.setAttribute("aria-hidden", "true");
-    el.innerHTML = '<span class="pdf-preview-placeholder-icone">📄</span>';
     return el;
 }
 

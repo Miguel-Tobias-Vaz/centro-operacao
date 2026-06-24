@@ -3,6 +3,6 @@
   "private": true,
   "scripts": {
     "build": "node scripts/generate-config.js",
-    "start": "python -m http.server 8080"
+    "start": "python -m http.server 5500"
   }
 }
