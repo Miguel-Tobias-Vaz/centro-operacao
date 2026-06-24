@@ -9,68 +9,6 @@ const btnClear = document.getElementById("btn-clear");
 let selectedFile = null;
 let downloadUrl = null;
 
-function hexParaRgb(hex) {
-    const h = hex.replace("#", "");
-    return {
-        r: parseInt(h.slice(0, 2), 16),
-        g: parseInt(h.slice(2, 4), 16),
-        b: parseInt(h.slice(4, 6), 16)
-    };
-}
-
-function rgbParaHex(r, g, b) {
-    const canal = (v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0");
-    return `#${canal(r)}${canal(g)}${canal(b)}`;
-}
-
-function clarearCor(hex, fator) {
-    const { r, g, b } = hexParaRgb(hex);
-    return rgbParaHex(
-        r + (255 - r) * fator,
-        g + (255 - g) * fator,
-        b + (255 - b) * fator
-    );
-}
-
-function escurecerCor(hex, fator) {
-    const { r, g, b } = hexParaRgb(hex);
-    return rgbParaHex(r * (1 - fator), g * (1 - fator), b * (1 - fator));
-}
-
-function luminanciaCor(hex) {
-    const { r, g, b } = hexParaRgb(hex);
-    const canal = (c) => {
-        const v = c / 255;
-        return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-    };
-    return 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
-}
-
-function aplicarCorDestaque(hex) {
-    const claro = document.body.classList.contains("tema-claro");
-    const hover = claro ? escurecerCor(hex, 0.1) : clarearCor(hex, 0.12);
-    const texto = luminanciaCor(hex) > 0.55 ? "#0a0a0b" : "#faf9f7";
-
-    document.documentElement.style.setProperty("--cor-destaque", hex);
-    document.documentElement.style.setProperty("--cor-destaque-hover", hover);
-    document.documentElement.style.setProperty("--cor-borda-foco", hex);
-    document.documentElement.style.setProperty("--cor-destaque-texto", texto);
-}
-
-function aplicarTema(claro) {
-    document.body.classList.toggle("tema-claro", claro);
-    if (botaoTema) botaoTema.textContent = claro ? "Escuro" : "Claro";
-    localStorage.setItem("tema", claro ? "claro" : "escuro");
-
-    const corSalva = localStorage.getItem("corDestaque");
-    if (corSalva) aplicarCorDestaque(corSalva);
-}
-
-function showStep(stepId) {
-    document.querySelectorAll(".tratamento-step").forEach((s) => s.classList.remove("ativo"));
-    document.getElementById(stepId).classList.add("ativo");
-}
-
 function revogarDownload() {
     if (downloadUrl) {
         URL.revokeObjectURL(downloadUrl);
@@ -99,46 +37,12 @@ function setFile(file) {
     btnProcessar.disabled = false;
 }
 
-dropzone.addEventListener("click", (e) => {
-    if (e.target === btnClear) return;
-    fileInput.click();
-});
-
-dropzone.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        fileInput.click();
-    }
-});
-
-fileInput.addEventListener("change", () => {
-    const f = fileInput.files?.[0];
-    if (f) setFile(f);
-});
+iniciarDropzone(dropzone, fileInput, setFile);
 
 btnClear.addEventListener("click", (e) => {
     e.stopPropagation();
     fileInput.value = "";
     setFile(null);
-});
-
-["dragenter", "dragover"].forEach((ev) => {
-    dropzone.addEventListener(ev, (e) => {
-        e.preventDefault();
-        dropzone.classList.add("sobre-arrasto");
-    });
-});
-
-["dragleave", "drop"].forEach((ev) => {
-    dropzone.addEventListener(ev, (e) => {
-        e.preventDefault();
-        dropzone.classList.remove("sobre-arrasto");
-    });
-});
-
-dropzone.addEventListener("drop", (e) => {
-    const f = e.dataTransfer?.files?.[0];
-    if (f) setFile(f);
 });
 
 async function processar() {
@@ -147,7 +51,7 @@ async function processar() {
     btnProcessar.disabled = true;
     const logEl = document.getElementById("log-mini");
     logEl.textContent = "Lendo ZIP…\n";
-    showStep("step-processing");
+    mostrarPassoFerramenta("step-processing");
 
     try {
         const resultado = await processarZipTratamento(selectedFile);
@@ -204,12 +108,12 @@ function mostrarSucesso(resultado) {
     dl.download = selectedFile.name.replace(/\.zip$/i, "") + "_tratado.zip";
     dl.hidden = false;
 
-    showStep("step-result");
+    mostrarPassoFerramenta("step-result");
 }
 
 function mostrarErro(msg) {
     document.getElementById("error-msg").textContent = msg;
-    showStep("step-error");
+    mostrarPassoFerramenta("step-error");
 }
 
 function resetar() {
@@ -219,17 +123,11 @@ function resetar() {
     document.getElementById("btn-download").hidden = true;
     document.getElementById("stat-card").hidden = true;
     document.getElementById("rename-wrap").hidden = true;
-    showStep("step-upload");
+    mostrarPassoFerramenta("step-upload");
 }
 
 btnProcessar.addEventListener("click", processar);
 document.getElementById("btn-novo").addEventListener("click", resetar);
 document.getElementById("btn-error-back").addEventListener("click", resetar);
 
-botaoTema?.addEventListener("click", () => {
-    aplicarTema(!document.body.classList.contains("tema-claro"));
-});
-
-aplicarTema(localStorage.getItem("tema") === "claro");
-const corSalva = localStorage.getItem("corDestaque");
-if (corSalva) aplicarCorDestaque(corSalva);
+iniciarTemaFerramenta(botaoTema);

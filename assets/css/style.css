@@ -191,18 +191,24 @@ a {
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .btn-header-ferramenta {
     white-space: nowrap;
 }
 
-/* Página de tratamento de nomes */
+/* Ferramentas (tratamento de nomes, separador de PDF) */
 
 .tratamento-pagina {
     max-width: 720px;
     margin: 0 auto;
     padding: 32px 24px 48px;
+}
+
+.tratamento-pagina-larga {
+    max-width: 1100px;
 }
 
 .tratamento-step {
@@ -330,6 +336,16 @@ a {
     line-height: 1.6;
 }
 
+.info-paginas {
+    margin-top: 1rem;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    color: var(--cor-destaque);
+    background: color-mix(in srgb, var(--cor-destaque) 10%, var(--vidro-fundo-card));
+    border: 1px solid color-mix(in srgb, var(--cor-destaque) 30%, transparent);
+    border-radius: var(--raio-sm);
+}
+
 .tratamento-acoes {
     display: flex;
     flex-wrap: wrap;
@@ -439,6 +455,652 @@ a {
     border-radius: var(--raio-sm);
     color: var(--cor-fonte);
     font-size: 0.9rem;
+}
+
+/* Editor de páginas PDF */
+
+.pdf-editor-topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.pdf-editor-barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background: var(--vidro-fundo);
+    border: 1px solid var(--vidro-borda);
+    border-radius: var(--raio);
+}
+
+.pdf-contador {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--cor-destaque);
+}
+
+.pdf-editor-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pdf-carregando {
+    font-size: 0.88rem;
+    color: var(--cor-fonte-suave);
+    margin-bottom: 12px;
+}
+
+.pdf-grade-paginas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+}
+
+.pdf-pagina-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--vidro-fundo-card);
+    border: 1px solid var(--vidro-borda-sutil);
+    border-radius: var(--raio-sm);
+    overflow: hidden;
+    transition:
+        border-color var(--transicao),
+        opacity var(--transicao),
+        box-shadow var(--transicao);
+}
+
+.pdf-pagina-card.nao-selecionada {
+    opacity: 0.55;
+}
+
+.pdf-pagina-card.arrastando {
+    opacity: 0.45;
+}
+
+.pdf-pagina-card.sobre-arrasto {
+    border-color: var(--cor-destaque);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--cor-destaque) 45%, transparent);
+}
+
+.pdf-pagina-topo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 8px 6px;
+}
+
+.pdf-pagina-selecao {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.pdf-pagina-selecao input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--cor-destaque);
+    cursor: pointer;
+}
+
+.pdf-pagina-arrastar {
+    margin-left: auto;
+    padding: 4px;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    color: var(--cor-fonte-suave);
+    border-radius: var(--raio-sm);
+}
+
+.pdf-pagina-arrastar:hover {
+    color: var(--cor-fonte);
+    background: var(--cor-superficie-hover);
+}
+
+.pdf-pagina-arrastar:active {
+    cursor: grabbing;
+}
+
+.pdf-pagina-ordem {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--cor-fonte-suave);
+    min-width: 1.5rem;
+    text-align: right;
+}
+
+.pdf-pagina-preview-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    padding: 8px;
+    background: color-mix(in srgb, var(--cor-fundo) 70%, transparent);
+    border-top: 1px solid var(--cor-borda);
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.pdf-preview-clicavel {
+    cursor: zoom-in;
+    position: relative;
+    transition: background var(--transicao);
+}
+
+.pdf-preview-clicavel:hover {
+    background: color-mix(in srgb, var(--cor-destaque) 8%, var(--cor-fundo));
+}
+
+.pdf-preview-clicavel::after {
+    content: "🔍";
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity var(--transicao);
+    pointer-events: none;
+}
+
+.pdf-preview-clicavel:hover::after {
+    opacity: 0.85;
+}
+
+.pdf-doc-mini-wrap.pdf-preview-clicavel::after {
+    right: 4px;
+    bottom: 18px;
+}
+
+.pdf-pagina-preview {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: var(--sombra-card);
+}
+
+.pdf-pagina-rodape {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px 10px;
+}
+
+.pdf-pagina-num {
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.pdf-pagina-status {
+    font-size: 0.72rem;
+    color: var(--cor-fonte-suave);
+}
+
+/* Faixa de páginas + divisores */
+
+.pdf-secao-titulo {
+    margin: 24px 0 12px;
+}
+
+.pdf-secao-titulo h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.pdf-secao-ajuda {
+    font-size: 0.82rem;
+    color: var(--cor-fonte-suave);
+}
+
+.pdf-secao-documentos {
+    margin-top: 32px;
+}
+
+.pdf-faixa-paginas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0;
+    padding: 12px;
+    background: var(--vidro-fundo);
+    border: 1px solid var(--vidro-borda);
+    border-radius: var(--raio);
+    overflow-x: auto;
+}
+
+.pdf-pagina-faixa {
+    width: 130px;
+    flex-shrink: 0;
+}
+
+.pdf-pagina-doc-badge {
+    margin-left: auto;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--cor-superficie-hover);
+    color: var(--cor-fonte-suave);
+}
+
+.pdf-divisor {
+    flex-shrink: 0;
+    align-self: center;
+    width: 32px;
+    height: 32px;
+    margin: 0 2px;
+    border: 1px dashed var(--cor-borda);
+    border-radius: 50%;
+    background: var(--cor-superficie);
+    color: var(--cor-fonte-suave);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition:
+        border-color var(--transicao),
+        background var(--transicao),
+        color var(--transicao),
+        transform var(--transicao);
+}
+
+.pdf-divisor:hover {
+    border-color: var(--cor-destaque);
+    color: var(--cor-destaque);
+    transform: scale(1.06);
+}
+
+.pdf-divisor.ativo {
+    border-style: solid;
+    border-color: var(--cor-destaque);
+    background: color-mix(in srgb, var(--cor-destaque) 18%, var(--cor-superficie));
+    color: var(--cor-destaque);
+}
+
+/* Cores por documento */
+
+.doc-cor-1 { --doc-cor: #5b8def; }
+.doc-cor-2 { --doc-cor: #c4ad93; }
+.doc-cor-3 { --doc-cor: #59a96c; }
+.doc-cor-4 { --doc-cor: #d97aa8; }
+.doc-cor-5 { --doc-cor: #9b7ad9; }
+.doc-cor-6 { --doc-cor: #d9a74a; }
+.doc-cor-7 { --doc-cor: #4db8b8; }
+.doc-cor-8 { --doc-cor: #d96b5b; }
+
+.pdf-pagina-card.doc-cor-1,
+.pdf-pagina-card.doc-cor-2,
+.pdf-pagina-card.doc-cor-3,
+.pdf-pagina-card.doc-cor-4,
+.pdf-pagina-card.doc-cor-5,
+.pdf-pagina-card.doc-cor-6,
+.pdf-pagina-card.doc-cor-7,
+.pdf-pagina-card.doc-cor-8 {
+    border-color: color-mix(in srgb, var(--doc-cor) 45%, var(--vidro-borda-sutil));
+}
+
+.pdf-pagina-card .pdf-pagina-doc-badge {
+    background: color-mix(in srgb, var(--doc-cor) 20%, var(--cor-superficie));
+    color: var(--doc-cor);
+}
+
+/* Cards de documentos */
+
+.pdf-lista-documentos {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.pdf-documento-card {
+    padding: 16px 18px;
+    background: var(--vidro-fundo-card);
+    border: 1px solid var(--vidro-borda-sutil);
+    border-left: 4px solid var(--doc-cor, var(--cor-destaque));
+    border-radius: var(--raio-sm);
+}
+
+.pdf-documento-cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.pdf-documento-num {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.pdf-documento-qtd {
+    font-size: 0.8rem;
+    color: var(--cor-fonte-suave);
+}
+
+.pdf-documento-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.pdf-documento-nome {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-sm);
+    background: var(--cor-fundo);
+    color: var(--cor-fonte);
+    font-size: 0.9rem;
+    font-family: inherit;
+    margin-bottom: 12px;
+}
+
+.pdf-documento-nome:focus {
+    outline: none;
+    border-color: var(--cor-borda-foco);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-borda-foco) 20%, transparent);
+}
+
+.pdf-documento-miniaturas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pdf-doc-mini-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.68rem;
+    color: var(--cor-fonte-suave);
+}
+
+.pdf-doc-miniatura {
+    display: block;
+    width: 56px;
+    height: auto;
+    border-radius: 4px;
+    border: 1px solid var(--cor-borda);
+    box-shadow: var(--sombra-card);
+}
+
+/* Visualizador ampliado */
+
+.pdf-visualizador {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.pdf-visualizador[hidden] {
+    display: none;
+}
+
+.pdf-visualizador-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(4px);
+}
+
+.pdf-visualizador-painel {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    width: min(96vw, 1100px);
+    max-height: 92vh;
+    background: var(--cor-superficie);
+    border: 1px solid var(--cor-borda);
+    border-radius: calc(var(--raio) + 4px);
+    box-shadow: var(--sombra);
+    overflow: hidden;
+}
+
+.pdf-visualizador-cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--cor-borda);
+    background: var(--cor-superficie-hover);
+}
+
+.pdf-visualizador-cabecalho h3 {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.pdf-visualizador-controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.pdf-vis-zoom-label {
+    min-width: 3.2rem;
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--cor-fonte-suave);
+}
+
+.pdf-visualizador-area {
+    flex: 1;
+    overflow: auto;
+    padding: 16px;
+    background: color-mix(in srgb, var(--cor-fundo) 85%, #000);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 280px;
+    max-height: calc(92vh - 120px);
+}
+
+.pdf-visualizador-area.carregando {
+    opacity: 0.6;
+}
+
+.pdf-vis-canvas {
+    display: block;
+    max-width: none;
+    border-radius: 4px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.pdf-visualizador-dica {
+    padding: 8px 16px 12px;
+    font-size: 0.75rem;
+    color: var(--cor-fonte-suave);
+    text-align: center;
+    border-top: 1px solid var(--cor-borda);
+}
+
+/* Ações por página */
+
+.pdf-pagina-acoes {
+    display: flex;
+    gap: 6px;
+    padding: 6px 8px 8px;
+    justify-content: center;
+}
+
+.pdf-pagina-btn {
+    flex: 1;
+    padding: 4px 6px;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-sm);
+    background: var(--cor-superficie-hover);
+    color: var(--cor-fonte);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color var(--transicao), background var(--transicao);
+}
+
+.pdf-pagina-btn:hover {
+    border-color: var(--cor-destaque);
+    background: color-mix(in srgb, var(--cor-destaque) 10%, var(--cor-superficie));
+}
+
+.pdf-pagina-btn-remover:hover {
+    border-color: #c0392b;
+    color: #c0392b;
+}
+
+.pdf-preview-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 100px;
+    color: var(--cor-fonte-suave);
+    opacity: 0.5;
+}
+
+.pdf-preview-placeholder-icone {
+    font-size: 1.5rem;
+}
+
+.pdf-pagina-card.aguardando-preview .pdf-pagina-preview-wrap {
+    background: color-mix(in srgb, var(--cor-fundo) 50%, transparent);
+}
+
+/* Modos Separar / Mesclar */
+
+.pdf-modos {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding: 4px;
+    background: var(--vidro-fundo);
+    border: 1px solid var(--vidro-borda);
+    border-radius: var(--raio);
+    width: fit-content;
+    max-width: 100%;
+}
+
+.pdf-modo-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--raio-sm);
+    background: transparent;
+    color: var(--cor-fonte-suave);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transicao), color var(--transicao);
+}
+
+.pdf-modo-btn:hover {
+    color: var(--cor-fonte);
+}
+
+.pdf-modo-btn.ativo {
+    background: color-mix(in srgb, var(--cor-destaque) 18%, var(--cor-superficie));
+    color: var(--cor-destaque);
+}
+
+.pdf-modo-painel {
+    display: none;
+}
+
+.pdf-modo-painel.ativo {
+    display: block;
+}
+
+.pdf-modo-step {
+    display: none;
+}
+
+.pdf-modo-step.ativo {
+    display: block;
+}
+
+/* Mesclar PDFs */
+
+.merge-nome-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.merge-nome-input {
+    margin-bottom: 0;
+    max-width: 320px;
+}
+
+.merge-lista-arquivos {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.merge-arquivo-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--vidro-fundo-card);
+    border: 1px solid var(--vidro-borda-sutil);
+    border-radius: var(--raio-sm);
+    transition: border-color var(--transicao), opacity var(--transicao);
+}
+
+.merge-arquivo-item.arrastando {
+    opacity: 0.45;
+}
+
+.merge-arquivo-item.sobre-arrasto {
+    border-color: var(--cor-destaque);
+}
+
+.merge-arquivo-arrastar {
+    flex-shrink: 0;
+    padding: 6px 4px;
+    cursor: grab;
+    color: var(--cor-fonte-suave);
+}
+
+.merge-arquivo-arrastar:active {
+    cursor: grabbing;
+}
+
+.merge-arquivo-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.merge-arquivo-nome {
+    font-size: 0.9rem;
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.merge-arquivo-meta {
+    font-size: 0.78rem;
+    color: var(--cor-fonte-suave);
 }
 
 .seletor-cor {

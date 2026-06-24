@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <title>Separador de PDF — Centro de Informações</title>
+</head>
+<body>
+    <header class="header">
+        <div class="container header-inner">
+            <h1 class="logo">Centro de Informações <span>— PDF</span></h1>
+
+            <div class="container-buttons">
+                <a href="index.html" class="btn btn-outline btn-sm">← Voltar</a>
+                <button type="button" id="tema" class="btn btn-secundario" aria-label="Alternar tema">
+                    Claro
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="tratamento-pagina tratamento-pagina-larga">
+        <nav class="pdf-modos" aria-label="Modo de operação">
+            <button type="button" id="modo-separar" class="pdf-modo-btn ativo">Separar documentos</button>
+            <button type="button" id="modo-mesclar" class="pdf-modo-btn">Mesclar PDFs</button>
+        </nav>
+
+        <div id="painel-separar" class="pdf-modo-painel ativo">
+            <section id="step-upload" class="tratamento-step ativo">
+                <header class="tratamento-cabecalho">
+                    <h2>Separar documentos em um PDF</h2>
+                    <p class="tratamento-lead">
+                        Agrupe páginas, remova ou gire páginas, renomeie cada documento e baixe em ZIP.
+                        Tudo no navegador — nada é enviado para servidor.
+                    </p>
+                </header>
+
+                <div class="panel-tratamento">
+                    <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Arraste um PDF ou clique para selecionar">
+                        <input type="file" id="file-input" accept=".pdf,application/pdf" hidden>
+                        <span class="dropzone-icone" aria-hidden="true">📄</span>
+                        <p class="dropzone-titulo">Arraste seu PDF aqui</p>
+                        <p class="dropzone-sub">ou clique para escolher · máximo 50 MB</p>
+                        <div class="file-chip" id="file-chip" hidden>
+                            <span class="file-chip-nome" id="file-name"></span>
+                            <button type="button" class="file-chip-limpar" id="btn-clear" title="Remover">×</button>
+                        </div>
+                    </div>
+
+                    <ul class="rules-list">
+                        <li>Ex.: 9 páginas → 3 documentos de 3 páginas (use ✂ entre páginas)</li>
+                        <li><strong>🗑</strong> remove página · <strong>↻</strong> gira 90° · clique na miniatura para zoom</li>
+                        <li>Miniaturas carregam sob demanda (ideal para PDFs grandes)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="step-editor" class="tratamento-step">
+                <header class="tratamento-cabecalho">
+                    <div class="pdf-editor-topo">
+                        <div>
+                            <h2 id="editor-titulo">Agrupar documentos</h2>
+                            <p class="tratamento-lead" id="editor-subtitulo"></p>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-sm" id="btn-trocar-arquivo">Trocar PDF</button>
+                    </div>
+                </header>
+
+                <div class="pdf-editor-barra">
+                    <p class="pdf-contador" id="pdf-contador">1 documento</p>
+                    <div class="pdf-editor-acoes">
+                        <button type="button" class="btn btn-outline btn-sm" id="btn-um-documento">Tudo em 1</button>
+                        <button type="button" class="btn btn-outline btn-sm" id="btn-pagina-documento">1 pág. = 1 doc</button>
+                        <button type="button" class="btn btn-primario" id="btn-processar">Baixar documentos</button>
+                    </div>
+                </div>
+
+                <p class="pdf-carregando" id="pdf-carregando" hidden>Preparando visualização das páginas…</p>
+
+                <div class="pdf-secao-titulo">
+                    <h3>Páginas do PDF</h3>
+                    <p class="pdf-secao-ajuda">Clique na página para ampliar · ✂ divide · ≡ reordena · 🗑 remove · ↻ gira</p>
+                </div>
+                <div class="pdf-faixa-paginas" id="pdf-faixa-paginas"></div>
+
+                <div class="pdf-secao-titulo pdf-secao-documentos">
+                    <h3>Documentos para download</h3>
+                    <p class="pdf-secao-ajuda">Renomeie cada arquivo antes de exportar.</p>
+                </div>
+                <div class="pdf-lista-documentos" id="pdf-lista-documentos"></div>
+            </section>
+
+            <section id="step-processing" class="tratamento-step">
+                <header class="tratamento-cabecalho">
+                    <h2>Processando…</h2>
+                    <p class="tratamento-lead">Gerando os PDFs dos documentos.</p>
+                </header>
+                <div class="panel-tratamento">
+                    <pre id="log-mini" class="log-tratamento">Aguardando…</pre>
+                </div>
+            </section>
+
+            <section id="step-result" class="tratamento-step">
+                <header class="tratamento-cabecalho">
+                    <h2>Concluído</h2>
+                    <p class="tratamento-lead" id="result-sub"></p>
+                </header>
+                <div class="stat-card" id="stat-card" hidden>
+                    <span class="stat-num" id="stat-renamed">0</span>
+                    <span class="stat-label">documento(s) no ZIP</span>
+                </div>
+                <div class="panel-tratamento" id="rename-wrap" hidden>
+                    <p class="panel-tratamento-titulo">Arquivos no ZIP</p>
+                    <ul class="doc-list" id="rename-list"></ul>
+                </div>
+                <div class="tratamento-acoes">
+                    <a class="btn btn-primario" id="btn-download" href="#" download hidden>Baixar ZIP</a>
+                    <button type="button" class="btn btn-outline" id="btn-novo">Separar outro PDF</button>
+                </div>
+            </section>
+
+            <section id="step-error" class="tratamento-step">
+                <header class="tratamento-cabecalho"><h2>Erro</h2></header>
+                <div class="alerta-tratamento" id="error-msg">Tente novamente.</div>
+                <div class="tratamento-acoes">
+                    <button type="button" class="btn btn-outline" id="btn-error-back">Voltar</button>
+                </div>
+            </section>
+        </div>
+
+        <div id="painel-mesclar" class="pdf-modo-painel">
+            <section id="step-merge-upload" class="pdf-modo-step ativo">
+                <header class="tratamento-cabecalho">
+                    <h2>Mesclar PDFs</h2>
+                    <p class="tratamento-lead">
+                        Selecione vários PDFs, defina a ordem e gere um único arquivo final.
+                    </p>
+                </header>
+                <div class="panel-tratamento">
+                    <div class="dropzone" id="merge-dropzone" tabindex="0" role="button">
+                        <input type="file" id="merge-file-input" accept=".pdf,application/pdf" multiple hidden>
+                        <span class="dropzone-icone" aria-hidden="true">📚</span>
+                        <p class="dropzone-titulo">Arraste um ou mais PDFs</p>
+                        <p class="dropzone-sub">ou clique para escolher · máximo 50 MB cada</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="step-merge-editor" class="pdf-modo-step">
+                <header class="tratamento-cabecalho">
+                    <h2>Ordem dos arquivos</h2>
+                    <p class="tratamento-lead" id="merge-contador">Nenhum arquivo</p>
+                </header>
+
+                <div class="pdf-editor-barra">
+                    <label class="merge-nome-label" for="merge-nome-saida">Nome do PDF final</label>
+                    <input type="text" id="merge-nome-saida" class="pdf-documento-nome merge-nome-input" value="documento_mesclado" placeholder="documento_mesclado">
+                    <div class="pdf-editor-acoes">
+                        <button type="button" class="btn btn-outline btn-sm" id="btn-merge-limpar">Limpar lista</button>
+                        <button type="button" class="btn btn-primario" id="btn-merge-processar" disabled>Mesclar e baixar</button>
+                    </div>
+                </div>
+
+                <div class="merge-lista-arquivos" id="merge-lista-arquivos"></div>
+            </section>
+
+            <section id="step-merge-processing" class="pdf-modo-step">
+                <header class="tratamento-cabecalho"><h2>Mesclando…</h2></header>
+                <div class="panel-tratamento">
+                    <pre id="merge-log" class="log-tratamento">Aguardando…</pre>
+                </div>
+            </section>
+
+            <section id="step-merge-result" class="pdf-modo-step">
+                <header class="tratamento-cabecalho">
+                    <h2>Concluído</h2>
+                    <p class="tratamento-lead" id="merge-result-sub"></p>
+                </header>
+                <div class="stat-card">
+                    <span class="stat-num" id="merge-stat-paginas">0</span>
+                    <span class="stat-label">página(s) no PDF final</span>
+                </div>
+                <div class="tratamento-acoes">
+                    <a class="btn btn-primario" id="btn-merge-download" href="#" download hidden>Baixar PDF mesclado</a>
+                    <button type="button" class="btn btn-outline" id="btn-merge-novo">Mesclar outros PDFs</button>
+                </div>
+            </section>
+
+            <section id="step-merge-error" class="pdf-modo-step">
+                <header class="tratamento-cabecalho"><h2>Erro</h2></header>
+                <div class="alerta-tratamento" id="merge-error-msg">Tente novamente.</div>
+                <div class="tratamento-acoes">
+                    <button type="button" class="btn btn-outline" id="btn-merge-error-back">Voltar</button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>© 2026 Centro de Informações — Suporte. Vai te ajudar.</p>
+    </footer>
+
+    <div id="pdf-visualizador" class="pdf-visualizador" hidden>
+        <div class="pdf-visualizador-backdrop"></div>
+        <div class="pdf-visualizador-painel" role="dialog" aria-modal="true" aria-labelledby="pdf-vis-titulo">
+            <header class="pdf-visualizador-cabecalho">
+                <h3 id="pdf-vis-titulo">Página 1</h3>
+                <div class="pdf-visualizador-controles">
+                    <button type="button" class="btn btn-outline btn-sm" id="pdf-vis-anterior" aria-label="Página anterior">‹</button>
+                    <button type="button" class="btn btn-outline btn-sm" id="pdf-vis-proximo" aria-label="Próxima página">›</button>
+                    <span class="pdf-vis-zoom-label" id="pdf-vis-zoom">100%</span>
+                    <button type="button" class="btn btn-outline btn-sm" id="pdf-vis-zoom-out" aria-label="Diminuir zoom">−</button>
+                    <button type="button" class="btn btn-outline btn-sm" id="pdf-vis-zoom-in" aria-label="Aumentar zoom">+</button>
+                    <button type="button" class="btn btn-outline btn-sm" id="pdf-vis-ajustar">Ajustar</button>
+                    <button type="button" class="btn btn-secundario btn-sm" id="pdf-vis-fechar" aria-label="Fechar">×</button>
+                </div>
+            </header>
+            <div class="pdf-visualizador-area" id="pdf-vis-area">
+                <canvas id="pdf-vis-canvas" class="pdf-vis-canvas"></canvas>
+            </div>
+            <p class="pdf-visualizador-dica">Scroll para zoom · ← → navegar · Esc fechar</p>
+        </div>
+    </div>
+
+    <script src="assets/js/ferramenta-tema.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="assets/js/separador-pdf-core.js"></script>
+    <script src="assets/js/pagina-manager.js"></script>
+    <script src="assets/js/separador-pdf-preview.js"></script>
+    <script src="assets/js/lazy-preview.js"></script>
+    <script src="assets/js/pdf-merge.js"></script>
+    <script src="assets/js/separador-pdf-visualizador.js"></script>
+    <script src="assets/js/separador-pdf.js"></script>
+</body>
+</html>
