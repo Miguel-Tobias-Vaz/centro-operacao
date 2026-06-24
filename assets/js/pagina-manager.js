@@ -43,11 +43,21 @@ function removerPaginaNaPosicao(paginasOrdem, divisoesEntre, pos) {
     return removida;
 }
 
-function confirmarRemocaoPagina(item) {
-    const num = item.indexOriginal + 1;
-    return confirm(
-        `Remover a página ${num} do PDF?\n\nEla não será exportada nos documentos finais.`
-    );
+function removerPaginasPorPosicoes(paginasOrdem, divisoesEntre, posicoes) {
+    if (!posicoes.length) return [];
+
+    const ordenadas = [...new Set(posicoes)]
+        .filter((pos) => pos >= 0 && pos < paginasOrdem.length)
+        .sort((a, b) => b - a);
+
+    const removidas = [];
+    for (const pos of ordenadas) {
+        const [item] = paginasOrdem.splice(pos, 1);
+        if (item) removidas.push(item);
+    }
+
+    limparDivisoesOrfas(paginasOrdem, divisoesEntre);
+    return removidas;
 }
 
 function reordenarPaginaNaLista(paginasOrdem, dePos, paraPos) {

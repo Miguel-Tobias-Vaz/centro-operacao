@@ -45,6 +45,21 @@ function removerPaginaNaPosicao(paginasOrdem, divisoesEntre, pos) {
     return removida;
 }
 
+function removerPaginasPorPosicoes(paginasOrdem, divisoesEntre, posicoes) {
+    const ordenadas = [...new Set(posicoes)]
+        .filter((pos) => pos >= 0 && pos < paginasOrdem.length)
+        .sort((a, b) => b - a);
+
+    const removidas = [];
+    for (const pos of ordenadas) {
+        const [item] = paginasOrdem.splice(pos, 1);
+        if (item) removidas.push(item);
+    }
+
+    limparDivisoesOrfas(paginasOrdem, divisoesEntre);
+    return removidas;
+}
+
 function aplicarDivisaoEntreTodasPaginas(paginasOrdem) {
     const divisoes = new Set();
     for (let i = 0; i < paginasOrdem.length - 1; i += 1) {
@@ -112,6 +127,16 @@ function nums(grupo) {
     assert(paginas.length === 150, "150 páginas criadas");
     assert(paginas[149].indexOriginal === 149, "última página índice 149");
     console.log("✓ Teste 4 — estrutura 150 páginas OK");
+}
+
+// Teste 5: exclusão em lote
+{
+    const paginas = criarEstadoPaginas(5);
+    const divisoes = new Set();
+    removerPaginasPorPosicoes(paginas, divisoes, [1, 3]);
+    assert(paginas.length === 3, "batch remove count");
+    assert(JSON.stringify(nums(paginas)) === "[1,3,5]", `batch remove pages: ${nums(paginas)}`);
+    console.log("✓ Teste 5 — exclusão em lote");
 }
 
 console.log("\nTodos os testes passaram.");

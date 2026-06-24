@@ -13,10 +13,10 @@
     --cor-fonte: #eceae6;
     --cor-fonte-suave: #8a8780;
     --cor-borda: rgba(255, 255, 255, 0.08);
-    --cor-borda-foco: #c4ad93;
-    --cor-destaque: #c4ad93;
-    --cor-destaque-hover: #d4bf9f;
-    --cor-destaque-texto: #0a0a0b;
+    --cor-borda-foco: #00588f;
+    --cor-destaque: #00588f;
+    --cor-destaque-hover: #006daa;
+    --cor-destaque-texto: #faf9f7;
     --vidro-fundo: rgba(255, 255, 255, 0.035);
     --vidro-fundo-card: rgba(255, 255, 255, 0.05);
     --vidro-fundo-card-hover: rgba(255, 255, 255, 0.075);
@@ -519,6 +519,41 @@ a {
 
 .pdf-pagina-card.nao-selecionada {
     opacity: 0.55;
+}
+
+.pdf-pagina-card.selecionada {
+    border-color: var(--cor-destaque);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--cor-destaque) 35%, transparent);
+}
+
+.pdf-faixa-paginas:not(.modo-selecao) .pdf-pagina-selecao {
+    display: none;
+}
+
+.pdf-faixa-paginas.modo-selecao .pdf-pagina-arrastar {
+    pointer-events: none;
+    opacity: 0.35;
+}
+
+.pdf-faixa-paginas.modo-selecao .pdf-pagina-card {
+    cursor: pointer;
+}
+
+.pdf-preview-selecao {
+    cursor: pointer;
+}
+
+.pdf-preview-selecao:hover {
+    background: color-mix(in srgb, var(--cor-destaque) 10%, var(--cor-fundo));
+}
+
+#btn-selecionar-paginas.ativo {
+    border-color: var(--cor-destaque);
+    color: var(--cor-destaque);
+}
+
+#btn-excluir-selecionadas:not([hidden]) {
+    margin-right: 4px;
 }
 
 .pdf-pagina-card.arrastando {
@@ -1101,6 +1136,38 @@ a {
 .merge-arquivo-meta {
     font-size: 0.78rem;
     color: var(--cor-fonte-suave);
+}
+
+.grupo-seletor-cor {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-reset-cor {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--cor-borda);
+    border-radius: 50%;
+    background: var(--cor-superficie-hover);
+    color: var(--cor-fonte-suave);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        border-color var(--transicao),
+        color var(--transicao),
+        transform var(--transicao);
+}
+
+.btn-reset-cor:hover {
+    border-color: var(--cor-destaque);
+    color: var(--cor-destaque);
+    transform: rotate(-30deg);
 }
 
 .seletor-cor {

@@ -10,6 +10,8 @@ const listaDocumentos = document.getElementById("pdf-lista-documentos");
 const contadorEl = document.getElementById("pdf-contador");
 const carregandoEl = document.getElementById("pdf-carregando");
 const editorSubtitulo = document.getElementById("editor-subtitulo");
+const btnSelecionarPaginas = document.getElementById("btn-selecionar-paginas");
+const btnExcluirSelecionadas = document.getElementById("btn-excluir-selecionadas");
 
 const CORES_DOCUMENTO = [
     "doc-cor-1", "doc-cor-2", "doc-cor-3", "doc-cor-4",
@@ -25,6 +27,8 @@ let stemBase = "Documento";
 let downloadUrl = null;
 let arrastandoPagina = null;
 let arrastarIniciado = false;
+let modoSelecao = false;
+let paginasSelecionadas = new Set();
 
 function revogarDownload() {
     if (downloadUrl) {
@@ -40,6 +44,8 @@ function limparEstado() {
     divisoesEntre = new Set();
     nomesDocumentos = [];
     stemBase = "Documento";
+    modoSelecao = false;
+    paginasSelecionadas = new Set();
     resetarLazyPreview();
     liberarPdfJs();
     faixaPaginas.replaceChildren();
@@ -97,6 +103,81 @@ function atualizarRodapePagina(rodape, item) {
     rodape.innerHTML = `<span class="pdf-pagina-num">Pág. ${item.indexOriginal + 1}${rot}</span>`;
 }
 
+function paginaEstaSelecionada(item) {
+    return paginasSelecionadas.has(item.indexOriginal);
+}
+
+function alternarSelecaoPagina(item) {
+    if (paginasSelecionadas.has(item.indexOriginal)) {
+        paginasSelecionadas.delete(item.indexOriginal);
+    } else {
+        paginasSelecionadas.add(item.indexOriginal);
+    }
+    atualizarUiSelecao();
+}
+
+function definirModoSelecao(ativo) {
+    const eraSelecao = modoSelecao;
+    modoSelecao = ativo;
+    if (!ativo) paginasSelecionadas.clear();
+    faixaPaginas.classList.toggle("modo-selecao", modoSelecao);
+    if (btnSelecionarPaginas) {
+        btnSelecionarPaginas.textContent = modoSelecao ? "Cancelar seleção" : "Selecionar páginas";
+        btnSelecionarPaginas.classList.toggle("ativo", modoSelecao);
+    }
+
+    if (eraSelecao && !ativo && paginasOrdem.length) {
+        renderizarInterfaceCompleta();
+        return;
+    }
+
+    atualizarUiSelecao();
+}
+
+function atualizarUiSelecao() {
+    const total = paginasSelecionadas.size;
+
+    if (btnExcluirSelecionadas) {
+        btnExcluirSelecionadas.hidden = !modoSelecao || total === 0;
+        btnExcluirSelecionadas.textContent = total === 1
+            ? "Excluir 1 página"
+            : `Excluir ${total} páginas`;
+    }
+
+    faixaPaginas.querySelectorAll(".pdf-pagina-card").forEach((card) => {
+        const item = card._item;
+        const selecionada = item && paginaEstaSelecionada(item);
+        card.classList.toggle("selecionada", !!selecionada);
+        card.classList.toggle("nao-selecionada", modoSelecao && !selecionada);
+
+        const input = card.querySelector(".pdf-pagina-selecao input");
+        if (input) input.checked = !!selecionada;
+    });
+}
+
+function excluirPaginasSelecionadas() {
+    if (!paginasSelecionadas.size) return;
+
+    const posicoes = [];
+    paginasOrdem.forEach((item, pos) => {
+        if (paginasSelecionadas.has(item.indexOriginal)) posicoes.push(pos);
+    });
+
+    const removidas = removerPaginasPorPosicoes(paginasOrdem, divisoesEntre, posicoes);
+    removidas.forEach((item) => invalidarPreviewPagina(item.indexOriginal));
+
+    paginasSelecionadas.clear();
+    definirModoSelecao(false);
+
+    if (paginasOrdem.length === 0) {
+        alert("Todas as páginas foram removidas. Envie outro PDF.");
+        resetar();
+        return;
+    }
+
+    renderizarInterfaceCompleta();
+}
+
 function criarCardPagina(item, pos) {
     const grupoIdx = indiceGrupoDaPagina(pos);
     const card = document.createElement("article");
@@ -106,6 +187,22 @@ function criarCardPagina(item, pos) {
 
     const topo = document.createElement("div");
     topo.className = "pdf-pagina-topo";
+
+    const selecao = document.createElement("label");
+    selecao.className = "pdf-pagina-selecao";
+    selecao.title = "Selecionar para excluir";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = paginaEstaSelecionada(item);
+    checkbox.setAttribute("aria-label", `Selecionar página ${item.indexOriginal + 1}`);
+    checkbox.addEventListener("click", (e) => e.stopPropagation());
+    checkbox.addEventListener("change", () => {
+        if (checkbox.checked) paginasSelecionadas.add(item.indexOriginal);
+        else paginasSelecionadas.delete(item.indexOriginal);
+        atualizarUiSelecao();
+    });
+    selecao.appendChild(checkbox);
 
     const arrastar = document.createElement("div");
     arrastar.className = "pdf-pagina-arrastar";
@@ -119,7 +216,7 @@ function criarCardPagina(item, pos) {
     badge.className = "pdf-pagina-doc-badge";
     badge.textContent = `Doc ${grupoIdx + 1}`;
 
-    topo.append(arrastar, badge);
+    topo.append(selecao, arrastar, badge);
 
     const preview = document.createElement("div");
     preview.className = "pdf-pagina-preview-wrap";
@@ -131,7 +228,18 @@ function criarCardPagina(item, pos) {
     canvas.setAttribute("aria-label", `Preview da página ${item.indexOriginal + 1}`);
 
     preview.append(placeholder, canvas);
-    ligarPreviewAoVisualizador(preview, item.indexOriginal);
+    if (!modoSelecao) {
+        ligarPreviewAoVisualizador(preview, item.indexOriginal);
+    } else {
+        preview.classList.add("pdf-preview-selecao");
+        preview.title = "Clique para selecionar";
+    }
+
+    card.addEventListener("click", (e) => {
+        if (!modoSelecao) return;
+        if (e.target.closest(".pdf-pagina-btn-girar, .pdf-pagina-arrastar, .pdf-pagina-selecao")) return;
+        alternarSelecaoPagina(item);
+    });
 
     const acoes = document.createElement("div");
     acoes.className = "pdf-pagina-acoes";
@@ -143,13 +251,6 @@ function criarCardPagina(item, pos) {
     btnGirar.setAttribute("aria-label", "Girar página 90 graus");
     btnGirar.textContent = "↻";
 
-    const btnRemover = document.createElement("button");
-    btnRemover.type = "button";
-    btnRemover.className = "pdf-pagina-btn pdf-pagina-btn-remover";
-    btnRemover.title = "Remover página";
-    btnRemover.setAttribute("aria-label", "Remover página");
-    btnRemover.textContent = "🗑";
-
     btnGirar.addEventListener("click", (e) => {
         e.stopPropagation();
         girarPagina(item);
@@ -159,24 +260,7 @@ function criarCardPagina(item, pos) {
         renderizarListaDocumentos();
     });
 
-    btnRemover.addEventListener("click", (e) => {
-        e.stopPropagation();
-        if (!confirmarRemocaoPagina(item)) return;
-
-        desregistrarCardLazy(card);
-        removerPaginaNaPosicao(paginasOrdem, divisoesEntre, pos);
-        invalidarPreviewPagina(item.indexOriginal);
-
-        if (paginasOrdem.length === 0) {
-            alert("Todas as páginas foram removidas. Envie outro PDF.");
-            resetar();
-            return;
-        }
-
-        renderizarInterfaceCompleta();
-    });
-
-    acoes.append(btnGirar, btnRemover);
+    acoes.append(btnGirar);
 
     const rodape = document.createElement("div");
     rodape.className = "pdf-pagina-rodape";
@@ -227,6 +311,7 @@ function montarFaixaPaginas() {
     });
 
     observarMiniaturasAposMontagem(faixaPaginas);
+    atualizarUiSelecao();
 }
 
 async function renderizarListaDocumentos() {
@@ -314,6 +399,7 @@ function iniciarArrastarPaginas() {
     arrastarIniciado = true;
 
     faixaPaginas.addEventListener("pointerdown", (e) => {
+        if (modoSelecao) return;
         if (e.target.closest(".pdf-pagina-btn")) return;
 
         const handle = e.target.closest(".pdf-pagina-arrastar");
@@ -433,6 +519,12 @@ document.getElementById("btn-pagina-documento").addEventListener("click", () => 
     divisoesEntre = aplicarDivisaoEntreTodasPaginas(paginasOrdem);
     renderizarInterfaceCompleta();
 });
+
+btnSelecionarPaginas?.addEventListener("click", () => {
+    definirModoSelecao(!modoSelecao);
+});
+
+btnExcluirSelecionadas?.addEventListener("click", excluirPaginasSelecionadas);
 
 async function processar() {
     const documentos = documentosParaExportar();

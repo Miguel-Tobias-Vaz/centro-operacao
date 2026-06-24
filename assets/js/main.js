@@ -16,8 +16,6 @@ const listaPublicacoes = document.getElementById("lista-publicacoes");
 const buscaGlobal = document.getElementById("busca-global");
 const buscaItem = document.getElementById("busca-item");
 const botaoTema = document.getElementById("tema");
-const inputCorDestaque = document.getElementById("cor-destaque");
-const amostraCorDestaque = document.getElementById("cor-destaque-amostra");
 const loading = document.getElementById("loading");
 const erroConfig = document.getElementById("erro-config");
 
@@ -1234,79 +1232,11 @@ async function excluirPublicacao() {
     }
 }
 
-const COR_PADRAO = {
-    escuro: "#c4ad93",
-    claro: "#8a7358"
-};
-
-function hexParaRgb(hex) {
-    const limpo = hex.replace("#", "");
-    return {
-        r: parseInt(limpo.slice(0, 2), 16),
-        g: parseInt(limpo.slice(2, 4), 16),
-        b: parseInt(limpo.slice(4, 6), 16)
-    };
-}
-
-function rgbParaHex(r, g, b) {
-    return `#${[r, g, b]
-        .map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0"))
-        .join("")}`;
-}
-
-function clarearCor(hex, fator) {
-    const { r, g, b } = hexParaRgb(hex);
-    return rgbParaHex(
-        r + (255 - r) * fator,
-        g + (255 - g) * fator,
-        b + (255 - b) * fator
-    );
-}
-
-function escurecerCor(hex, fator) {
-    const { r, g, b } = hexParaRgb(hex);
-    return rgbParaHex(r * (1 - fator), g * (1 - fator), b * (1 - fator));
-}
-
-function luminanciaCor(hex) {
-    const { r, g, b } = hexParaRgb(hex);
-    const canal = (c) => {
-        const v = c / 255;
-        return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-    };
-    return 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
-}
-
-function obterCorPadraoTema() {
-    return document.body.classList.contains("tema-claro")
-        ? COR_PADRAO.claro
-        : COR_PADRAO.escuro;
-}
-
-function aplicarCorDestaque(hex) {
-    const claro = document.body.classList.contains("tema-claro");
-    const hover = claro ? escurecerCor(hex, 0.1) : clarearCor(hex, 0.12);
-    const texto = luminanciaCor(hex) > 0.55 ? "#0a0a0b" : "#faf9f7";
-
-    document.documentElement.style.setProperty("--cor-destaque", hex);
-    document.documentElement.style.setProperty("--cor-destaque-hover", hover);
-    document.documentElement.style.setProperty("--cor-borda-foco", hex);
-    document.documentElement.style.setProperty("--cor-destaque-texto", texto);
-
-    if (inputCorDestaque) inputCorDestaque.value = hex;
-    if (amostraCorDestaque) amostraCorDestaque.style.backgroundColor = hex;
-}
-
-function carregarCorDestaque() {
-    const salva = localStorage.getItem("corDestaque");
-    aplicarCorDestaque(salva || obterCorPadraoTema());
-}
-
 function aplicarTema(claro) {
     document.body.classList.toggle("tema-claro", claro);
     botaoTema.textContent = claro ? "Escuro" : "Claro";
     localStorage.setItem("tema", claro ? "claro" : "escuro");
-    carregarCorDestaque();
+    carregarCorDestaqueSalva();
 }
 
 document.getElementById("criar-modulo").addEventListener("click", () => abrirModalModulo());
@@ -1357,15 +1287,10 @@ botaoTema.addEventListener("click", () => {
     aplicarTema(!document.body.classList.contains("tema-claro"));
 });
 
-inputCorDestaque?.addEventListener("input", (e) => {
-    const hex = e.target.value;
-    aplicarCorDestaque(hex);
-    localStorage.setItem("corDestaque", hex);
-});
-
 async function iniciar() {
     const temaSalvo = localStorage.getItem("tema");
     aplicarTema(temaSalvo === "claro");
+    iniciarSeletorCorDestaque();
 
     if (!configValida()) {
         mostrarErroConfig();

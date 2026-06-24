@@ -35,6 +35,19 @@ function luminanciaCor(hex) {
     return 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
 }
 
+const COR_DESTAQUE_PADRAO = "#00588f";
+
+function obterCorDestaqueAtiva() {
+    return localStorage.getItem("corDestaque") || COR_DESTAQUE_PADRAO;
+}
+
+function sincronizarSeletorCor(hex) {
+    const input = document.getElementById("cor-destaque");
+    const amostra = document.getElementById("cor-destaque-amostra");
+    if (input) input.value = hex;
+    if (amostra) amostra.style.backgroundColor = hex;
+}
+
 function aplicarCorDestaqueFerramenta(hex) {
     const claro = document.body.classList.contains("tema-claro");
     const hover = claro ? escurecerCor(hex, 0.1) : clarearCor(hex, 0.12);
@@ -46,13 +59,39 @@ function aplicarCorDestaqueFerramenta(hex) {
     document.documentElement.style.setProperty("--cor-destaque-texto", texto);
 }
 
+function restaurarCorDestaquePadrao() {
+    localStorage.removeItem("corDestaque");
+    aplicarCorDestaqueFerramenta(COR_DESTAQUE_PADRAO);
+    sincronizarSeletorCor(COR_DESTAQUE_PADRAO);
+}
+
+function carregarCorDestaqueSalva() {
+    const hex = obterCorDestaqueAtiva();
+    aplicarCorDestaqueFerramenta(hex);
+    sincronizarSeletorCor(hex);
+}
+
+function iniciarSeletorCorDestaque() {
+    const input = document.getElementById("cor-destaque");
+    const btnReset = document.getElementById("cor-destaque-reset");
+
+    input?.addEventListener("input", (e) => {
+        const hex = e.target.value;
+        aplicarCorDestaqueFerramenta(hex);
+        localStorage.setItem("corDestaque", hex);
+        sincronizarSeletorCor(hex);
+    });
+
+    btnReset?.addEventListener("click", restaurarCorDestaquePadrao);
+
+    carregarCorDestaqueSalva();
+}
+
 function aplicarTemaFerramenta(claro, botaoTema) {
     document.body.classList.toggle("tema-claro", claro);
     if (botaoTema) botaoTema.textContent = claro ? "Escuro" : "Claro";
     localStorage.setItem("tema", claro ? "claro" : "escuro");
-
-    const corSalva = localStorage.getItem("corDestaque");
-    if (corSalva) aplicarCorDestaqueFerramenta(corSalva);
+    carregarCorDestaqueSalva();
 }
 
 function iniciarTemaFerramenta(botaoTema) {
@@ -61,9 +100,7 @@ function iniciarTemaFerramenta(botaoTema) {
     });
 
     aplicarTemaFerramenta(localStorage.getItem("tema") === "claro", botaoTema);
-
-    const corSalva = localStorage.getItem("corDestaque");
-    if (corSalva) aplicarCorDestaqueFerramenta(corSalva);
+    iniciarSeletorCorDestaque();
 }
 
 function mostrarPassoFerramenta(stepId, classePasso = "tratamento-step") {

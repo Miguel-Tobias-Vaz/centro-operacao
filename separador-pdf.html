@@ -50,7 +50,7 @@
 
                     <ul class="rules-list">
                         <li>Ex.: 9 páginas → 3 documentos de 3 páginas (use ✂ entre páginas)</li>
-                        <li><strong>🗑</strong> remove página · <strong>↻</strong> gira 90° · clique na miniatura para zoom</li>
+                        <li><strong>Selecionar páginas</strong> marca várias de uma vez · depois <strong>Excluir selecionadas</strong></li>
                         <li>Miniaturas carregam sob demanda (ideal para PDFs grandes)</li>
                     </ul>
                 </div>
@@ -70,6 +70,8 @@
                 <div class="pdf-editor-barra">
                     <p class="pdf-contador" id="pdf-contador">1 documento</p>
                     <div class="pdf-editor-acoes">
+                        <button type="button" class="btn btn-outline btn-sm" id="btn-selecionar-paginas">Selecionar páginas</button>
+                        <button type="button" class="btn btn-perigo btn-sm" id="btn-excluir-selecionadas" hidden>Excluir selecionadas</button>
                         <button type="button" class="btn btn-outline btn-sm" id="btn-um-documento">Tudo em 1</button>
                         <button type="button" class="btn btn-outline btn-sm" id="btn-pagina-documento">1 pág. = 1 doc</button>
                         <button type="button" class="btn btn-primario" id="btn-processar">Baixar documentos</button>
@@ -80,7 +82,7 @@
 
                 <div class="pdf-secao-titulo">
                     <h3>Páginas do PDF</h3>
-                    <p class="pdf-secao-ajuda">Clique na página para ampliar · ✂ divide · ≡ reordena · 🗑 remove · ↻ gira</p>
+                    <p class="pdf-secao-ajuda">Clique na página para ampliar · ✂ divide · ≡ reordena · ↻ gira · selecione e exclua em lote</p>
                 </div>
                 <div class="pdf-faixa-paginas" id="pdf-faixa-paginas"></div>
 
