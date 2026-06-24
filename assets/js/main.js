@@ -1,5 +1,6 @@
 let supabaseClient = null;
 let modulos = [];
+let categoriasModuloLista = [];
 let moduloAtivoId = null;
 let termoBuscaGlobal = "";
 let termoBuscaItem = "";
@@ -24,9 +25,12 @@ const modalEl = document.getElementById("modal");
 const modalTitulo = document.getElementById("modal-titulo");
 const modalFechar = document.getElementById("modal-fechar");
 const formModulo = document.getElementById("form-modulo");
+const formCategoria = document.getElementById("form-categoria");
 const formPublicacao = document.getElementById("form-publicacao");
 const inputModuloNome = document.getElementById("modulo-nome");
 const inputModuloCategoria = document.getElementById("modulo-categoria");
+const inputCategoriaTitulo = document.getElementById("categoria-titulo");
+const inputCategoriaDescricao = document.getElementById("categoria-descricao");
 const inputImagemModulo = document.getElementById("modulo-imagem-input");
 const btnPreviewImagemModulo = document.getElementById("modulo-imagem-preview");
 const imgPreviewModulo = document.getElementById("modulo-imagem-img");
@@ -46,31 +50,115 @@ const btnRemoverArquivo = document.getElementById("btn-remover-arquivo");
 const BUCKET_ARQUIVOS = "publicacoes-arquivos";
 const BUCKET_MODULOS_IMAGENS = "modulos-imagens";
 
-const CATEGORIAS_MODULO = [
+const CATEGORIAS_PADRAO = [
     {
         id: "site",
         titulo: "Site",
-        descricao: "Módulos e conteúdos voltados ao site público."
+        descricao: "Módulos e conteúdos voltados ao site público.",
+        ordem: 1
     },
     {
         id: "interno",
         titulo: "Interno",
-        descricao: "Ferramentas e referências de uso interno da equipe."
+        descricao: "Ferramentas e referências de uso interno da equipe.",
+        ordem: 2
     },
     {
         id: "portal",
         titulo: "Portal",
-        descricao: "Conteúdos e acessos do portal institucional."
+        descricao: "Conteúdos e acessos do portal institucional.",
+        ordem: 3
     }
 ];
 
+function criarSlugCategoria(titulo) {
+    const slug = titulo
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 48);
+
+    return slug || "categoria";
+}
+
+function obterIdCategoriaPadrao() {
+    return categoriasModuloLista[0]?.id || CATEGORIAS_PADRAO[0].id;
+}
+
 function normalizarCategoria(categoria) {
-    const id = (categoria || "site").toLowerCase();
-    return CATEGORIAS_MODULO.some((c) => c.id === id) ? id : "site";
+    const id = (categoria || obterIdCategoriaPadrao()).toLowerCase();
+    if (categoriasModuloLista.some((c) => c.id === id)) return id;
+    return obterIdCategoriaPadrao();
 }
 
 function obterCategoriaModulo(modulo) {
-    return CATEGORIAS_MODULO.find((c) => c.id === normalizarCategoria(modulo?.categoria)) || CATEGORIAS_MODULO[0];
+    const id = normalizarCategoria(modulo?.categoria);
+    return categoriasModuloLista.find((c) => c.id === id) || {
+        id,
+        titulo: id,
+        descricao: ""
+    };
+}
+
+function preencherSelectCategorias(selecionada = null) {
+    if (!inputModuloCategoria) return;
+
+    const valorAtual = selecionada || inputModuloCategoria.value || obterIdCategoriaPadrao();
+    inputModuloCategoria.replaceChildren();
+
+    categoriasModuloLista.forEach((cat) => {
+        const opt = document.createElement("option");
+        opt.value = cat.id;
+        opt.textContent = cat.titulo;
+        inputModuloCategoria.appendChild(opt);
+    });
+
+    if (categoriasModuloLista.some((c) => c.id === valorAtual)) {
+        inputModuloCategoria.value = valorAtual;
+    } else if (categoriasModuloLista.length) {
+        inputModuloCategoria.value = categoriasModuloLista[0].id;
+    }
+}
+
+async function carregarCategorias() {
+    const { data, error } = await supabaseClient
+        .from("categorias_modulo")
+        .select("id, titulo, descricao, ordem")
+        .order("ordem", { ascending: true });
+
+    if (error) {
+        if (error.code === "42P01" || error.message?.includes("categorias_modulo")) {
+            categoriasModuloLista = [...CATEGORIAS_PADRAO];
+            preencherSelectCategorias();
+            return;
+        }
+        throw error;
+    }
+
+    categoriasModuloLista = (data || []).length ? data : [...CATEGORIAS_PADRAO];
+    preencherSelectCategorias();
+}
+
+function obterCategoriasParaExibir() {
+    const lista = [...categoriasModuloLista];
+    const ids = new Set(lista.map((c) => c.id));
+
+    modulos.forEach((modulo) => {
+        const id = modulo.categoria;
+        if (id && !ids.has(id)) {
+            ids.add(id);
+            lista.push({
+                id,
+                titulo: id,
+                descricao: "",
+                ordem: 9999
+            });
+        }
+    });
+
+    return lista.sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
 }
 
 const TAMANHO_MAX_ARQUIVO = 10 * 1024 * 1024;
@@ -483,6 +571,8 @@ function tratarErro(erro, acao) {
 }
 
 async function carregarDados() {
+    await carregarCategorias();
+
     const { data, error } = await supabaseClient
         .from("modulos")
         .select(`
@@ -525,6 +615,7 @@ async function carregarDados() {
 
 function esconderFormulariosModal() {
     formModulo.hidden = true;
+    formCategoria.hidden = true;
     formPublicacao.hidden = true;
 }
 
@@ -550,6 +641,7 @@ function abrirModalModulo(id = null) {
     esconderFormulariosModal();
     formModulo.hidden = false;
     resetarFormularioModulo();
+    preencherSelectCategorias();
 
     if (id) {
         const modulo = obterModulo(id);
@@ -566,12 +658,64 @@ function abrirModalModulo(id = null) {
         }
     } else {
         modalTitulo.textContent = "Novo Módulo";
-        if (inputModuloCategoria) inputModuloCategoria.value = "site";
+        if (inputModuloCategoria) {
+            inputModuloCategoria.value = obterIdCategoriaPadrao();
+        }
         btnExcluirModulo.hidden = true;
     }
 
     abrirModal();
     inputModuloNome.focus();
+}
+
+function abrirModalCategoria() {
+    esconderFormulariosModal();
+    formCategoria.hidden = false;
+    modalTitulo.textContent = "Nova Categoria";
+    inputCategoriaTitulo.value = "";
+    inputCategoriaDescricao.value = "";
+    abrirModal();
+    inputCategoriaTitulo.focus();
+}
+
+async function salvarCategoria(e) {
+    e.preventDefault();
+
+    const titulo = inputCategoriaTitulo.value.trim();
+    if (!titulo) return;
+
+    const descricao = inputCategoriaDescricao.value.trim()
+        || `Módulos da categoria ${titulo}.`;
+    const id = criarSlugCategoria(titulo);
+
+    if (categoriasModuloLista.some((c) => c.id === id)) {
+        alert("Já existe uma categoria com esse nome. Escolha outro título.");
+        return;
+    }
+
+    const maxOrdem = categoriasModuloLista.reduce(
+        (max, c) => Math.max(max, c.ordem || 0),
+        0
+    );
+
+    mostrarLoading(true);
+
+    try {
+        const { error } = await supabaseClient
+            .from("categorias_modulo")
+            .insert({ id, titulo, descricao, ordem: maxOrdem + 1 });
+
+        if (error) throw error;
+
+        await carregarCategorias();
+        preencherSelectCategorias(id);
+        fecharModal();
+        renderizarModulos();
+    } catch (erro) {
+        tratarErro(erro, "criar categoria");
+    } finally {
+        mostrarLoading(false);
+    }
 }
 
 function abrirModalPublicacao(id = null) {
@@ -791,7 +935,7 @@ function renderizarModulos() {
         return;
     }
 
-    CATEGORIAS_MODULO.forEach((categoria) => {
+    obterCategoriasParaExibir().forEach((categoria) => {
         const daCategoria = modulosFiltrados
             .filter((m) => normalizarCategoria(m.categoria) === categoria.id)
             .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
@@ -1354,6 +1498,7 @@ function aplicarTema(claro) {
 }
 
 document.getElementById("criar-modulo").addEventListener("click", () => abrirModalModulo());
+document.getElementById("criar-categoria").addEventListener("click", () => abrirModalCategoria());
 document.getElementById("voltar-modulos").addEventListener("click", voltarParaExplorar);
 document.getElementById("criar-publicacao").addEventListener("click", () => abrirModalPublicacao());
 document.getElementById("editar-modulo").addEventListener("click", () => {
@@ -1361,6 +1506,7 @@ document.getElementById("editar-modulo").addEventListener("click", () => {
 });
 
 formModulo.addEventListener("submit", salvarModulo);
+formCategoria.addEventListener("submit", salvarCategoria);
 formPublicacao.addEventListener("submit", salvarPublicacao);
 btnExcluirModulo.addEventListener("click", excluirModulo);
 btnExcluirPublicacao.addEventListener("click", excluirPublicacao);

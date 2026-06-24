@@ -62,6 +62,9 @@
                 <button type="button" id="criar-modulo" class="btn btn-outline">
                     Novo Módulo +
                 </button>
+                <button type="button" id="criar-categoria" class="btn btn-outline">
+                    Nova Categoria +
+                </button>
             </div>
 
             <section id="painel-modulo" class="painel-modulo" hidden>
@@ -117,11 +120,7 @@
                 <input type="text" id="modulo-nome" required placeholder="Ex: Links Importantes">
 
                 <label for="modulo-categoria">Categoria</label>
-                <select id="modulo-categoria" class="modal-select" required>
-                    <option value="site">Site</option>
-                    <option value="interno">Interno</option>
-                    <option value="portal">Portal</option>
-                </select>
+                <select id="modulo-categoria" class="modal-select" required></select>
 
                 <label>Imagem <span class="label-opcional">(opcional)</span></label>
                 <p class="campo-ajuda">Ícone circular para identificar o módulo na grade.</p>
@@ -141,6 +140,21 @@
                     <button type="button" class="btn btn-secundario" data-acao="cancelar">Cancelar</button>
                     <button type="button" class="btn btn-perigo" id="excluir-modulo" hidden>Excluir</button>
                     <button type="submit" class="btn btn-primario">Salvar</button>
+                </div>
+            </form>
+
+            <form id="form-categoria" class="modal-form" hidden>
+                <label for="categoria-titulo">Nome da categoria</label>
+                <input type="text" id="categoria-titulo" required placeholder="Ex: Site, Interno, Portal">
+
+                <label for="categoria-descricao">Descrição <span class="label-opcional">(opcional)</span></label>
+                <textarea id="categoria-descricao" rows="3" placeholder="Texto exibido abaixo do título na tela inicial"></textarea>
+
+                <p class="campo-ajuda">A categoria aparecerá como uma seção na lista de módulos.</p>
+
+                <div class="modal-acoes">
+                    <button type="button" class="btn btn-secundario" data-acao="cancelar">Cancelar</button>
+                    <button type="submit" class="btn btn-primario">Criar categoria</button>
                 </div>
             </form>
 
