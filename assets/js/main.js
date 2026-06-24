@@ -1011,10 +1011,18 @@ function selecionarModulo(id) {
 
 function voltarParaExplorar() {
     moduloAtivoId = null;
+    termoBuscaItem = "";
+    if (buscaItem) buscaItem.value = "";
     sidebar.hidden = true;
     painelModulo.hidden = true;
     painelExplorar.hidden = false;
     renderizarModulos();
+}
+
+function irParaHome() {
+    termoBuscaGlobal = "";
+    if (buscaGlobal) buscaGlobal.value = "";
+    voltarParaExplorar();
 }
 
 async function reordenarModulo(idOrigem, idDestino) {
@@ -1499,6 +1507,7 @@ function aplicarTema(claro) {
 
 document.getElementById("criar-modulo").addEventListener("click", () => abrirModalModulo());
 document.getElementById("criar-categoria").addEventListener("click", () => abrirModalCategoria());
+document.getElementById("logo-home")?.addEventListener("click", irParaHome);
 document.getElementById("voltar-modulos").addEventListener("click", voltarParaExplorar);
 document.getElementById("criar-publicacao").addEventListener("click", () => abrirModalPublicacao());
 document.getElementById("editar-modulo").addEventListener("click", () => {

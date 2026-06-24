@@ -116,6 +116,28 @@ a {
     gap: 20px;
 }
 
+.logo-home {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    border-radius: var(--raio-sm);
+    transition: opacity var(--transicao);
+}
+
+.logo-home:hover .logo,
+.logo-home:focus-visible .logo {
+    color: var(--cor-destaque);
+}
+
+.logo-home:focus-visible {
+    outline: 2px solid var(--cor-borda-foco);
+    outline-offset: 2px;
+}
+
 .logo {
     font-size: 1rem;
     font-weight: 700;
@@ -1440,6 +1462,11 @@ a {
     display: flex;
     flex-direction: column;
     gap: 0;
+}
+
+.painel-explorar-wrapper[hidden],
+.painel-modulo[hidden] {
+    display: none !important;
 }
 
 .categorias-modulos {
