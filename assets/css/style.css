@@ -1488,6 +1488,27 @@ a {
         inset 0 1px 0 var(--vidro-borda-sutil);
 }
 
+.explorar-header {
+    margin-bottom: 0;
+}
+
+.explorar-header-topo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.explorar-header-texto {
+    flex: 1;
+    min-width: 0;
+}
+
+.explorar-btn-editar {
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
 .explorar-rotulo {
     font-size: 0.85rem;
     color: var(--cor-destaque);

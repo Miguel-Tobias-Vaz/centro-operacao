@@ -5,6 +5,7 @@ let moduloAtivoId = null;
 let termoBuscaGlobal = "";
 let termoBuscaItem = "";
 let editandoModuloId = null;
+let editandoCategoriaId = null;
 let editandoPublicacaoId = null;
 
 const listaModulos = document.getElementById("lista-modulos");
@@ -31,6 +32,8 @@ const inputModuloNome = document.getElementById("modulo-nome");
 const inputModuloCategoria = document.getElementById("modulo-categoria");
 const inputCategoriaTitulo = document.getElementById("categoria-titulo");
 const inputCategoriaDescricao = document.getElementById("categoria-descricao");
+const btnExcluirCategoria = document.getElementById("excluir-categoria");
+const btnSalvarCategoria = document.getElementById("btn-salvar-categoria");
 const inputImagemModulo = document.getElementById("modulo-imagem-input");
 const btnPreviewImagemModulo = document.getElementById("modulo-imagem-preview");
 const imgPreviewModulo = document.getElementById("modulo-imagem-img");
@@ -630,6 +633,7 @@ function fecharModal() {
     esconderFormulariosModal();
     modalEl.classList.remove("modal-grande");
     editandoModuloId = null;
+    editandoCategoriaId = null;
     editandoPublicacaoId = null;
     resetarFormularioModulo();
     resetarFormularioPublicacao();
@@ -668,12 +672,28 @@ function abrirModalModulo(id = null) {
     inputModuloNome.focus();
 }
 
-function abrirModalCategoria() {
+function abrirModalCategoria(id = null) {
+    editandoCategoriaId = id;
     esconderFormulariosModal();
     formCategoria.hidden = false;
-    modalTitulo.textContent = "Nova Categoria";
-    inputCategoriaTitulo.value = "";
-    inputCategoriaDescricao.value = "";
+
+    if (id) {
+        const cat = categoriasModuloLista.find((c) => c.id === id);
+        if (!cat) return;
+
+        modalTitulo.textContent = "Editar Categoria";
+        inputCategoriaTitulo.value = cat.titulo;
+        inputCategoriaDescricao.value = cat.descricao || "";
+        if (btnExcluirCategoria) btnExcluirCategoria.hidden = false;
+        if (btnSalvarCategoria) btnSalvarCategoria.textContent = "Salvar";
+    } else {
+        modalTitulo.textContent = "Nova Categoria";
+        inputCategoriaTitulo.value = "";
+        inputCategoriaDescricao.value = "";
+        if (btnExcluirCategoria) btnExcluirCategoria.hidden = true;
+        if (btnSalvarCategoria) btnSalvarCategoria.textContent = "Criar categoria";
+    }
+
     abrirModal();
     inputCategoriaTitulo.focus();
 }
@@ -686,33 +706,83 @@ async function salvarCategoria(e) {
 
     const descricao = inputCategoriaDescricao.value.trim()
         || `Módulos da categoria ${titulo}.`;
-    const id = criarSlugCategoria(titulo);
 
-    if (categoriasModuloLista.some((c) => c.id === id)) {
-        alert("Já existe uma categoria com esse nome. Escolha outro título.");
+    mostrarLoading(true);
+
+    try {
+        if (editandoCategoriaId) {
+            const { error } = await supabaseClient
+                .from("categorias_modulo")
+                .update({ titulo, descricao })
+                .eq("id", editandoCategoriaId);
+
+            if (error) throw error;
+        } else {
+            const id = criarSlugCategoria(titulo);
+
+            if (categoriasModuloLista.some((c) => c.id === id)) {
+                alert("Já existe uma categoria com esse nome. Escolha outro título.");
+                return;
+            }
+
+            const maxOrdem = categoriasModuloLista.reduce(
+                (max, c) => Math.max(max, c.ordem || 0),
+                0
+            );
+
+            const { error } = await supabaseClient
+                .from("categorias_modulo")
+                .insert({ id, titulo, descricao, ordem: maxOrdem + 1 });
+
+            if (error) throw error;
+        }
+
+        await carregarDados();
+        fecharModal();
+        renderizarModulos();
+    } catch (erro) {
+        tratarErro(erro, editandoCategoriaId ? "atualizar categoria" : "criar categoria");
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+async function excluirCategoria() {
+    if (!editandoCategoriaId) return;
+
+    const cat = categoriasModuloLista.find((c) => c.id === editandoCategoriaId);
+    const qtdModulos = modulos.filter(
+        (m) => normalizarCategoria(m.categoria) === editandoCategoriaId
+    ).length;
+
+    if (qtdModulos > 0) {
+        alert(
+            `Não é possível excluir "${cat?.titulo || editandoCategoriaId}".\n\n` +
+            `${qtdModulos} módulo(s) ainda usam esta categoria. Mova ou exclua os módulos antes.`
+        );
         return;
     }
 
-    const maxOrdem = categoriasModuloLista.reduce(
-        (max, c) => Math.max(max, c.ordem || 0),
-        0
-    );
+    const nome = cat?.titulo || editandoCategoriaId;
+    if (!confirm(`Excluir a categoria "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+        return;
+    }
 
     mostrarLoading(true);
 
     try {
         const { error } = await supabaseClient
             .from("categorias_modulo")
-            .insert({ id, titulo, descricao, ordem: maxOrdem + 1 });
+            .delete()
+            .eq("id", editandoCategoriaId);
 
         if (error) throw error;
 
-        await carregarCategorias();
-        preencherSelectCategorias(id);
+        await carregarDados();
         fecharModal();
         renderizarModulos();
     } catch (erro) {
-        tratarErro(erro, "criar categoria");
+        tratarErro(erro, "excluir categoria");
     } finally {
         mostrarLoading(false);
     }
@@ -887,6 +957,10 @@ function criarCardPublicacao(publicacao) {
     return card;
 }
 
+function categoriaEhEditavel(categoria) {
+    return categoriasModuloLista.some((c) => c.id === categoria.id);
+}
+
 function criarSecaoCategoria(categoria, modulosDaCategoria) {
     const secao = document.createElement("section");
     secao.className = "categoria-modulos painel-explorar";
@@ -894,11 +968,27 @@ function criarSecaoCategoria(categoria, modulosDaCategoria) {
 
     const cabecalho = document.createElement("header");
     cabecalho.className = "explorar-header";
-    cabecalho.innerHTML = `
-        <p class="explorar-rotulo">Explorar</p>
-        <h2 class="explorar-titulo">${escaparHtml(categoria.titulo)}</h2>
-        <p class="explorar-descricao">${escaparHtml(categoria.descricao)}</p>
+
+    const topo = document.createElement("div");
+    topo.className = "explorar-header-topo";
+    topo.innerHTML = `
+        <div class="explorar-header-texto">
+            <p class="explorar-rotulo">Explorar</p>
+            <h2 class="explorar-titulo">${escaparHtml(categoria.titulo)}</h2>
+            <p class="explorar-descricao">${escaparHtml(categoria.descricao)}</p>
+        </div>
     `;
+
+    if (categoriaEhEditavel(categoria)) {
+        const btnEditar = document.createElement("button");
+        btnEditar.type = "button";
+        btnEditar.className = "btn btn-outline btn-sm explorar-btn-editar";
+        btnEditar.textContent = "Editar categoria";
+        btnEditar.addEventListener("click", () => abrirModalCategoria(categoria.id));
+        topo.appendChild(btnEditar);
+    }
+
+    cabecalho.appendChild(topo);
 
     const grid = document.createElement("div");
     grid.className = "grid-modulos";
@@ -1516,6 +1606,7 @@ document.getElementById("editar-modulo").addEventListener("click", () => {
 
 formModulo.addEventListener("submit", salvarModulo);
 formCategoria.addEventListener("submit", salvarCategoria);
+btnExcluirCategoria?.addEventListener("click", excluirCategoria);
 formPublicacao.addEventListener("submit", salvarPublicacao);
 btnExcluirModulo.addEventListener("click", excluirModulo);
 btnExcluirPublicacao.addEventListener("click", excluirPublicacao);
