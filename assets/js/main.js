@@ -7,7 +7,7 @@ let editandoModuloId = null;
 let editandoPublicacaoId = null;
 
 const listaModulos = document.getElementById("lista-modulos");
-const gridModulos = document.getElementById("grid-modulos");
+const categoriasModulos = document.getElementById("categorias-modulos");
 const painelModulo = document.getElementById("painel-modulo");
 const painelExplorar = document.getElementById("painel-explorar");
 const sidebar = document.getElementById("sidebar");
@@ -26,6 +26,7 @@ const modalFechar = document.getElementById("modal-fechar");
 const formModulo = document.getElementById("form-modulo");
 const formPublicacao = document.getElementById("form-publicacao");
 const inputModuloNome = document.getElementById("modulo-nome");
+const inputModuloCategoria = document.getElementById("modulo-categoria");
 const inputImagemModulo = document.getElementById("modulo-imagem-input");
 const btnPreviewImagemModulo = document.getElementById("modulo-imagem-preview");
 const imgPreviewModulo = document.getElementById("modulo-imagem-img");
@@ -44,6 +45,34 @@ const btnRemoverArquivo = document.getElementById("btn-remover-arquivo");
 
 const BUCKET_ARQUIVOS = "publicacoes-arquivos";
 const BUCKET_MODULOS_IMAGENS = "modulos-imagens";
+
+const CATEGORIAS_MODULO = [
+    {
+        id: "site",
+        titulo: "Site",
+        descricao: "Módulos e conteúdos voltados ao site público."
+    },
+    {
+        id: "interno",
+        titulo: "Interno",
+        descricao: "Ferramentas e referências de uso interno da equipe."
+    },
+    {
+        id: "portal",
+        titulo: "Portal",
+        descricao: "Conteúdos e acessos do portal institucional."
+    }
+];
+
+function normalizarCategoria(categoria) {
+    const id = (categoria || "site").toLowerCase();
+    return CATEGORIAS_MODULO.some((c) => c.id === id) ? id : "site";
+}
+
+function obterCategoriaModulo(modulo) {
+    return CATEGORIAS_MODULO.find((c) => c.id === normalizarCategoria(modulo?.categoria)) || CATEGORIAS_MODULO[0];
+}
+
 const TAMANHO_MAX_ARQUIVO = 10 * 1024 * 1024;
 const TAMANHO_MAX_IMAGEM_MODULO = 2 * 1024 * 1024;
 
@@ -460,6 +489,7 @@ async function carregarDados() {
             id,
             nome,
             ordem,
+            categoria,
             imagem_url,
             created_at,
             publicacoes (
@@ -481,6 +511,7 @@ async function carregarDados() {
         id: modulo.id,
         nome: modulo.nome,
         ordem: modulo.ordem ?? 0,
+        categoria: normalizarCategoria(modulo.categoria),
         imagem_url: modulo.imagem_url || null,
         publicacoes: (modulo.publicacoes || []).sort(
             (a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)
@@ -524,6 +555,9 @@ function abrirModalModulo(id = null) {
         const modulo = obterModulo(id);
         modalTitulo.textContent = "Editar Módulo";
         inputModuloNome.value = modulo.nome;
+        if (inputModuloCategoria) {
+            inputModuloCategoria.value = normalizarCategoria(modulo.categoria);
+        }
         btnExcluirModulo.hidden = false;
 
         if (modulo.imagem_url) {
@@ -532,6 +566,7 @@ function abrirModalModulo(id = null) {
         }
     } else {
         modalTitulo.textContent = "Novo Módulo";
+        if (inputModuloCategoria) inputModuloCategoria.value = "site";
         btnExcluirModulo.hidden = true;
     }
 
@@ -708,15 +743,42 @@ function criarCardPublicacao(publicacao) {
     return card;
 }
 
+function criarSecaoCategoria(categoria, modulosDaCategoria) {
+    const secao = document.createElement("section");
+    secao.className = "categoria-modulos painel-explorar";
+    secao.dataset.categoria = categoria.id;
+
+    const cabecalho = document.createElement("header");
+    cabecalho.className = "explorar-header";
+    cabecalho.innerHTML = `
+        <p class="explorar-rotulo">Explorar</p>
+        <h2 class="explorar-titulo">${escaparHtml(categoria.titulo)}</h2>
+        <p class="explorar-descricao">${escaparHtml(categoria.descricao)}</p>
+    `;
+
+    const grid = document.createElement("div");
+    grid.className = "grid-modulos";
+    grid.dataset.categoria = categoria.id;
+
+    if (modulosDaCategoria.length === 0) {
+        const vazio = document.createElement("p");
+        vazio.className = "lista-vazia categoria-vazia";
+        vazio.textContent = "Nenhum módulo nesta categoria.";
+        grid.appendChild(vazio);
+    } else {
+        modulosDaCategoria.forEach((modulo) => {
+            grid.appendChild(criarCardModuloGrid(modulo));
+        });
+    }
+
+    secao.append(cabecalho, grid);
+    return secao;
+}
+
 function renderizarModulos() {
     const modulosFiltrados = filtrarModulos();
     listaModulos.replaceChildren();
-    gridModulos.replaceChildren();
-
-    modulosFiltrados.forEach((modulo) => {
-        listaModulos.appendChild(criarCardModuloSidebar(modulo));
-        gridModulos.appendChild(criarCardModuloGrid(modulo));
-    });
+    if (categoriasModulos) categoriasModulos.replaceChildren();
 
     if (modulosFiltrados.length === 0) {
         const vazio = document.createElement("p");
@@ -725,8 +787,38 @@ function renderizarModulos() {
             ? 'Nenhum módulo criado. Clique em "Novo Módulo +".'
             : "Nenhum módulo encontrado.";
         listaModulos.appendChild(vazio);
-        gridModulos.appendChild(vazio.cloneNode(true));
+        if (categoriasModulos) categoriasModulos.appendChild(vazio.cloneNode(true));
+        return;
     }
+
+    CATEGORIAS_MODULO.forEach((categoria) => {
+        const daCategoria = modulosFiltrados
+            .filter((m) => normalizarCategoria(m.categoria) === categoria.id)
+            .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+
+        const mostrarSecao = daCategoria.length > 0 || !termoBuscaGlobal.trim();
+        if (categoriasModulos && mostrarSecao) {
+            categoriasModulos.appendChild(criarSecaoCategoria(categoria, daCategoria));
+        }
+
+        if (daCategoria.length > 0) {
+            const grupo = document.createElement("div");
+            grupo.className = "sidebar-grupo-categoria";
+
+            const tituloGrupo = document.createElement("h3");
+            tituloGrupo.className = "sidebar-categoria-titulo";
+            tituloGrupo.textContent = categoria.titulo;
+
+            const lista = document.createElement("div");
+            lista.className = "lista-modulos-interna";
+            daCategoria.forEach((modulo) => {
+                lista.appendChild(criarCardModuloSidebar(modulo));
+            });
+
+            grupo.append(tituloGrupo, lista);
+            listaModulos.appendChild(grupo);
+        }
+    });
 }
 
 function renderizarPublicacoes() {
@@ -782,7 +874,17 @@ function voltarParaExplorar() {
 }
 
 async function reordenarModulo(idOrigem, idDestino) {
-    const lista = [...modulos];
+    const origem = obterModulo(idOrigem);
+    const destino = obterModulo(idDestino);
+    if (!origem || !destino) return;
+
+    const categoriaId = normalizarCategoria(origem.categoria);
+    if (categoriaId !== normalizarCategoria(destino.categoria)) return;
+
+    const lista = modulos
+        .filter((m) => normalizarCategoria(m.categoria) === categoriaId)
+        .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+
     const fromIdx = lista.findIndex((m) => m.id === idOrigem);
     const toIdx = lista.findIndex((m) => m.id === idDestino);
     if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
@@ -825,22 +927,30 @@ function finalizarArrastar(alvoCard) {
 
     const { card, id } = arrastandoModulo;
     card.classList.remove("arrastando");
-    gridModulos.querySelectorAll(".card-modulo-grid").forEach((c) => {
+    categoriasModulos?.querySelectorAll(".card-modulo-grid").forEach((c) => {
         c.classList.remove("sobre-arrasto");
     });
 
     if (alvoCard && alvoCard !== card) {
-        reordenarModulo(id, alvoCard.dataset.id);
+        const origem = obterModulo(id);
+        const destino = obterModulo(alvoCard.dataset.id);
+        if (
+            origem &&
+            destino &&
+            normalizarCategoria(origem.categoria) === normalizarCategoria(destino.categoria)
+        ) {
+            reordenarModulo(id, alvoCard.dataset.id);
+        }
     }
 
     arrastandoModulo = null;
 }
 
 function iniciarArrastarGrid() {
-    if (arrastarGridIniciado) return;
+    if (arrastarGridIniciado || !categoriasModulos) return;
     arrastarGridIniciado = true;
 
-    gridModulos.addEventListener("pointerdown", (e) => {
+    categoriasModulos.addEventListener("pointerdown", (e) => {
         if (termoBuscaGlobal.trim()) return;
 
         const handle = e.target.closest(".modulo-arrastar");
@@ -860,28 +970,28 @@ function iniciarArrastarGrid() {
         card.classList.add("arrastando");
     });
 
-    gridModulos.addEventListener("pointermove", (e) => {
+    categoriasModulos.addEventListener("pointermove", (e) => {
         if (!arrastandoModulo || e.pointerId !== arrastandoModulo.pointerId) return;
 
         const alvo = document.elementFromPoint(e.clientX, e.clientY)?.closest(".card-modulo-grid");
-        gridModulos.querySelectorAll(".card-modulo-grid").forEach((c) => {
+        categoriasModulos.querySelectorAll(".card-modulo-grid").forEach((c) => {
             c.classList.toggle("sobre-arrasto", alvo === c && c !== arrastandoModulo.card);
         });
     });
 
-    gridModulos.addEventListener("pointerup", (e) => {
+    categoriasModulos.addEventListener("pointerup", (e) => {
         if (!arrastandoModulo || e.pointerId !== arrastandoModulo.pointerId) return;
 
         const alvo = document.elementFromPoint(e.clientX, e.clientY)?.closest(".card-modulo-grid");
         finalizarArrastar(alvo);
     });
 
-    gridModulos.addEventListener("pointercancel", (e) => {
+    categoriasModulos.addEventListener("pointercancel", (e) => {
         if (!arrastandoModulo || e.pointerId !== arrastandoModulo.pointerId) return;
         finalizarArrastar(null);
     });
 
-    gridModulos.addEventListener("lostpointercapture", () => {
+    categoriasModulos.addEventListener("lostpointercapture", () => {
         if (arrastandoModulo) finalizarArrastar(null);
     });
 }
@@ -1000,6 +1110,8 @@ async function salvarModulo(e) {
     const nome = inputModuloNome.value.trim();
     if (!nome) return;
 
+    const categoria = normalizarCategoria(inputModuloCategoria?.value);
+
     const imagemPendente =
         imagemModuloPendente && imagemModuloSessaoId === moduloFormSessao
             ? imagemModuloPendente
@@ -1015,15 +1127,17 @@ async function salvarModulo(e) {
         if (editandoModuloId) {
             const { error } = await supabaseClient
                 .from("modulos")
-                .update({ nome })
+                .update({ nome, categoria })
                 .eq("id", editandoModuloId);
 
             if (error) throw error;
         } else {
-            const maxOrdem = modulos.reduce((max, m) => Math.max(max, m.ordem || 0), 0);
+            const maxOrdem = modulos
+                .filter((m) => normalizarCategoria(m.categoria) === categoria)
+                .reduce((max, m) => Math.max(max, m.ordem || 0), 0);
             const { data, error } = await supabaseClient
                 .from("modulos")
-                .insert({ nome, ordem: maxOrdem + 1 })
+                .insert({ nome, categoria, ordem: maxOrdem + 1 })
                 .select("id")
                 .single();
 

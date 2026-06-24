@@ -1436,7 +1436,20 @@ a {
 
 /* Painel explorar (grade inicial) */
 
-.painel-explorar {
+.painel-explorar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.categorias-modulos {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.painel-explorar,
+.categoria-modulos {
     background: var(--vidro-fundo);
     backdrop-filter: blur(var(--vidro-blur));
     -webkit-backdrop-filter: blur(var(--vidro-blur));
@@ -1467,6 +1480,34 @@ a {
 .explorar-descricao {
     color: var(--cor-fonte-suave);
     margin-bottom: 28px;
+}
+
+.categoria-vazia {
+    grid-column: 1 / -1;
+    padding: 12px 0 4px;
+}
+
+.sidebar-grupo-categoria {
+    margin-bottom: 16px;
+}
+
+.sidebar-grupo-categoria:last-child {
+    margin-bottom: 0;
+}
+
+.sidebar-categoria-titulo {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cor-destaque);
+    margin-bottom: 8px;
+}
+
+.lista-modulos-interna {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .grid-modulos {
@@ -1580,7 +1621,8 @@ a {
 
 /* Módulos — modo claro: cards com mais contraste */
 
-body.tema-claro .painel-explorar {
+body.tema-claro .painel-explorar,
+body.tema-claro .categoria-modulos {
     background: color-mix(in srgb, var(--cor-destaque) 7%, #e4e2dd);
     border-color: color-mix(in srgb, var(--cor-destaque) 16%, rgba(0, 0, 0, 0.1));
     box-shadow:
@@ -2031,7 +2073,9 @@ body.tema-claro .card-modulo-grid.sobre-arrasto {
 }
 
 .modal-form input,
-.modal-form textarea {
+.modal-form textarea,
+.modal-form select,
+.modal-select {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--cor-borda);
@@ -2046,7 +2090,9 @@ body.tema-claro .card-modulo-grid.sobre-arrasto {
 }
 
 .modal-form input:focus,
-.modal-form textarea:focus {
+.modal-form textarea:focus,
+.modal-form select:focus,
+.modal-select:focus {
     border-color: var(--cor-borda-foco);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-borda-foco) 20%, transparent);
 }
@@ -2215,6 +2261,7 @@ body.tema-claro .card-modulo-grid.sobre-arrasto {
     }
 
     .painel-explorar,
+    .categoria-modulos,
     .painel-modulo {
         padding: 20px;
     }

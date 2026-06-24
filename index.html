@@ -94,13 +94,8 @@
                 <div id="lista-publicacoes" class="lista-publicacoes"></div>
             </section>
 
-            <section id="painel-explorar" class="painel-explorar">
-                <header class="explorar-header">
-                    <p class="explorar-rotulo">Explorar</p>
-                    <h2 class="explorar-titulo">Módulos</h2>
-                    <p class="explorar-descricao">Organize e gerencie seus conteúdos por módulos.</p>
-                </header>
-                <div id="grid-modulos" class="grid-modulos"></div>
+            <section id="painel-explorar" class="painel-explorar-wrapper">
+                <div id="categorias-modulos" class="categorias-modulos"></div>
             </section>
         </main>
     </div>
@@ -120,6 +115,13 @@
             <form id="form-modulo" class="modal-form" hidden>
                 <label for="modulo-nome">Nome do módulo</label>
                 <input type="text" id="modulo-nome" required placeholder="Ex: Links Importantes">
+
+                <label for="modulo-categoria">Categoria</label>
+                <select id="modulo-categoria" class="modal-select" required>
+                    <option value="site">Site</option>
+                    <option value="interno">Interno</option>
+                    <option value="portal">Portal</option>
+                </select>
 
                 <label>Imagem <span class="label-opcional">(opcional)</span></label>
                 <p class="campo-ajuda">Ícone circular para identificar o módulo na grade.</p>
