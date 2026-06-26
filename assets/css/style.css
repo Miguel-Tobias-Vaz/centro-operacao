@@ -1346,6 +1346,91 @@ a {
 
 /* Layout principal */
 
+.painel-inicio {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px 64px;
+}
+
+.painel-inicio[hidden] {
+    display: none !important;
+}
+
+.inicio-card {
+    width: 100%;
+    max-width: 480px;
+    padding: 40px 32px;
+    text-align: center;
+    border-radius: var(--raio);
+    border: 1px solid var(--vidro-borda);
+    background: var(--vidro-fundo-card);
+    box-shadow: var(--sombra-card);
+    backdrop-filter: blur(var(--vidro-blur));
+    -webkit-backdrop-filter: blur(var(--vidro-blur));
+}
+
+.inicio-marca {
+    margin-bottom: 20px;
+}
+
+.inicio-logo {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    margin-bottom: 16px;
+    border-radius: 16px;
+}
+
+.inicio-titulo {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin: 0 0 4px;
+    color: var(--cor-fonte);
+}
+
+.inicio-subtitulo {
+    font-size: 1rem;
+    color: var(--cor-destaque);
+    font-weight: 600;
+    margin: 0;
+}
+
+.inicio-descricao {
+    margin: 0 0 24px;
+    color: var(--cor-fonte-suave);
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.inicio-btn-entrar {
+    min-width: 160px;
+    padding: 12px 28px;
+    font-size: 0.95rem;
+}
+
+.inicio-ferramentas {
+    margin: 24px 0 0;
+    font-size: 0.8rem;
+    color: var(--cor-fonte-suave);
+    line-height: 1.5;
+}
+
+.inicio-ferramentas a {
+    color: var(--cor-destaque);
+    text-decoration: none;
+}
+
+.inicio-ferramentas a:hover {
+    text-decoration: underline;
+}
+
+#app-layout[hidden] {
+    display: none !important;
+}
+
 .app-layout {
     flex: 1;
     display: flex;
@@ -2565,7 +2650,7 @@ body.usuario-logado .auth-so-logado {
 }
 
 .menu-usuario-item {
-    display: none;
+    display: block;
     width: 100%;
     padding: 9px 10px;
     border: none;
@@ -2578,14 +2663,6 @@ body.usuario-logado .auth-so-logado {
     text-decoration: none;
     cursor: pointer;
     transition: background-color var(--transicao);
-}
-
-body.usuario-admin #link-admin {
-    display: block;
-}
-
-.menu-usuario-item.menu-usuario-sair {
-    display: block;
 }
 
 .menu-usuario-item[hidden] {
@@ -2636,7 +2713,7 @@ body:not(.tema-claro) .login-erro {
 /* Administração */
 
 .admin-pagina {
-    max-width: 720px;
+    max-width: 920px;
     margin: 0 auto;
     padding: 32px 24px 48px;
 }
@@ -2698,13 +2775,91 @@ body:not(.tema-claro) .login-erro {
 
 .usuario-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
-    padding: 10px 12px;
+    gap: 16px;
+    padding: 14px 16px;
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio-sm);
     background: var(--cor-fundo);
+}
+
+.usuario-item-inativo {
+    opacity: 0.72;
+    border-style: dashed;
+}
+
+.usuario-item-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+    max-width: 360px;
+}
+
+.usuario-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-sm);
+    font-size: 0.8rem;
+    color: var(--cor-fonte);
+    cursor: pointer;
+    user-select: none;
+    background: var(--cor-superficie);
+}
+
+.usuario-toggle input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--cor-destaque);
+    cursor: pointer;
+}
+
+.usuario-toggle input:disabled {
+    cursor: not-allowed;
+}
+
+.usuario-btn-acao,
+.usuario-btn-excluir {
+    white-space: nowrap;
+}
+
+.usuario-btn-excluir {
+    border-color: #c0392b;
+    color: #c0392b;
+}
+
+body:not(.tema-claro) .usuario-btn-excluir {
+    border-color: #ff8a80;
+    color: #ff8a80;
+}
+
+.usuario-status {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.usuario-status-on {
+    color: #2e7d32;
+}
+
+.usuario-status-off {
+    color: #c0392b;
+}
+
+body:not(.tema-claro) .usuario-status-on {
+    color: #81c784;
+}
+
+body:not(.tema-claro) .usuario-status-off {
+    color: #ff8a80;
 }
 
 .lista-usuarios {

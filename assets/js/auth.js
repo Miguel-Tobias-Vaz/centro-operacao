@@ -7,6 +7,52 @@ const Auth = (() => {
     let perfil = null;
     let uiPronta = false;
     let menuAberto = false;
+    let listaUsuariosRenderId = 0;
+    let colunaAtivoDisponivel = null;
+
+    const CAMPOS_PERFIL_BASE = "id, email, nome, role, created_at";
+    const CAMPOS_PERFIL_COM_ATIVO = `${CAMPOS_PERFIL_BASE}, ativo`;
+
+    function erroColunaAtivoAusente(error) {
+        const msg = error?.message || "";
+        const code = error?.code || "";
+        return (
+            code === "42703" ||
+            code === "PGRST204" ||
+            /profiles\.ativo/i.test(msg) ||
+            /column.*ativo/i.test(msg) ||
+            /could not find.*ativo/i.test(msg)
+        );
+    }
+
+    function normalizarAtivo(registro) {
+        if (!registro) return registro;
+        if (registro.ativo == null) registro.ativo = true;
+        return registro;
+    }
+
+    async function detectarColunaAtivo() {
+        if (!client) return colunaAtivoDisponivel ?? false;
+        if (colunaAtivoDisponivel === true) return true;
+
+        const { error } = await client.from("profiles").select("ativo").limit(1);
+        if (!error) {
+            colunaAtivoDisponivel = true;
+            return true;
+        }
+
+        if (erroColunaAtivoAusente(error)) {
+            colunaAtivoDisponivel = false;
+            return false;
+        }
+
+        console.warn("Não foi possível verificar coluna ativo:", error);
+        return false;
+    }
+
+    function camposPerfilSelect() {
+        return colunaAtivoDisponivel ? CAMPOS_PERFIL_COM_ATIVO : CAMPOS_PERFIL_BASE;
+    }
 
     function getSession() {
         return session;
@@ -17,11 +63,29 @@ const Auth = (() => {
     }
 
     function podeEditar() {
-        return !!perfil && ["admin", "editor"].includes(perfil.role);
+        return !!perfil && perfil.ativo !== false && ["admin", "editor"].includes(perfil.role);
     }
 
     function ehAdmin() {
-        return perfil?.role === "admin";
+        return perfil?.role === "admin" && perfil?.ativo !== false;
+    }
+
+    async function validarContaAtiva() {
+        if (!session?.user || !perfil || perfil.ativo !== false) return true;
+
+        await client.auth.signOut();
+        session = null;
+        perfil = null;
+        atualizarUIModo();
+
+        const erroEl = document.getElementById("login-erro");
+        if (erroEl) {
+            erroEl.textContent = "Conta desativada. Peça a um administrador para reativar o acesso.";
+            erroEl.hidden = false;
+        }
+
+        abrirModalLogin();
+        return false;
     }
 
     function emitirMudanca() {
@@ -69,9 +133,11 @@ const Auth = (() => {
             return;
         }
 
+        await detectarColunaAtivo();
+
         const { data, error } = await client
             .from("profiles")
-            .select("id, email, nome, role, created_at")
+            .select(camposPerfilSelect())
             .eq("id", session.user.id)
             .maybeSingle();
 
@@ -81,7 +147,7 @@ const Auth = (() => {
             return;
         }
 
-        perfil = data;
+        perfil = normalizarAtivo(data);
     }
 
     function atualizarHeader() {
@@ -107,6 +173,14 @@ const Auth = (() => {
         if (emailEl) emailEl.textContent = session?.user?.email || "";
         if (linkAdmin) linkAdmin.hidden = !ehAdmin();
         if (btnMenu) btnMenu.title = `${nome} — ${session?.user?.email || ""}`;
+
+        const painelInicio = document.getElementById("painel-inicio");
+        const appLayout = document.getElementById("app-layout");
+        const buscaForm = document.getElementById("busca-global-form");
+
+        if (painelInicio) painelInicio.hidden = logado;
+        if (appLayout) appLayout.hidden = !logado;
+        if (buscaForm) buscaForm.hidden = !logado;
 
         if (!logado) fecharMenuUsuario();
     }
@@ -224,6 +298,9 @@ const Auth = (() => {
             return;
         }
 
+        await carregarPerfil();
+        if (!(await validarContaAtiva())) return;
+
         fecharOverlayModal();
         document.getElementById("form-login")?.reset();
     }
@@ -258,23 +335,84 @@ const Auth = (() => {
     }
 
     async function listarUsuarios() {
+        await detectarColunaAtivo();
+
         const { data, error } = await client
             .from("profiles")
-            .select("id, email, nome, role, created_at")
+            .select(camposPerfilSelect())
             .order("created_at", { ascending: true });
 
         if (error) throw error;
-        return data || [];
+        return (data || []).map((usuario) => normalizarAtivo({ ...usuario }));
+    }
+
+    async function redefinirSenhaUsuario(email) {
+        if (!confirm(`Enviar link de redefinição de senha para ${email}?`)) return;
+
+        const { error } = await client.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/index.html`
+        });
+
+        if (error) throw error;
+        alert(`Link de redefinição enviado para ${email}.`);
+    }
+
+    async function alternarAcessoUsuario(usuario, ativo) {
+        if (!(await detectarColunaAtivo())) {
+            throw new Error("Não foi possível alterar o acesso.");
+        }
+
+        if (usuario.id === perfil?.id && !ativo) {
+            throw new Error("Você não pode desativar sua própria conta.");
+        }
+
+        const { error } = await client
+            .from("profiles")
+            .update({ ativo })
+            .eq("id", usuario.id);
+
+        if (error) throw error;
+        usuario.ativo = ativo;
+    }
+
+    async function excluirUsuario(usuario) {
+        if (!(await detectarColunaAtivo())) {
+            throw new Error("Não foi possível excluir este usuário.");
+        }
+
+        if (usuario.id === perfil?.id) {
+            throw new Error("Você não pode excluir sua própria conta.");
+        }
+
+        const nome = usuario.nome || usuario.email;
+        if (!confirm(`Excluir permanentemente "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+            return;
+        }
+
+        const { error } = await client.rpc("admin_excluir_usuario", { target_id: usuario.id });
+        if (error) throw error;
+    }
+
+    function deduplicarUsuarios(usuarios) {
+        const mapa = new Map();
+        usuarios.forEach((usuario) => {
+            if (usuario?.id) mapa.set(usuario.id, usuario);
+        });
+        return [...mapa.values()];
     }
 
     async function renderizarListaUsuarios(containerId = "lista-usuarios") {
         const lista = document.getElementById(containerId);
         if (!lista) return;
 
+        const renderId = ++listaUsuariosRenderId;
         lista.replaceChildren();
 
         try {
-            const usuarios = await listarUsuarios();
+            const suportaAtivo = await detectarColunaAtivo();
+            const usuarios = deduplicarUsuarios(await listarUsuarios());
+
+            if (renderId !== listaUsuariosRenderId) return;
 
             if (!usuarios.length) {
                 const vazio = document.createElement("p");
@@ -287,6 +425,9 @@ const Auth = (() => {
             usuarios.forEach((usuario) => {
                 const item = document.createElement("div");
                 item.className = "usuario-item";
+                if (suportaAtivo && usuario.ativo === false) {
+                    item.classList.add("usuario-item-inativo");
+                }
 
                 const avatar = document.createElement("div");
                 avatar.className = "modulo-avatar modulo-avatar-sm";
@@ -294,13 +435,23 @@ const Auth = (() => {
 
                 const info = document.createElement("div");
                 info.className = "usuario-item-info";
+                const status = !suportaAtivo
+                    ? ""
+                    : usuario.ativo === false
+                        ? '<span class="usuario-status usuario-status-off">Acesso desligado</span>'
+                        : '<span class="usuario-status usuario-status-on">Acesso ligado</span>';
                 info.innerHTML = `
                     <strong class="usuario-item-nome">${escapar(usuario.nome || usuario.email)}</strong>
                     <span class="usuario-item-email">${escapar(usuario.email)}</span>
+                    ${status}
                 `;
+
+                const acoes = document.createElement("div");
+                acoes.className = "usuario-item-acoes";
 
                 const select = document.createElement("select");
                 select.className = "modal-select usuario-item-role";
+                select.title = "Permissão";
                 select.innerHTML = `
                     <option value="editor">Editor</option>
                     <option value="admin">Administrador</option>
@@ -326,7 +477,65 @@ const Auth = (() => {
                     }
                 });
 
-                item.append(avatar, info, select);
+                const toggleLabel = suportaAtivo ? document.createElement("label") : null;
+                if (toggleLabel) {
+                    toggleLabel.className = "usuario-toggle";
+                    toggleLabel.title = "Ligar ou desligar acesso ao sistema";
+
+                    const toggle = document.createElement("input");
+                    toggle.type = "checkbox";
+                    toggle.checked = usuario.ativo !== false;
+                    toggle.disabled = usuario.id === perfil?.id;
+
+                    const toggleTexto = document.createElement("span");
+                    toggleTexto.textContent = "Acesso";
+
+                    toggle.addEventListener("change", async () => {
+                        const novoAtivo = toggle.checked;
+                        const anterior = usuario.ativo !== false;
+
+                        try {
+                            await alternarAcessoUsuario(usuario, novoAtivo);
+                            await renderizarListaUsuarios(containerId);
+                        } catch (erro) {
+                            toggle.checked = anterior;
+                            alert(erro.message);
+                        }
+                    });
+
+                    toggleLabel.append(toggle, toggleTexto);
+                }
+
+                const btnSenha = document.createElement("button");
+                btnSenha.type = "button";
+                btnSenha.className = "btn btn-outline btn-sm usuario-btn-acao";
+                btnSenha.textContent = "Redefinir senha";
+                btnSenha.addEventListener("click", async () => {
+                    try {
+                        await redefinirSenhaUsuario(usuario.email);
+                    } catch (erro) {
+                        alert(`Erro ao redefinir senha: ${erro.message}`);
+                    }
+                });
+
+                const btnExcluir = document.createElement("button");
+                btnExcluir.type = "button";
+                btnExcluir.className = "btn btn-outline btn-sm usuario-btn-excluir";
+                btnExcluir.textContent = "Excluir";
+                btnExcluir.disabled = usuario.id === perfil?.id || !suportaAtivo;
+                btnExcluir.addEventListener("click", async () => {
+                    try {
+                        await excluirUsuario(usuario);
+                        await renderizarListaUsuarios(containerId);
+                    } catch (erro) {
+                        alert(`Erro ao excluir: ${erro.message}`);
+                    }
+                });
+
+                acoes.append(select);
+                if (toggleLabel) acoes.append(toggleLabel);
+                acoes.append(btnSenha, btnExcluir);
+                item.append(avatar, info, acoes);
                 lista.appendChild(item);
             });
         } catch (erro) {
@@ -416,6 +625,12 @@ const Auth = (() => {
                 return;
             }
 
+            if (alvo.closest("#btn-entrar-inicio")) {
+                e.preventDefault();
+                abrirModalLogin();
+                return;
+            }
+
             if (alvo.closest("#btn-menu-usuario")) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -455,13 +670,17 @@ const Auth = (() => {
 
         session = data?.session ?? null;
         await carregarPerfil();
+        await validarContaAtiva();
         atualizarUIModo();
 
         client.auth.onAuthStateChange(async (_evento, novaSessao) => {
             session = novaSessao;
             await carregarPerfil();
+            await validarContaAtiva();
             atualizarUIModo();
-            emitirMudanca();
+            if (_evento !== "INITIAL_SESSION") {
+                emitirMudanca();
+            }
         });
     }
 

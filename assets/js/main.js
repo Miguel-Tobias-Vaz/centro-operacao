@@ -1788,9 +1788,29 @@ async function iniciar() {
         console.error("Erro ao iniciar autenticação:", erro);
     }
 
-    window.addEventListener("auth:changed", () => {
-        renderizarModulos();
-        if (moduloAtivoId) renderizarPublicacoes();
+    window.addEventListener("auth:changed", async () => {
+        if (!window.Auth.getSession()) {
+            moduloAtivoId = null;
+            termoBuscaGlobal = "";
+            termoBuscaItem = "";
+            if (buscaGlobal) buscaGlobal.value = "";
+            if (buscaItem) buscaItem.value = "";
+            if (sidebar) sidebar.hidden = true;
+            if (painelModulo) painelModulo.hidden = true;
+            if (painelExplorar) painelExplorar.hidden = false;
+            return;
+        }
+
+        mostrarLoading(true);
+        try {
+            await carregarDados();
+            renderizarModulos();
+            if (moduloAtivoId) renderizarPublicacoes();
+        } catch (erro) {
+            tratarErro(erro, "carregar dados");
+        } finally {
+            mostrarLoading(false);
+        }
     });
 
     iniciarArrastarGrid();
@@ -1801,8 +1821,10 @@ async function iniciar() {
     mostrarLoading(true);
 
     try {
-        await carregarDados();
-        renderizarModulos();
+        if (window.Auth.getSession()) {
+            await carregarDados();
+            renderizarModulos();
+        }
     } catch (erro) {
         tratarErro(erro, "carregar dados");
     } finally {

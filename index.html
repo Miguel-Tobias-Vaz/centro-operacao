@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="assets/icone/icone.png" type="image/png">
+    <link rel="icon" href="assets/icone/icon-negona.jpeg" type="image/jpeg">
     <link rel="stylesheet" href="assets/css/style.css">
     <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
     <title>Centro de Informações — Suporte</title>
@@ -15,7 +15,7 @@
                 <h1 class="logo">Centro de Informações <span>— Suporte</span></h1>
             </button>
 
-            <form action="" class="form-busca" role="search" id="busca-global-form">
+            <form action="" class="form-busca" role="search" id="busca-global-form" hidden>
                 <label for="busca-global" class="sr-only">Pesquisar em tudo</label>
                 <div class="busca-wrapper">
                     <span class="busca-icone" aria-hidden="true">🔍</span>
@@ -89,7 +89,29 @@
         </div>
     </header>
 
-    <div class="app-layout">
+    <section id="painel-inicio" class="painel-inicio" aria-label="Página inicial">
+        <div class="inicio-card">
+            <div class="inicio-marca">
+                <img src="assets/icone/icon-negona.jpeg" alt="" class="inicio-logo" width="72" height="72">
+                <h2 class="inicio-titulo">Centro de Informações</h2>
+                <p class="inicio-subtitulo">Suporte</p>
+            </div>
+            <p class="inicio-descricao">
+                Acesse módulos, publicações e referências da equipe. Faça login para entrar no centro de operações.
+            </p>
+            <button type="button" id="btn-entrar-inicio" class="btn btn-primario inicio-btn-entrar">
+                Entrar
+            </button>
+            <p class="inicio-ferramentas">
+                Ferramentas disponíveis sem login:
+                <a href="separador-pdf.html">Separador de PDF</a>
+                ·
+                <a href="tratamento.html">Tratamento de nomes</a>
+            </p>
+        </div>
+    </section>
+
+    <div class="app-layout" id="app-layout" hidden>
         <aside id="sidebar" class="sidebar" aria-label="Lista de módulos" hidden>
             <h2 class="sidebar-titulo">Módulos</h2>
             <div id="lista-modulos" class="lista-modulos"></div>
