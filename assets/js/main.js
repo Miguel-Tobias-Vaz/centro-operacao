@@ -7,6 +7,7 @@ let termoBuscaItem = "";
 let editandoModuloId = null;
 let editandoCategoriaId = null;
 let editandoPublicacaoId = null;
+let ordemCategoriasTemp = [];
 
 const listaModulos = document.getElementById("lista-modulos");
 const categoriasModulos = document.getElementById("categorias-modulos");
@@ -28,6 +29,9 @@ const modalFechar = document.getElementById("modal-fechar");
 const formModulo = document.getElementById("form-modulo");
 const formCategoria = document.getElementById("form-categoria");
 const formPublicacao = document.getElementById("form-publicacao");
+const painelOrdenarCategorias = document.getElementById("painel-ordenar-categorias");
+const listaOrdenarCategorias = document.getElementById("lista-ordenar-categorias");
+const btnSalvarOrdemCategorias = document.getElementById("salvar-ordem-categorias");
 const inputModuloNome = document.getElementById("modulo-nome");
 const inputModuloCategoria = document.getElementById("modulo-categoria");
 const inputCategoriaTitulo = document.getElementById("categoria-titulo");
@@ -302,12 +306,15 @@ function selecionarArquivoPublicacao(file) {
 }
 
 function obterUrlPublicaArquivo(caminho) {
+    if (!caminho) return "";
+    if (/^https?:\/\//i.test(caminho)) return caminho;
     const { data } = supabaseClient.storage.from(BUCKET_ARQUIVOS).getPublicUrl(caminho);
     return data.publicUrl;
 }
 
 function obterUrlPublicaImagemModulo(caminho) {
     if (!caminho) return "";
+    if (/^https?:\/\//i.test(caminho)) return caminho;
     const { data } = supabaseClient.storage.from(BUCKET_MODULOS_IMAGENS).getPublicUrl(caminho);
     return data.publicUrl;
 }
@@ -570,6 +577,12 @@ function filtrarPublicacoes(modulo) {
 
 function tratarErro(erro, acao) {
     console.error(erro);
+    const codigo = erro.code || erro.status;
+    if (codigo === "42501" || codigo === 403 || erro.message?.includes("permission")) {
+        alert(`Sem permissão para ${acao}. Faça login com uma conta de editor ou administrador.`);
+        window.Auth?.abrirModalLogin();
+        return;
+    }
     alert(`Erro ao ${acao}: ${erro.message}`);
 }
 
@@ -620,6 +633,8 @@ function esconderFormulariosModal() {
     formModulo.hidden = true;
     formCategoria.hidden = true;
     formPublicacao.hidden = true;
+    if (painelOrdenarCategorias) painelOrdenarCategorias.hidden = true;
+    window.Auth?.fecharModalAuth();
 }
 
 function abrirModal() {
@@ -631,15 +646,19 @@ function fecharModal() {
     modalOverlay.hidden = true;
     document.body.style.overflow = "";
     esconderFormulariosModal();
+    window.Auth?.fecharOverlayModal();
     modalEl.classList.remove("modal-grande");
     editandoModuloId = null;
     editandoCategoriaId = null;
     editandoPublicacaoId = null;
+    ordemCategoriasTemp = [];
     resetarFormularioModulo();
     resetarFormularioPublicacao();
 }
 
 function abrirModalModulo(id = null) {
+    if (!window.Auth?.exigirEdicao()) return;
+
     editandoModuloId = id;
     moduloFormSessao += 1;
     esconderFormulariosModal();
@@ -673,6 +692,8 @@ function abrirModalModulo(id = null) {
 }
 
 function abrirModalCategoria(id = null) {
+    if (!window.Auth?.exigirEdicao()) return;
+
     editandoCategoriaId = id;
     esconderFormulariosModal();
     formCategoria.hidden = false;
@@ -696,6 +717,101 @@ function abrirModalCategoria(id = null) {
 
     abrirModal();
     inputCategoriaTitulo.focus();
+}
+
+function abrirModalOrdenarCategorias() {
+    if (!window.Auth?.exigirEdicao()) return;
+
+    if (categoriasModuloLista.length < 2) {
+        alert("É necessário ter pelo menos duas categorias para reorganizar a ordem.");
+        return;
+    }
+
+    esconderFormulariosModal();
+    if (painelOrdenarCategorias) painelOrdenarCategorias.hidden = false;
+
+    modalTitulo.textContent = "Organizar categorias";
+    ordemCategoriasTemp = [...categoriasModuloLista].sort(
+        (a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)
+    );
+    renderizarListaOrdenacaoCategorias();
+    abrirModal();
+}
+
+function renderizarListaOrdenacaoCategorias() {
+    if (!listaOrdenarCategorias) return;
+
+    listaOrdenarCategorias.replaceChildren();
+
+    ordemCategoriasTemp.forEach((categoria, index) => {
+        const item = document.createElement("li");
+        item.className = "ordenar-categoria-item";
+
+        const nome = document.createElement("span");
+        nome.className = "ordenar-categoria-nome";
+        nome.textContent = categoria.titulo;
+
+        const acoes = document.createElement("div");
+        acoes.className = "ordenar-categoria-acoes";
+
+        const btnCima = document.createElement("button");
+        btnCima.type = "button";
+        btnCima.className = "btn btn-outline btn-sm btn-ordenar";
+        btnCima.textContent = "↑";
+        btnCima.title = "Subir";
+        btnCima.disabled = index === 0;
+        btnCima.addEventListener("click", () => moverCategoriaNaLista(index, -1));
+
+        const btnBaixo = document.createElement("button");
+        btnBaixo.type = "button";
+        btnBaixo.className = "btn btn-outline btn-sm btn-ordenar";
+        btnBaixo.textContent = "↓";
+        btnBaixo.title = "Descer";
+        btnBaixo.disabled = index === ordemCategoriasTemp.length - 1;
+        btnBaixo.addEventListener("click", () => moverCategoriaNaLista(index, 1));
+
+        acoes.append(btnCima, btnBaixo);
+        item.append(nome, acoes);
+        listaOrdenarCategorias.appendChild(item);
+    });
+}
+
+function moverCategoriaNaLista(index, direcao) {
+    const novoIndex = index + direcao;
+    if (novoIndex < 0 || novoIndex >= ordemCategoriasTemp.length) return;
+
+    const [item] = ordemCategoriasTemp.splice(index, 1);
+    ordemCategoriasTemp.splice(novoIndex, 0, item);
+    renderizarListaOrdenacaoCategorias();
+}
+
+async function salvarOrdemCategorias() {
+    mostrarLoading(true);
+
+    try {
+        await Promise.all(
+            ordemCategoriasTemp.map((categoria, index) => {
+                const novaOrdem = index + 1;
+                if (categoria.ordem === novaOrdem) return Promise.resolve();
+
+                return supabaseClient
+                    .from("categorias_modulo")
+                    .update({ ordem: novaOrdem })
+                    .eq("id", categoria.id)
+                    .then(({ error }) => {
+                        if (error) throw error;
+                    });
+            })
+        );
+
+        await carregarDados();
+        fecharModal();
+        renderizarModulos();
+    } catch (erro) {
+        tratarErro(erro, "salvar ordem das categorias");
+    } finally {
+        mostrarLoading(false);
+    }
 }
 
 async function salvarCategoria(e) {
@@ -789,6 +905,8 @@ async function excluirCategoria() {
 }
 
 function abrirModalPublicacao(id = null) {
+    if (!window.Auth?.exigirEdicao()) return;
+
     if (!id && !moduloAtivoId) {
         alert("Selecione um módulo antes de criar uma publicação.");
         return;
@@ -855,7 +973,7 @@ function criarCardModuloGrid(modulo) {
     card.className = "card-modulo-grid";
     card.dataset.id = modulo.id;
 
-    const arrastar = termoBuscaGlobal.trim()
+    const arrastar = termoBuscaGlobal.trim() || !window.Auth?.podeEditar()
         ? ""
         : `
         <div class="modulo-arrastar item-arrastar" role="button" tabindex="0" aria-label="Arrastar para reordenar" title="Arrastar para reordenar">
@@ -887,7 +1005,7 @@ function criarCardPublicacao(publicacao) {
     card.className = "card-publicacao";
     card.dataset.id = publicacao.id;
 
-    const arrastar = termoBuscaItem.trim()
+    const arrastar = termoBuscaItem.trim() || !window.Auth?.podeEditar()
         ? ""
         : `
         <div class="item-arrastar" role="button" tabindex="0" aria-label="Arrastar para reordenar" title="Arrastar para reordenar">
@@ -958,7 +1076,7 @@ function criarCardPublicacao(publicacao) {
 }
 
 function categoriaEhEditavel(categoria) {
-    return categoriasModuloLista.some((c) => c.id === categoria.id);
+    return window.Auth?.podeEditar() && categoriasModuloLista.some((c) => c.id === categoria.id);
 }
 
 function criarSecaoCategoria(categoria, modulosDaCategoria) {
@@ -1597,6 +1715,7 @@ function aplicarTema(claro) {
 
 document.getElementById("criar-modulo").addEventListener("click", () => abrirModalModulo());
 document.getElementById("criar-categoria").addEventListener("click", () => abrirModalCategoria());
+document.getElementById("ordenar-categorias")?.addEventListener("click", () => abrirModalOrdenarCategorias());
 document.getElementById("logo-home")?.addEventListener("click", irParaHome);
 document.getElementById("voltar-modulos").addEventListener("click", voltarParaExplorar);
 document.getElementById("criar-publicacao").addEventListener("click", () => abrirModalPublicacao());
@@ -1607,6 +1726,7 @@ document.getElementById("editar-modulo").addEventListener("click", () => {
 formModulo.addEventListener("submit", salvarModulo);
 formCategoria.addEventListener("submit", salvarCategoria);
 btnExcluirCategoria?.addEventListener("click", excluirCategoria);
+btnSalvarOrdemCategorias?.addEventListener("click", salvarOrdemCategorias);
 formPublicacao.addEventListener("submit", salvarPublicacao);
 btnExcluirModulo.addEventListener("click", excluirModulo);
 btnExcluirPublicacao.addEventListener("click", excluirPublicacao);
@@ -1661,6 +1781,17 @@ async function iniciar() {
         window.SUPABASE_URL,
         window.SUPABASE_ANON_KEY
     );
+
+    try {
+        await window.Auth.iniciar(supabaseClient);
+    } catch (erro) {
+        console.error("Erro ao iniciar autenticação:", erro);
+    }
+
+    window.addEventListener("auth:changed", () => {
+        renderizarModulos();
+        if (moduloAtivoId) renderizarPublicacoes();
+    });
 
     iniciarArrastarGrid();
     iniciarArrastarPublicacoes();

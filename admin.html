@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="assets/icone/icone.png" type="image/png">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <title>Administração — Centro de Informações</title>
+</head>
+<body>
+    <header class="header">
+        <div class="container header-inner">
+            <h1 class="logo">Centro de Informações <span>— Administração</span></h1>
+
+            <div class="container-buttons">
+                <a href="index.html" class="btn btn-outline btn-sm">← Voltar</a>
+                <button type="button" id="tema" class="btn btn-secundario" aria-label="Alternar tema">Claro</button>
+                <div id="auth-header" class="auth-header">
+                    <button type="button" id="btn-entrar" class="btn btn-outline btn-sm auth-so-deslogado">Entrar</button>
+                    <div id="auth-logado" class="auth-logado auth-so-logado" hidden>
+                        <div class="menu-usuario-wrap">
+                            <button
+                                type="button"
+                                id="btn-menu-usuario"
+                                class="usuario-avatar-btn"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                aria-label="Menu da conta"
+                            >
+                                <span class="modulo-avatar modulo-avatar-sm">
+                                    <span class="modulo-avatar-inicial" id="auth-usuario-inicial">?</span>
+                                </span>
+                            </button>
+                            <div id="menu-usuario" class="menu-usuario" hidden>
+                                <p class="menu-usuario-nome" id="auth-usuario-nome"></p>
+                                <p class="menu-usuario-email" id="auth-usuario-email"></p>
+                                <button type="button" id="btn-sair" class="menu-usuario-item menu-usuario-sair">Sair</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="admin-pagina">
+        <header class="admin-cabecalho">
+            <h2>Usuários</h2>
+            <p class="admin-descricao">Crie contas e defina quem pode editar o conteúdo do centro de operações.</p>
+        </header>
+
+        <section class="admin-secao admin-card">
+            <h3 class="admin-secao-titulo">Novo usuário</h3>
+            <form id="form-novo-usuario" class="form-admin">
+                <label for="novo-usuario-nome">Nome</label>
+                <input type="text" id="novo-usuario-nome" required placeholder="Nome completo">
+
+                <label for="novo-usuario-email">E-mail</label>
+                <input type="email" id="novo-usuario-email" required placeholder="usuario@email.com">
+
+                <label for="novo-usuario-senha">Senha</label>
+                <input type="password" id="novo-usuario-senha" required minlength="6" placeholder="Mínimo 6 caracteres">
+
+                <label for="novo-usuario-role">Permissão</label>
+                <select id="novo-usuario-role" class="modal-select">
+                    <option value="editor">Editor — pode criar e editar conteúdo</option>
+                    <option value="admin">Administrador — edita conteúdo e gerencia usuários</option>
+                </select>
+
+                <p id="novo-usuario-erro" class="login-erro" hidden></p>
+                <button type="submit" class="btn btn-primario">Criar usuário</button>
+            </form>
+        </section>
+
+        <section class="admin-secao admin-card">
+            <h3 class="admin-secao-titulo">Usuários cadastrados</h3>
+            <div id="lista-usuarios" class="lista-usuarios"></div>
+        </section>
+    </main>
+
+    <div id="modal-overlay" class="modal-overlay" hidden>
+        <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+            <div class="modal-cabecalho">
+                <h2 id="modal-titulo">Entrar</h2>
+                <button type="button" id="modal-fechar" class="btn-modal-fechar" aria-label="Fechar">×</button>
+            </div>
+            <form id="form-login" class="modal-form">
+                <label for="login-email">E-mail</label>
+                <input type="email" id="login-email" required autocomplete="username" placeholder="seu@email.com">
+                <label for="login-senha">Senha</label>
+                <input type="password" id="login-senha" required autocomplete="current-password" placeholder="••••••••">
+                <p id="login-erro" class="login-erro" hidden></p>
+                <button type="button" id="btn-recuperar-senha" class="btn-link-login">Esqueci minha senha</button>
+                <div class="modal-acoes">
+                    <button type="button" class="btn btn-secundario" data-acao="cancelar">Cancelar</button>
+                    <button type="submit" class="btn btn-primario">Entrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" hidden><p>Carregando...</p></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="config.js"></script>
+    <script src="assets/js/ferramenta-tema.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/admin.js"></script>
+</body>
+</html>
