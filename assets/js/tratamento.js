@@ -25,8 +25,8 @@ function setFile(file) {
         return;
     }
 
-    if (!file.name.toLowerCase().endsWith(".zip")) {
-        alert("Envie um arquivo .zip com os documentos.");
+    if (!ehArquivoTratamento(file.name)) {
+        alert(`Envie um arquivo compactado (${rotuloArquivosEntrada()}).`);
         return;
     }
 
@@ -50,16 +50,16 @@ async function processar() {
 
     btnProcessar.disabled = true;
     const logEl = document.getElementById("log-mini");
-    logEl.textContent = "Lendo ZIP…\n";
+    logEl.textContent = "Lendo arquivo…\n";
     mostrarPassoFerramenta("step-processing");
 
     try {
-        const resultado = await processarZipTratamento(selectedFile);
+        const resultado = await processarArquivoTratamento(selectedFile);
         logEl.textContent += `${resultado.totalDocumentos} documento(s) encontrado(s).\n`;
         logEl.textContent += `${resultado.totalRenomeados} nome(s) ajustado(s).\n`;
         mostrarSucesso(resultado);
     } catch (e) {
-        mostrarErro(e.message || "Falha ao processar o ZIP.");
+        mostrarErro(e.message || "Falha ao processar o arquivo.");
     } finally {
         btnProcessar.disabled = false;
     }
@@ -76,14 +76,14 @@ function mostrarSucesso(resultado) {
 
     if (documentos.length === 0) {
         document.getElementById("result-sub").textContent =
-            "Nenhum documento encontrado no ZIP enviado.";
+            "Nenhum documento encontrado no arquivo enviado.";
         document.getElementById("rename-wrap").hidden = true;
     } else {
         const extra = totalRenomeados > 0
             ? `${totalRenomeados} nome(s) ajustado(s). `
             : "Nomes já estavam padronizados. ";
         document.getElementById("result-sub").textContent =
-            extra + `${totalDocumentos} documento(s) no ZIP para download.`;
+            extra + `${totalDocumentos} documento(s) no arquivo para download.`;
         document.getElementById("rename-wrap").hidden = false;
 
         const limite = 80;
@@ -105,7 +105,9 @@ function mostrarSucesso(resultado) {
     downloadUrl = URL.createObjectURL(blob);
     const dl = document.getElementById("btn-download");
     dl.href = downloadUrl;
-    dl.download = selectedFile.name.replace(/\.zip$/i, "") + "_tratado.zip";
+    const extEntrada = extensaoArquivoEntrada(selectedFile.name) || ".zip";
+    const base = selectedFile.name.slice(0, selectedFile.name.length - extEntrada.length);
+    dl.download = `${base}_tratado${extEntrada}`;
     dl.hidden = false;
 
     mostrarPassoFerramenta("step-result");

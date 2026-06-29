@@ -1,3 +1,5 @@
+const EXTENSOES_ARQUIVO_ENTRADA = [".zip", ".ram"];
+
 const EXTENSOES_PERMITIDAS = new Set([
     ".pdf", ".doc", ".docx", ".odt", ".xls", ".xlsx", ".png", ".jpg", ".jpeg"
 ]);
@@ -96,6 +98,19 @@ function ignorarCaminho(rel) {
     return partes.includes("__macosx");
 }
 
+function extensaoArquivoEntrada(nome) {
+    const lower = nome.toLowerCase();
+    return EXTENSOES_ARQUIVO_ENTRADA.find((ext) => lower.endsWith(ext)) || null;
+}
+
+function ehArquivoTratamento(nome) {
+    return extensaoArquivoEntrada(nome) !== null;
+}
+
+function rotuloArquivosEntrada() {
+    return EXTENSOES_ARQUIVO_ENTRADA.join(", ");
+}
+
 function extensaoArquivo(nome) {
     const i = nome.lastIndexOf(".");
     return i >= 0 ? nome.slice(i).toLowerCase() : "";
@@ -126,7 +141,7 @@ function nomeUnico(caminho, usados) {
     }
 }
 
-async function processarZipTratamento(file) {
+async function processarArquivoTratamento(file) {
     const zip = await JSZip.loadAsync(file);
     const alteracoes = [];
     const usados = new Set();
