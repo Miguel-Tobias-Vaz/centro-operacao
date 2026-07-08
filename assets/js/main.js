@@ -525,7 +525,7 @@ function configValida() {
 }
 
 function mostrarLoading(ativo) {
-    loading.hidden = !ativo;
+    if (loading) loading.hidden = !ativo;
 }
 
 function mostrarErroConfig() {
@@ -586,12 +586,17 @@ function tratarErro(erro, acao) {
     alert(`Erro ao ${acao}: ${erro.message}`);
 }
 
-async function carregarDados() {
-    await carregarCategorias();
+let carregarDadosPromise = null;
 
-    const { data, error } = await supabaseClient
-        .from("modulos")
-        .select(`
+async function carregarDados() {
+    if (carregarDadosPromise) return carregarDadosPromise;
+
+    carregarDadosPromise = (async () => {
+        await carregarCategorias();
+
+        const { data, error } = await supabaseClient
+            .from("modulos")
+            .select(`
             id,
             nome,
             ordem,
@@ -608,24 +613,31 @@ async function carregarDados() {
                 created_at
             )
         `)
-        .order("ordem", { ascending: true })
-        .order("created_at", { foreignTable: "publicacoes", ascending: true });
+            .order("ordem", { ascending: true })
+            .order("created_at", { foreignTable: "publicacoes", ascending: true });
 
-    if (error) throw error;
+        if (error) throw error;
 
-    modulos = (data || []).map((modulo) => ({
-        id: modulo.id,
-        nome: modulo.nome,
-        ordem: modulo.ordem ?? 0,
-        categoria: normalizarCategoria(modulo.categoria),
-        imagem_url: modulo.imagem_url || null,
-        publicacoes: (modulo.publicacoes || []).sort(
-            (a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)
-        )
-    }));
+        modulos = (data || []).map((modulo) => ({
+            id: modulo.id,
+            nome: modulo.nome,
+            ordem: modulo.ordem ?? 0,
+            categoria: normalizarCategoria(modulo.categoria),
+            imagem_url: modulo.imagem_url || null,
+            publicacoes: (modulo.publicacoes || []).sort(
+                (a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)
+            )
+        }));
 
-    if (moduloAtivoId && !obterModulo(moduloAtivoId)) {
-        voltarParaExplorar();
+        if (moduloAtivoId && !obterModulo(moduloAtivoId)) {
+            voltarParaExplorar();
+        }
+    })();
+
+    try {
+        await carregarDadosPromise;
+    } finally {
+        carregarDadosPromise = null;
     }
 }
 
@@ -1798,6 +1810,7 @@ async function iniciar() {
             if (sidebar) sidebar.hidden = true;
             if (painelModulo) painelModulo.hidden = true;
             if (painelExplorar) painelExplorar.hidden = false;
+            mostrarLoading(false);
             return;
         }
 
@@ -1818,17 +1831,16 @@ async function iniciar() {
     iniciarUploadArquivo();
     iniciarUploadImagemModulo();
 
-    mostrarLoading(true);
-
-    try {
-        if (window.Auth.getSession()) {
+    if (window.Auth.getSession()) {
+        mostrarLoading(true);
+        try {
             await carregarDados();
             renderizarModulos();
+        } catch (erro) {
+            tratarErro(erro, "carregar dados");
+        } finally {
+            mostrarLoading(false);
         }
-    } catch (erro) {
-        tratarErro(erro, "carregar dados");
-    } finally {
-        mostrarLoading(false);
     }
 }
 

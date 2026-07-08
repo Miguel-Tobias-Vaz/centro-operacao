@@ -9,6 +9,7 @@ const Auth = (() => {
     let menuAberto = false;
     let listaUsuariosRenderId = 0;
     let colunaAtivoDisponivel = null;
+    let ultimoUserIdNotificado = null;
 
     const CAMPOS_PERFIL_BASE = "id, email, nome, role, created_at";
     const CAMPOS_PERFIL_COM_ATIVO = `${CAMPOS_PERFIL_BASE}, ativo`;
@@ -88,8 +89,8 @@ const Auth = (() => {
         return false;
     }
 
-    function emitirMudanca() {
-        window.dispatchEvent(new CustomEvent("auth:changed"));
+    function emitirMudanca(detalhe = {}) {
+        window.dispatchEvent(new CustomEvent("auth:changed", { detail: detalhe }));
     }
 
     function obterNomeExibicao() {
@@ -674,12 +675,20 @@ const Auth = (() => {
         atualizarUIModo();
 
         client.auth.onAuthStateChange(async (_evento, novaSessao) => {
+            const novoUserId = novaSessao?.user?.id ?? null;
             session = novaSessao;
             await carregarPerfil();
             await validarContaAtiva();
             atualizarUIModo();
-            if (_evento !== "INITIAL_SESSION") {
-                emitirMudanca();
+
+            if (_evento === "INITIAL_SESSION") {
+                ultimoUserIdNotificado = novoUserId;
+                return;
+            }
+
+            if (novoUserId !== ultimoUserIdNotificado) {
+                ultimoUserIdNotificado = novoUserId;
+                emitirMudanca({ evento: _evento });
             }
         });
     }
