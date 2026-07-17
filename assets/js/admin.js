@@ -37,6 +37,8 @@ async function iniciar() {
         window.SUPABASE_ANON_KEY
     );
 
+    window.LogsAtividade?.iniciar(client);
+
     mostrarLoading(true);
 
     try {
@@ -54,6 +56,7 @@ async function iniciar() {
         }
 
         await window.Auth.renderizarListaUsuarios("lista-usuarios");
+        await window.LogsAtividade?.renderizar("lista-logs");
     } finally {
         mostrarLoading(false);
     }
@@ -71,6 +74,11 @@ window.addEventListener("auth:changed", async () => {
     }
 
     await window.Auth.renderizarListaUsuarios("lista-usuarios");
+    await window.LogsAtividade?.renderizar("lista-logs");
+});
+
+document.getElementById("btn-atualizar-logs")?.addEventListener("click", () => {
+    window.LogsAtividade?.renderizar("lista-logs");
 });
 
 iniciar();

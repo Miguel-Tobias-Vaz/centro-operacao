@@ -13,14 +13,28 @@
     overflow: hidden;
 }
 
-/* Sobe o conteúdo acima do fundo — sem tocar no modal/loading (precisam de position: fixed). */
-.vida-ambiente ~ *:not(.modal-overlay):not(.loading) {
+/* Sobe o conteúdo acima do fundo — sem tocar no modal/loading/menu. */
+.vida-ambiente ~ *:not(.modal-overlay):not(.loading):not(.menu-usuario) {
     position: relative;
     z-index: 1;
 }
 
+/* Header e menus precisam ficar acima do conteúdo (tela dividida / sticky). */
+.vida-ambiente ~ .header {
+    z-index: 200;
+}
+
+.vida-ambiente ~ .menu-usuario,
+.menu-usuario.menu-usuario-fix {
+    z-index: 10000;
+}
+
 .vida-ambiente ~ .loading {
     z-index: 300;
+}
+
+.vida-ambiente ~ .modal-overlay {
+    z-index: 250;
 }
 
 .vida-gradiente {
@@ -275,6 +289,16 @@ body.tema-claro .vida-cursor {
     opacity: 1;
     transform: translateY(0) scale(1);
     filter: blur(0);
+}
+
+/* Cards de módulo nunca usam reveal — evita ficarem invisíveis no grid dinâmico */
+.card-modulo-grid,
+.card-modulo,
+.card-modulo-grid.revelar,
+.card-modulo.revelar {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
 }
 
 .inicio-card.revelar {

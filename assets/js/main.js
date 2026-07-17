@@ -916,6 +916,7 @@ async function salvarOrdemCategorias() {
         await carregarDados();
         fecharModal();
         renderizarModulos();
+        window.LogsAtividade?.registrar("Reordenar categorias", "Ordem das categorias atualizada", "categoria");
     } catch (erro) {
         tratarErro(erro, "salvar ordem das categorias");
     } finally {
@@ -962,9 +963,11 @@ async function salvarCategoria(e) {
             if (error) throw error;
         }
 
+        const acao = editandoCategoriaId ? "Editar categoria" : "Criar categoria";
         await carregarDados();
         fecharModal();
         renderizarModulos();
+        window.LogsAtividade?.registrar(acao, titulo, "categoria");
     } catch (erro) {
         tratarErro(erro, editandoCategoriaId ? "atualizar categoria" : "criar categoria");
     } finally {
@@ -1006,6 +1009,7 @@ async function excluirCategoria() {
         await carregarDados();
         fecharModal();
         renderizarModulos();
+        window.LogsAtividade?.registrar("Excluir categoria", nome, "categoria");
     } catch (erro) {
         tratarErro(erro, "excluir categoria");
     } finally {
@@ -1646,8 +1650,10 @@ async function salvarModulo(e) {
             sidebar.hidden = false;
         }
 
+        const acaoModulo = editandoModuloId ? "Editar módulo" : "Criar módulo";
         renderizarModulos();
         if (moduloAtivoId) renderizarPublicacoes();
+        window.LogsAtividade?.registrar(acaoModulo, `${nome} (${categoria})`, "modulo");
     } catch (erro) {
         tratarErro(erro, "salvar módulo");
     } finally {
@@ -1663,6 +1669,7 @@ async function excluirModulo() {
 
     try {
         const modulo = obterModulo(editandoModuloId);
+        const nomeModulo = modulo?.nome || editandoModuloId;
         if (modulo?.imagem_url) {
             await excluirImagemModuloStorage(modulo.imagem_url);
         }
@@ -1681,6 +1688,7 @@ async function excluirModulo() {
         await carregarDados();
         fecharModal();
         renderizarModulos();
+        window.LogsAtividade?.registrar("Excluir módulo", nomeModulo, "modulo");
     } catch (erro) {
         tratarErro(erro, "excluir módulo");
     } finally {
@@ -1772,10 +1780,13 @@ async function salvarPublicacao(e) {
             if (erroArquivo) throw erroArquivo;
         }
 
+        const acaoPub = editandoPublicacaoId ? "Editar publicação" : "Criar publicação";
+        const moduloNome = obterModulo(moduloAtivoId)?.nome || "";
         await carregarDados();
         fecharModal();
         renderizarModulos();
         renderizarPublicacoes();
+        window.LogsAtividade?.registrar(acaoPub, `${titulo}${moduloNome ? ` · ${moduloNome}` : ""}`, "publicacao");
     } catch (erro) {
         tratarErro(erro, "salvar publicação");
     } finally {
@@ -1789,6 +1800,7 @@ async function excluirPublicacao() {
 
     const modulo = obterModulo(moduloAtivoId);
     const publicacao = modulo?.publicacoes.find((p) => p.id === editandoPublicacaoId);
+    const tituloPub = publicacao?.titulo || editandoPublicacaoId;
 
     mostrarLoading(true);
 
@@ -1808,6 +1820,11 @@ async function excluirPublicacao() {
         fecharModal();
         renderizarModulos();
         renderizarPublicacoes();
+        window.LogsAtividade?.registrar(
+            "Excluir publicação",
+            `${tituloPub}${modulo?.nome ? ` · ${modulo.nome}` : ""}`,
+            "publicacao"
+        );
     } catch (erro) {
         tratarErro(erro, "excluir publicação");
     } finally {
@@ -1890,6 +1907,8 @@ async function iniciar() {
         window.SUPABASE_URL,
         window.SUPABASE_ANON_KEY
     );
+
+    window.LogsAtividade?.iniciar(supabaseClient);
 
     try {
         await window.Auth.iniciar(supabaseClient);

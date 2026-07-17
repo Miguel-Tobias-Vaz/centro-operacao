@@ -110,12 +110,55 @@ const Auth = (() => {
         });
     }
 
+    let menuUsuarioParent = null;
+
     function fecharMenuUsuario() {
         menuAberto = false;
         const menu = document.getElementById("menu-usuario");
         const btn = document.getElementById("btn-menu-usuario");
-        if (menu) menu.hidden = true;
+        if (menu) {
+            menu.hidden = true;
+            menu.classList.remove("menu-usuario-fix");
+            menu.style.top = "";
+            menu.style.right = "";
+            menu.style.left = "";
+            menu.style.bottom = "";
+            menu.style.width = "";
+            // Devolve o menu ao lugar original (fora do body)
+            if (menuUsuarioParent && menu.parentElement === document.body) {
+                menuUsuarioParent.appendChild(menu);
+            }
+        }
         if (btn) btn.setAttribute("aria-expanded", "false");
+    }
+
+    function posicionarMenuUsuario() {
+        const menu = document.getElementById("menu-usuario");
+        const btn = document.getElementById("btn-menu-usuario");
+        if (!menu || !btn || menu.hidden) return;
+
+        // Sai do header (backdrop-filter corta position:fixed)
+        if (menu.parentElement !== document.body) {
+            menuUsuarioParent = menu.parentElement;
+            document.body.appendChild(menu);
+        }
+
+        const rect = btn.getBoundingClientRect();
+        const larguraMenu = Math.min(260, window.innerWidth - 16);
+        let left = rect.right - larguraMenu;
+        left = Math.max(8, Math.min(left, window.innerWidth - larguraMenu - 8));
+        let top = rect.bottom + 8;
+        const alturaEstimada = menu.offsetHeight || 160;
+        if (top + alturaEstimada > window.innerHeight - 8) {
+            top = Math.max(8, rect.top - alturaEstimada - 8);
+        }
+
+        menu.classList.add("menu-usuario-fix");
+        menu.style.top = `${Math.round(top)}px`;
+        menu.style.left = `${Math.round(left)}px`;
+        menu.style.right = "auto";
+        menu.style.bottom = "auto";
+        menu.style.width = `${larguraMenu}px`;
     }
 
     function alternarMenuUsuario() {
@@ -123,9 +166,20 @@ const Auth = (() => {
         const btn = document.getElementById("btn-menu-usuario");
         if (!menu || !btn) return;
 
-        menuAberto = !menuAberto;
-        menu.hidden = !menuAberto;
-        btn.setAttribute("aria-expanded", menuAberto ? "true" : "false");
+        if (menuAberto) {
+            fecharMenuUsuario();
+            return;
+        }
+
+        menuAberto = true;
+        menu.hidden = false;
+        btn.setAttribute("aria-expanded", "true");
+
+        const linkAdmin = document.getElementById("link-admin");
+        if (linkAdmin) linkAdmin.hidden = !ehAdmin();
+
+        posicionarMenuUsuario();
+        requestAnimationFrame(() => posicionarMenuUsuario());
     }
 
     async function carregarPerfil() {
@@ -149,6 +203,78 @@ const Auth = (() => {
         }
 
         perfil = normalizarAtivo(data);
+        await garantirAdminInicial();
+    }
+
+    /**
+     * No projeto novo, se ainda não existe nenhum admin,
+     * promove o usuário logado (primeiro a entrar).
+     */
+    async function garantirAdminInicial() {
+        if (!client || !session?.user?.id) return;
+        if (perfil?.role === "admin" && perfil?.ativo !== false) return;
+
+        try {
+            const { data, error } = await client.rpc("promover_primeiro_admin");
+            if (error) {
+                // Função ainda não migrada: tenta promover via UPDATE direto
+                if (/promover_primeiro_admin|Could not find the function/i.test(error.message || "")) {
+                    await tentarPromoverAdminLocal();
+                    return;
+                }
+                console.warn("promover_primeiro_admin:", error.message);
+                return;
+            }
+
+            if (data === true) {
+                await recarregarPerfilSemBootstrap();
+            }
+        } catch (erro) {
+            console.warn("Não foi possível garantir admin inicial:", erro);
+        }
+    }
+
+    async function tentarPromoverAdminLocal() {
+        const { count, error: erroCount } = await client
+            .from("profiles")
+            .select("id", { count: "exact", head: true })
+            .eq("role", "admin");
+
+        if (erroCount) {
+            console.warn("Não foi possível verificar admins:", erroCount);
+            return;
+        }
+
+        if ((count ?? 0) > 0) return;
+
+        const { error } = await client
+            .from("profiles")
+            .update({ role: "admin" })
+            .eq("id", session.user.id);
+
+        if (error) {
+            console.warn(
+                "Sem permissão para virar admin automaticamente. " +
+                "Execute supabase/migration_promover_admin.sql no Supabase " +
+                "ou rode: UPDATE profiles SET role = 'admin' WHERE email = 'seu@email';"
+            , error);
+            return;
+        }
+
+        await recarregarPerfilSemBootstrap();
+    }
+
+    async function recarregarPerfilSemBootstrap() {
+        const { data, error } = await client
+            .from("profiles")
+            .select(camposPerfilSelect())
+            .eq("id", session.user.id)
+            .maybeSingle();
+
+        if (!error && data) {
+            perfil = normalizarAtivo(data);
+            atualizarUIModo();
+        }
     }
 
     function atualizarHeader() {
@@ -304,11 +430,14 @@ const Auth = (() => {
 
         fecharOverlayModal();
         document.getElementById("form-login")?.reset();
+        window.LogsAtividade?.registrar("Login", email, "auth");
     }
 
     async function fazerLogout() {
         if (!client) return;
+        const email = perfil?.email || session?.user?.email || "";
         fecharMenuUsuario();
+        await window.LogsAtividade?.registrar("Logout", email, "auth");
         await client.auth.signOut();
         fecharOverlayModal();
 
@@ -356,6 +485,7 @@ const Auth = (() => {
 
         if (error) throw error;
         alert(`Link de redefinição enviado para ${email}.`);
+        window.LogsAtividade?.registrar("Redefinir senha", email, "usuario");
     }
 
     async function alternarAcessoUsuario(usuario, ativo) {
@@ -374,6 +504,11 @@ const Auth = (() => {
 
         if (error) throw error;
         usuario.ativo = ativo;
+        window.LogsAtividade?.registrar(
+            ativo ? "Ativar usuário" : "Desativar usuário",
+            usuario.nome || usuario.email,
+            "usuario"
+        );
     }
 
     async function excluirUsuario(usuario) {
@@ -392,6 +527,7 @@ const Auth = (() => {
 
         const { error } = await client.rpc("admin_excluir_usuario", { target_id: usuario.id });
         if (error) throw error;
+        window.LogsAtividade?.registrar("Excluir usuário", nome, "usuario");
     }
 
     function deduplicarUsuarios(usuarios) {
@@ -598,6 +734,11 @@ const Auth = (() => {
             await criarUsuarioViaSignup({ email, password: senha, nome, role });
             document.getElementById("form-novo-usuario")?.reset();
             await renderizarListaUsuarios();
+            window.LogsAtividade?.registrar(
+                "Criar usuário",
+                `${nome} (${email}) · ${role}`,
+                "usuario"
+            );
             alert(`Usuário ${nome} criado. Já pode entrar com o e-mail e a senha definidos.`);
         } catch (erro) {
             if (erroEl) {
@@ -645,10 +786,18 @@ const Auth = (() => {
                 return;
             }
 
-            if (menuAberto && !alvo.closest(".menu-usuario-wrap")) {
+            if (menuAberto && !alvo.closest(".menu-usuario-wrap") && !alvo.closest("#menu-usuario")) {
                 fecharMenuUsuario();
             }
         });
+
+        window.addEventListener("resize", () => {
+            if (menuAberto) posicionarMenuUsuario();
+        }, { passive: true });
+
+        window.addEventListener("scroll", () => {
+            if (menuAberto) posicionarMenuUsuario();
+        }, { passive: true, capture: true });
 
         document.getElementById("form-login")?.addEventListener("submit", fazerLogin);
         document.getElementById("btn-recuperar-senha")?.addEventListener("click", recuperarSenha);
