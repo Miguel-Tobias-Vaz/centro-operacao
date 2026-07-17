@@ -539,6 +539,12 @@ function escaparHtml(texto) {
     return div.innerHTML;
 }
 
+function rotuloPublicacoes(qtd) {
+    const n = Number(qtd) || 0;
+    if (n === 1) return "1 publicação";
+    return `${n} publicações`;
+}
+
 function formatarConteudo(texto) {
     return renderizarConteudo(texto);
 }
@@ -965,7 +971,7 @@ function criarCardModuloSidebar(modulo) {
             ${htmlAvatarModulo(modulo, "modulo-avatar-sm")}
             <div class="card-modulo-info">
                 <h3 class="card-modulo-nome">${escaparHtml(modulo.nome)}</h3>
-                <p class="card-modulo-qtd">${modulo.publicacoes.length} publicação(ões)</p>
+                <p class="card-modulo-qtd">${rotuloPublicacoes(modulo.publicacoes.length)}</p>
             </div>
         </div>
         <button type="button" class="btn btn-primario btn-sm btn-selecionar" data-id="${modulo.id}">
@@ -999,7 +1005,7 @@ function criarCardModuloGrid(modulo) {
             ${htmlAvatarModulo(modulo, "modulo-avatar-md")}
         </div>
         <h3 class="card-modulo-nome">${escaparHtml(modulo.nome)}</h3>
-        <p class="card-modulo-qtd">${modulo.publicacoes.length} publicação(ões)</p>
+        <p class="card-modulo-qtd">${rotuloPublicacoes(modulo.publicacoes.length)}</p>
         <button type="button" class="btn btn-primario btn-selecionar" data-id="${modulo.id}">
             Selecionar
         </button>
