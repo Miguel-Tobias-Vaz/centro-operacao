@@ -670,6 +670,8 @@ const Auth = (() => {
         if (error) console.warn("Erro ao obter sessão:", error);
 
         session = data?.session ?? null;
+        atualizarUIModo();
+
         await carregarPerfil();
         await validarContaAtiva();
         atualizarUIModo();
@@ -677,6 +679,7 @@ const Auth = (() => {
         client.auth.onAuthStateChange(async (_evento, novaSessao) => {
             const novoUserId = novaSessao?.user?.id ?? null;
             session = novaSessao;
+            atualizarUIModo();
             await carregarPerfil();
             await validarContaAtiva();
             atualizarUIModo();
