@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "build": "node scripts/generate-config.js",
-    "start": "python -m http.server 5500"
+    "start": "python -m http.server 5500",
+    "test:nomes": "node scripts/test-tratamento-nomes.js",
+    "test:separador": "node scripts/test-separador-logic.js"
   }
 }

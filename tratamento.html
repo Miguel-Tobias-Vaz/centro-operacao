@@ -26,9 +26,10 @@
             <header class="tratamento-cabecalho">
                 <h2>Normalizar nomes de documentos</h2>
                 <p class="tratamento-lead">
-                    Envie um arquivo compactado (.zip ou .ram) com PDFs ou documentos com nomes bagunçados
-                    (<code class="code-inline">ATA_DE_PRECO_assinado.pdf</code>, traços, underlines…)
-                    e baixe o arquivo com os nomes padronizados.
+                    Envie um pacote (<code class="code-inline">.zip</code>, <code class="code-inline">.ram</code>,
+                    <code class="code-inline">.rar</code>, <code class="code-inline">.7z</code>)
+                    ou um documento avulso (<code class="code-inline">.pdf</code>, Office, imagem).
+                    Nomes de arquivos e pastas são padronizados; o restante do pacote pode ser preservado.
                 </p>
             </header>
 
@@ -38,22 +39,29 @@
                     id="dropzone"
                     tabindex="0"
                     role="button"
-                    aria-label="Arraste um arquivo .zip ou .ram ou clique para selecionar"
+                    aria-label="Arraste um pacote ou documento, ou clique para selecionar"
                 >
-                    <input type="file" id="file-input" accept=".zip,application/zip,.ram" hidden>
+                    <input type="file" id="file-input" accept=".zip,.ram,.rar,.7z,.pdf,.doc,.docx,.odt,.xls,.xlsx,.png,.jpg,.jpeg" hidden>
                     <span class="dropzone-icone" aria-hidden="true">📦</span>
-                    <p class="dropzone-titulo">Arraste seu .zip ou .ram aqui</p>
-                    <p class="dropzone-sub">ou clique para escolher</p>
+                    <p class="dropzone-titulo">Arraste pacote ou documento aqui</p>
+                    <p class="dropzone-sub">ZIP, RAM, RAR, 7Z ou PDF/Office/imagem</p>
                     <div class="file-chip" id="file-chip" hidden>
                         <span class="file-chip-nome" id="file-name"></span>
                         <button type="button" class="file-chip-limpar" id="btn-clear" title="Remover">×</button>
                     </div>
                 </div>
 
+                <label class="tratamento-opcao" for="manter-extras">
+                    <input type="checkbox" id="manter-extras" checked>
+                    <span>Manter outros arquivos do pacote (sem renomear o arquivo; pastas são normalizadas)</span>
+                </label>
+
                 <ul class="rules-list">
-                    <li>Remove <strong>assinado</strong>, <strong>ass</strong>, <strong>a.s.s.</strong> do final</li>
-                    <li>Troca <strong>_</strong> e <strong>-</strong> por espaços</li>
-                    <li>Capitaliza cada palavra e corrige acentos comuns</li>
+                    <li>Remove <strong>assinado</strong>, <strong>scan</strong>, <strong>cópia</strong>, <strong>(1)</strong> e similares</li>
+                    <li>Troca <strong>_</strong> / <strong>-</strong> por espaços e separa CamelCase</li>
+                    <li>Capitaliza com artigos minúsculos (<strong>de</strong>, <strong>da</strong>, <strong>do</strong>…) e acentos</li>
+                    <li>Normaliza também <strong>pastas</strong> e exporta relatório CSV</li>
+                    <li>RAR/7Z saem como <strong>ZIP tratado</strong> (leitura suportada; gravação em ZIP)</li>
                 </ul>
 
                 <div class="tratamento-acoes">
@@ -69,17 +77,17 @@
                     <div class="example-row">
                         <span class="example-before">ATA_DE_REGISTRO_DE_PRECO.pdf</span>
                         <span class="example-arrow">→</span>
-                        <span class="example-after">Ata De Registro De Preço.pdf</span>
+                        <span class="example-after">Ata de Registro de Preço.pdf</span>
                     </div>
                     <div class="example-row">
-                        <span class="example-before">edital-licitacao-001_ass.pdf</span>
+                        <span class="example-before">DOCUMENTOS_ASSINADOS/edital_ass.pdf</span>
                         <span class="example-arrow">→</span>
-                        <span class="example-after">Edital Licitação 001.pdf</span>
+                        <span class="example-after">Documentos/Edital.pdf</span>
                     </div>
                     <div class="example-row">
-                        <span class="example-before">termo_referencia---assinado.pdf</span>
+                        <span class="example-before">PORTARIA_N_123_copia.pdf</span>
                         <span class="example-arrow">→</span>
-                        <span class="example-after">Termo De Referência.pdf</span>
+                        <span class="example-after">Portaria nº 123.pdf</span>
                     </div>
                 </div>
             </div>
@@ -88,7 +96,7 @@
         <section id="step-processing" class="tratamento-step">
             <header class="tratamento-cabecalho">
                 <h2>Processando…</h2>
-                <p class="tratamento-lead">Renomeando arquivos dentro do pacote.</p>
+                <p class="tratamento-lead">Renomeando arquivos e pastas.</p>
             </header>
             <div class="panel-tratamento">
                 <pre id="log-mini" class="log-tratamento">Aguardando…</pre>
@@ -103,16 +111,17 @@
 
             <div class="stat-card" id="stat-card" hidden>
                 <span class="stat-num" id="stat-renamed">0</span>
-                <span class="stat-label">documento(s) no arquivo</span>
+                <span class="stat-label">documento(s) processado(s)</span>
             </div>
 
             <div class="panel-tratamento" id="rename-wrap" hidden>
-                <p class="panel-tratamento-titulo">Documentos no arquivo</p>
+                <p class="panel-tratamento-titulo">Documentos no resultado</p>
                 <ul class="doc-list" id="rename-list"></ul>
             </div>
 
             <div class="tratamento-acoes">
                 <a class="btn btn-primario" id="btn-download" href="#" download hidden>Baixar arquivo tratado</a>
+                <a class="btn btn-outline" id="btn-download-csv" href="#" download hidden>Baixar relatório CSV</a>
                 <button type="button" class="btn btn-outline" id="btn-novo">Enviar outro arquivo</button>
             </div>
         </section>

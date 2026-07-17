@@ -399,6 +399,27 @@ a {
     line-height: 1.6;
 }
 
+.tratamento-opcao {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 14px 0 0;
+    padding: 10px 12px;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-sm);
+    background: var(--cor-fundo);
+    font-size: 0.85rem;
+    color: var(--cor-fonte);
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.tratamento-opcao input {
+    margin-top: 2px;
+    accent-color: var(--cor-destaque);
+    flex-shrink: 0;
+}
+
 .info-paginas {
     margin-top: 1rem;
     padding: 10px 14px;

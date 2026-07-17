@@ -5,14 +5,24 @@ const fileChip = document.getElementById("file-chip");
 const fileNameEl = document.getElementById("file-name");
 const btnProcessar = document.getElementById("btn-processar");
 const btnClear = document.getElementById("btn-clear");
+const chkManterExtras = document.getElementById("manter-extras");
 
 let selectedFile = null;
 let downloadUrl = null;
+let csvUrl = null;
+
+if (fileInput && typeof acceptArquivosEntrada === "function") {
+    fileInput.accept = acceptArquivosEntrada();
+}
 
 function revogarDownload() {
     if (downloadUrl) {
         URL.revokeObjectURL(downloadUrl);
         downloadUrl = null;
+    }
+    if (csvUrl) {
+        URL.revokeObjectURL(csvUrl);
+        csvUrl = null;
     }
 }
 
@@ -26,7 +36,7 @@ function setFile(file) {
     }
 
     if (!ehArquivoTratamento(file.name)) {
-        alert(`Envie um arquivo compactado (${rotuloArquivosEntrada()}).`);
+        alert(`Envie um pacote ou documento (${rotuloArquivosEntrada()}).`);
         return;
     }
 
@@ -54,19 +64,47 @@ async function processar() {
     mostrarPassoFerramenta("step-processing");
 
     try {
-        const resultado = await processarArquivoTratamento(selectedFile);
-        logEl.textContent += `${resultado.totalDocumentos} documento(s) encontrado(s).\n`;
-        logEl.textContent += `${resultado.totalRenomeados} nome(s) ajustado(s).\n`;
+        const manterExtras = chkManterExtras ? chkManterExtras.checked : true;
+        const resultado = await processarArquivoTratamento(selectedFile, { manterExtras });
+
+        if (resultado.modo === "arquivo") {
+            logEl.textContent += "Documento avulso processado.\n";
+        } else {
+            logEl.textContent += `${resultado.totalDocumentos} documento(s) normalizado(s).\n`;
+            if (resultado.totalPreservados) {
+                logEl.textContent += `${resultado.totalPreservados} outro(s) arquivo(s) preservado(s).\n`;
+            }
+        }
+        logEl.textContent += `${resultado.totalRenomeados} nome(s)/caminho(s) ajustado(s).\n`;
         mostrarSucesso(resultado);
     } catch (e) {
+        console.error(e);
         mostrarErro(e.message || "Falha ao processar o arquivo.");
     } finally {
         btnProcessar.disabled = false;
     }
 }
 
+function baseNomeEntrada() {
+    const nome = selectedFile?.name || "arquivo";
+    const extCompactado = extensaoArquivoEntrada(nome);
+    if (extCompactado) return nome.slice(0, nome.length - extCompactado.length);
+
+    const ext = nome.lastIndexOf(".");
+    return ext >= 0 ? nome.slice(0, ext) : nome;
+}
+
 function mostrarSucesso(resultado) {
-    const { documentos, totalRenomeados, totalDocumentos, blob } = resultado;
+    const {
+        documentos,
+        totalRenomeados,
+        totalDocumentos,
+        totalPreservados = 0,
+        blob,
+        csvBlob,
+        modo,
+        nomeDownload
+    } = resultado;
 
     document.getElementById("stat-renamed").textContent = totalDocumentos;
     document.getElementById("stat-card").hidden = false;
@@ -74,16 +112,28 @@ function mostrarSucesso(resultado) {
     const lista = document.getElementById("rename-list");
     lista.replaceChildren();
 
-    if (documentos.length === 0) {
+    const btnCsv = document.getElementById("btn-download-csv");
+
+    if (documentos.length === 0 && !totalPreservados) {
         document.getElementById("result-sub").textContent =
-            "Nenhum documento encontrado no arquivo enviado.";
+            "Nenhum arquivo encontrado no envio.";
         document.getElementById("rename-wrap").hidden = true;
     } else {
-        const extra = totalRenomeados > 0
-            ? `${totalRenomeados} nome(s) ajustado(s). `
-            : "Nomes já estavam padronizados. ";
-        document.getElementById("result-sub").textContent =
-            extra + `${totalDocumentos} documento(s) no arquivo para download.`;
+        const partes = [];
+        if (totalRenomeados > 0) {
+            partes.push(`${totalRenomeados} nome(s)/caminho(s) ajustado(s)`);
+        } else {
+            partes.push("Nomes já estavam padronizados");
+        }
+        if (modo === "arquivo") {
+            partes.push("1 documento para download");
+        } else {
+            partes.push(`${totalDocumentos} documento(s) normalizado(s)`);
+            if (totalPreservados) {
+                partes.push(`${totalPreservados} outro(s) preservado(s)`);
+            }
+        }
+        document.getElementById("result-sub").textContent = `${partes.join(". ")}.`;
         document.getElementById("rename-wrap").hidden = false;
 
         const limite = 80;
@@ -105,10 +155,22 @@ function mostrarSucesso(resultado) {
     downloadUrl = URL.createObjectURL(blob);
     const dl = document.getElementById("btn-download");
     dl.href = downloadUrl;
-    const extEntrada = extensaoArquivoEntrada(selectedFile.name) || ".zip";
-    const base = selectedFile.name.slice(0, selectedFile.name.length - extEntrada.length);
-    dl.download = `${base}_tratado${extEntrada}`;
+
+    if (modo === "arquivo") {
+        dl.download = nomeDownload || "documento";
+        dl.textContent = "Baixar documento";
+    } else {
+        dl.download = `${baseNomeEntrada()}_tratado.zip`;
+        dl.textContent = "Baixar ZIP tratado";
+    }
     dl.hidden = false;
+
+    if (btnCsv && csvBlob) {
+        csvUrl = URL.createObjectURL(csvBlob);
+        btnCsv.href = csvUrl;
+        btnCsv.download = `${baseNomeEntrada()}_relatorio.csv`;
+        btnCsv.hidden = false;
+    }
 
     mostrarPassoFerramenta("step-result");
 }
@@ -123,6 +185,8 @@ function resetar() {
     fileInput.value = "";
     setFile(null);
     document.getElementById("btn-download").hidden = true;
+    const btnCsv = document.getElementById("btn-download-csv");
+    if (btnCsv) btnCsv.hidden = true;
     document.getElementById("stat-card").hidden = true;
     document.getElementById("rename-wrap").hidden = true;
     mostrarPassoFerramenta("step-upload");
