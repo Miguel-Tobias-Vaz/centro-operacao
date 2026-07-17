@@ -1,9 +1,6 @@
 /**
  * Camada de vida visual (v1.1) — microinterações sem redesenho.
  * Respeita prefers-reduced-motion.
- *
- * Importante: não aplica .revelar em conteúdo dinâmico (módulos/publicações),
- * para não ficar invisível com opacity:0 quando o IntersectionObserver falha.
  */
 (() => {
     const reduzirMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -27,9 +24,11 @@
     }
 
     function prepararRevelacao() {
-        // Só elementos estáticos da página — nunca cards de módulo gerados via JS.
         const seletores = [
             ".inicio-card",
+            ".card-modulo-grid",
+            ".categoria-bloco",
+            ".publicacao-item",
             ".admin-card",
             ".panel-tratamento",
             ".examples-panel",
@@ -37,25 +36,15 @@
         ];
 
         document.querySelectorAll(seletores.join(",")).forEach((el) => {
-            el.classList.add("revelar");
+            if (!el.classList.contains("revelar")) {
+                el.classList.add("revelar");
+            }
         });
     }
 
-    function revelarAgora(el) {
-        el.classList.add("revelar-visivel");
-    }
-
     function iniciarScrollReveal() {
-        // Corrige cards que já ficaram invisíveis por builds anteriores
-        document
-            .querySelectorAll(".card-modulo-grid, .card-modulo, .categoria-bloco, .publicacao-item")
-            .forEach((el) => {
-                el.classList.remove("revelar");
-                el.classList.add("revelar-visivel");
-            });
-
         if (reduzirMotion) {
-            document.querySelectorAll(".revelar").forEach(revelarAgora);
+            document.querySelectorAll(".revelar").forEach((el) => el.classList.add("revelar-visivel"));
             return;
         }
 
@@ -63,41 +52,26 @@
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
-                        revelarAgora(entry.target);
+                        entry.target.classList.add("revelar-visivel");
                         observer.unobserve(entry.target);
                     }
                 });
             },
-            { threshold: 0.08, rootMargin: "0px 0px -4% 0px" }
+            { threshold: 0.12, rootMargin: "0px 0px -6% 0px" }
         );
 
-        document.querySelectorAll(".revelar").forEach((el) => {
-            observer.observe(el);
-            // Fallback: se já estiver na tela e o observer atrasar
-            requestAnimationFrame(() => {
-                const rect = el.getBoundingClientRect();
-                const visivel =
-                    rect.top < window.innerHeight &&
-                    rect.bottom > 0 &&
-                    rect.width > 0 &&
-                    rect.height > 0;
-                if (visivel) revelarAgora(el);
+        document.querySelectorAll(".revelar").forEach((el) => observer.observe(el));
+
+        const mo = new MutationObserver(() => {
+            document.querySelectorAll(".revelar:not(.revelar-visivel)").forEach((el) => {
+                if (!el.dataset.vidaObservado) {
+                    el.dataset.vidaObservado = "1";
+                    observer.observe(el);
+                }
             });
         });
 
-        // Rede de segurança: nada fica invisível para sempre
-        setTimeout(() => {
-            document.querySelectorAll(".revelar:not(.revelar-visivel)").forEach(revelarAgora);
-        }, 900);
-
-        // Troca de tema / login às vezes só “acorda” o layout — revela o que ficou preso
-        new MutationObserver(() => {
-            document.querySelectorAll(".revelar:not(.revelar-visivel)").forEach((el) => {
-                if (el.closest("[hidden]")) return;
-                const rect = el.getBoundingClientRect();
-                if (rect.width > 0 && rect.height > 0) revelarAgora(el);
-            });
-        }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+        mo.observe(document.body, { childList: true, subtree: true });
     }
 
     function iniciarCursorEParallax() {
@@ -161,6 +135,20 @@
         requestAnimationFrame(tick);
     }
 
+    function marcarCardsDinamicos() {
+        const grid = document.getElementById("categorias-modulos") || document.getElementById("grid-modulos");
+        if (!grid) return;
+
+        const observar = () => {
+            grid.querySelectorAll(".card-modulo-grid, .card-modulo").forEach((el) => {
+                el.classList.add("revelar");
+            });
+        };
+
+        observar();
+        new MutationObserver(observar).observe(grid, { childList: true, subtree: true });
+    }
+
     function iniciar() {
         document.documentElement.classList.add("vida-ativa");
         if (reduzirMotion) document.documentElement.classList.add("vida-reduzida");
@@ -169,6 +157,7 @@
         prepararRevelacao();
         iniciarScrollReveal();
         iniciarCursorEParallax();
+        marcarCardsDinamicos();
     }
 
     if (document.readyState === "loading") {

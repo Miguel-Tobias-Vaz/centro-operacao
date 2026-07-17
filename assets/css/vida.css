@@ -277,17 +277,6 @@ body.tema-claro .vida-cursor {
     filter: blur(0);
 }
 
-/* Módulos/publicações nunca ficam invisíveis por causa do reveal */
-.card-modulo.revelar,
-.card-modulo-grid.revelar,
-.categoria-bloco.revelar,
-.publicacao-item.revelar,
-.grid-modulos .revelar {
-    opacity: 1 !important;
-    transform: none !important;
-    filter: none !important;
-}
-
 .inicio-card.revelar {
     animation: none;
 }
