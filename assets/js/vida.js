@@ -42,9 +42,25 @@
         });
     }
 
+    /** Registra elementos .revelar no IntersectionObserver (ou revela na hora se reduced-motion). */
+    let observarElementoRevelar = (el) => {
+        if (!el || el.classList.contains("revelar-visivel")) return;
+        if (reduzirMotion) {
+            el.classList.add("revelar-visivel");
+            return;
+        }
+        // Fallback até o observer real ser criado em iniciarScrollReveal
+        el.classList.add("revelar-visivel");
+    };
+
     function iniciarScrollReveal() {
         if (reduzirMotion) {
             document.querySelectorAll(".revelar").forEach((el) => el.classList.add("revelar-visivel"));
+            observarElementoRevelar = (el) => {
+                if (el && !el.classList.contains("revelar-visivel")) {
+                    el.classList.add("revelar-visivel");
+                }
+            };
             return;
         }
 
@@ -60,18 +76,27 @@
             { threshold: 0.12, rootMargin: "0px 0px -6% 0px" }
         );
 
-        document.querySelectorAll(".revelar").forEach((el) => observer.observe(el));
+        observarElementoRevelar = (el) => {
+            if (!el || el.classList.contains("revelar-visivel") || el.dataset.vidaObservado) return;
+            el.dataset.vidaObservado = "1";
+            observer.observe(el);
+        };
+
+        document.querySelectorAll(".revelar").forEach((el) => observarElementoRevelar(el));
 
         const mo = new MutationObserver(() => {
             document.querySelectorAll(".revelar:not(.revelar-visivel)").forEach((el) => {
-                if (!el.dataset.vidaObservado) {
-                    el.dataset.vidaObservado = "1";
-                    observer.observe(el);
-                }
+                observarElementoRevelar(el);
             });
         });
 
-        mo.observe(document.body, { childList: true, subtree: true });
+        // childList + class: cards dinâmicos recebem .revelar depois de anexados ao DOM
+        mo.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ["class"]
+        });
     }
 
     function iniciarCursorEParallax() {
@@ -139,14 +164,18 @@
         const grid = document.getElementById("categorias-modulos") || document.getElementById("grid-modulos");
         if (!grid) return;
 
-        const observar = () => {
+        const marcar = () => {
             grid.querySelectorAll(".card-modulo-grid, .card-modulo").forEach((el) => {
-                el.classList.add("revelar");
+                if (!el.classList.contains("revelar")) {
+                    el.classList.add("revelar");
+                }
+                // Garante observação mesmo se o MO de class não disparar a tempo
+                observarElementoRevelar(el);
             });
         };
 
-        observar();
-        new MutationObserver(observar).observe(grid, { childList: true, subtree: true });
+        marcar();
+        new MutationObserver(marcar).observe(grid, { childList: true, subtree: true });
     }
 
     function iniciar() {
