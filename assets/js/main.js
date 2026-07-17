@@ -9,6 +9,9 @@ let editandoCategoriaId = null;
 let editandoPublicacaoId = null;
 let ordemCategoriasTemp = [];
 
+const CACHE_DADOS_PREFIXO = "centro-op-dados:";
+const CACHE_DADOS_TTL_MS = 30 * 60 * 1000;
+
 const listaModulos = document.getElementById("lista-modulos");
 const categoriasModulos = document.getElementById("categorias-modulos");
 const painelModulo = document.getElementById("painel-modulo");
@@ -528,6 +531,65 @@ function mostrarLoading(ativo) {
     if (loading) loading.hidden = !ativo;
 }
 
+function chaveCacheDados() {
+    const id = window.Auth?.getSession()?.user?.id;
+    return id ? `${CACHE_DADOS_PREFIXO}${id}` : null;
+}
+
+function lerCacheDados() {
+    const chave = chaveCacheDados();
+    if (!chave) return null;
+
+    try {
+        const bruto = sessionStorage.getItem(chave);
+        if (!bruto) return null;
+
+        const cache = JSON.parse(bruto);
+        if (!cache || !Array.isArray(cache.modulos)) return null;
+        if (Date.now() - (cache.ts || 0) > CACHE_DADOS_TTL_MS) return null;
+
+        return cache;
+    } catch {
+        return null;
+    }
+}
+
+function salvarCacheDados() {
+    const chave = chaveCacheDados();
+    if (!chave) return;
+
+    try {
+        sessionStorage.setItem(
+            chave,
+            JSON.stringify({
+                modulos,
+                categorias: categoriasModuloLista,
+                ts: Date.now()
+            })
+        );
+    } catch (erro) {
+        console.warn("Não foi possível salvar cache local:", erro);
+    }
+}
+
+function limparCacheDados() {
+    try {
+        Object.keys(sessionStorage)
+            .filter((chave) => chave.startsWith(CACHE_DADOS_PREFIXO))
+            .forEach((chave) => sessionStorage.removeItem(chave));
+    } catch {
+        /* ignore */
+    }
+}
+
+function aplicarCacheDados(cache) {
+    modulos = cache.modulos || [];
+    categoriasModuloLista = Array.isArray(cache.categorias) && cache.categorias.length
+        ? cache.categorias
+        : [...CATEGORIAS_PADRAO];
+    preencherSelectCategorias?.();
+}
+
 function mostrarErroConfig() {
     erroConfig.hidden = false;
     document.querySelector(".app-layout").style.display = "none";
@@ -636,8 +698,37 @@ async function carregarDados() {
 
     try {
         await carregarDadosPromise;
+        salvarCacheDados();
     } finally {
         carregarDadosPromise = null;
+    }
+}
+
+async function sincronizarDadosAoAbrir() {
+    const cache = lerCacheDados();
+
+    if (cache) {
+        aplicarCacheDados(cache);
+        renderizarModulos();
+        if (moduloAtivoId) renderizarPublicacoes();
+
+        try {
+            await carregarDados();
+            renderizarModulos();
+            if (moduloAtivoId) renderizarPublicacoes();
+        } catch (erro) {
+            console.warn("Atualização em segundo plano falhou:", erro);
+        }
+        return;
+    }
+
+    mostrarLoading(true);
+    try {
+        await carregarDados();
+        renderizarModulos();
+        if (moduloAtivoId) renderizarPublicacoes();
+    } finally {
+        mostrarLoading(false);
     }
 }
 
@@ -1802,9 +1893,11 @@ async function iniciar() {
 
     window.addEventListener("auth:changed", async () => {
         if (!window.Auth.getSession()) {
+            limparCacheDados();
             moduloAtivoId = null;
             termoBuscaGlobal = "";
             termoBuscaItem = "";
+            modulos = [];
             if (buscaGlobal) buscaGlobal.value = "";
             if (buscaItem) buscaItem.value = "";
             if (sidebar) sidebar.hidden = true;
@@ -1814,16 +1907,7 @@ async function iniciar() {
             return;
         }
 
-        mostrarLoading(true);
-        try {
-            await carregarDados();
-            renderizarModulos();
-            if (moduloAtivoId) renderizarPublicacoes();
-        } catch (erro) {
-            tratarErro(erro, "carregar dados");
-        } finally {
-            mostrarLoading(false);
-        }
+        await sincronizarDadosAoAbrir();
     });
 
     iniciarArrastarGrid();
@@ -1832,15 +1916,7 @@ async function iniciar() {
     iniciarUploadImagemModulo();
 
     if (window.Auth.getSession()) {
-        mostrarLoading(true);
-        try {
-            await carregarDados();
-            renderizarModulos();
-        } catch (erro) {
-            tratarErro(erro, "carregar dados");
-        } finally {
-            mostrarLoading(false);
-        }
+        await sincronizarDadosAoAbrir();
     }
 }
 
