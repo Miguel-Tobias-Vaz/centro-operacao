@@ -5,17 +5,174 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="assets/icone/Icone.png" type="image/png">
     <link rel="stylesheet" href="assets/css/style.css">
-<<<<<<< Updated upstream
-=======
     <link rel="stylesheet" href="assets/css/vida.css">
->>>>>>> Stashed changes
-    <title>Normalização de Nomes — Central OPTO</title>
+    <title>Renomear arquivos — Central OPTO</title>
+    <style>
+        .renomear-wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 1.5rem 1.25rem 3rem;
+        }
+        .renomear-lead {
+            margin: 0 0 1.5rem;
+            color: var(--cor-fonte-suave);
+            font-size: 0.95rem;
+        }
+        .renomear-dropzone {
+            border: 1.5px dashed var(--cor-borda);
+            background: var(--vidro-fundo-card);
+            border-radius: 6px;
+            padding: 2rem 1.25rem;
+            text-align: center;
+            cursor: pointer;
+            color: var(--cor-fonte);
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .renomear-dropzone:hover,
+        .renomear-dropzone:focus-visible {
+            border-color: var(--cor-destaque);
+            background: color-mix(in srgb, var(--cor-destaque) 8%, var(--vidro-fundo-card));
+            outline: none;
+        }
+        .renomear-dropzone.arrasto {
+            border-color: var(--cor-destaque);
+            background: color-mix(in srgb, var(--cor-destaque) 12%, var(--vidro-fundo-card));
+        }
+        .renomear-dropzone p { margin: 0.25rem 0; }
+        .renomear-dropzone .hint {
+            font-size: 0.85rem;
+            color: var(--cor-fonte-suave);
+        }
+        .renomear-file-input { display: none; }
+        .renomear-painel { margin-top: 1.25rem; }
+        .renomear-painel[hidden] { display: none !important; }
+        .renomear-painel-titulo {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.6rem;
+        }
+        .renomear-painel-titulo h2 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .renomear-meta {
+            font-size: 0.85rem;
+            color: var(--cor-fonte-suave);
+        }
+        .renomear-lista {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            border: 1px solid var(--cor-borda);
+            border-radius: 6px;
+            max-height: 220px;
+            overflow: auto;
+        }
+        .renomear-lista li {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.55rem 0.75rem;
+            border-bottom: 1px solid var(--cor-borda);
+            font-size: 0.9rem;
+        }
+        .renomear-lista li:last-child { border-bottom: none; }
+        .renomear-lista .nome {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .renomear-lista .tag {
+            flex-shrink: 0;
+            color: var(--cor-fonte-suave);
+            font-size: 0.8rem;
+        }
+        .renomear-acoes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 1rem;
+        }
+        .renomear-progresso { margin-top: 1.25rem; }
+        .renomear-barra {
+            height: 8px;
+            background: var(--cor-superficie);
+            border: 1px solid var(--cor-borda);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .renomear-barra > span {
+            display: block;
+            height: 100%;
+            width: 0%;
+            background: var(--cor-destaque);
+            transition: width 0.15s linear;
+        }
+        .renomear-progresso-texto {
+            margin-top: 0.4rem;
+            font-size: 0.85rem;
+            color: var(--cor-fonte-suave);
+        }
+        .renomear-erro {
+            margin-top: 1rem;
+            padding: 0.75rem 0.9rem;
+            border: 1px solid #e2b4b4;
+            background: #fdf5f5;
+            color: #a33;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        .renomear-resultado { margin-top: 1.5rem; }
+        .renomear-resumo {
+            margin: 0 0 0.75rem;
+            font-size: 0.9rem;
+            color: var(--cor-fonte-suave);
+        }
+        .renomear-tabela {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            border: 1px solid var(--cor-borda);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .renomear-tabela thead th {
+            text-align: left;
+            background: var(--cor-superficie);
+            padding: 0.6rem 0.75rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--cor-borda);
+        }
+        .renomear-tabela tbody td {
+            padding: 0.55rem 0.75rem;
+            border-bottom: 1px solid var(--cor-borda);
+            vertical-align: top;
+            word-break: break-word;
+        }
+        .renomear-tabela tbody tr:last-child td { border-bottom: none; }
+        .renomear-tabela .seta {
+            width: 2rem;
+            text-align: center;
+            color: var(--cor-fonte-suave);
+            white-space: nowrap;
+        }
+        .renomear-tabela .alterado .novo { color: #1b7a4e; font-weight: 600; }
+        .renomear-tabela .igual .novo { color: var(--cor-fonte-suave); }
+        .btn-sucesso-renomear {
+            background: #1b7a4e;
+            color: #fff;
+            border: none;
+        }
+        .btn-sucesso-renomear:hover { filter: brightness(0.95); }
+    </style>
 </head>
 <body>
     <header class="header">
         <div class="container header-inner">
-            <h1 class="logo">Central OPTO <span>- Normalização de nomes</span></h1>
-
+            <h1 class="logo">Central OPTO <span>— Renomear arquivos</span></h1>
             <div class="container-buttons">
                 <a href="index.html" class="btn btn-outline btn-sm">← Voltar</a>
                 <button type="button" id="tema" class="btn btn-secundario" aria-label="Alternar tema">
@@ -25,120 +182,61 @@
         </div>
     </header>
 
-    <main class="tratamento-pagina">
-        <section id="step-upload" class="tratamento-step ativo">
-            <header class="tratamento-cabecalho">
-                <h2>Normalização de nomes</h2>
-                <p class="tratamento-lead">
-                    Envie um pacote (<code class="code-inline">.zip</code>, <code class="code-inline">.ram</code>,
-                    <code class="code-inline">.rar</code>, <code class="code-inline">.7z</code>)
-                    ou um documento avulso (<code class="code-inline">.pdf</code>, Office, imagem).
-                    Nomes de arquivos e pastas são padronizados; o restante do pacote pode ser preservado.
-                </p>
-            </header>
+    <main class="renomear-wrap">
+        <h2 class="logo" style="font-size:1.25rem;margin:0 0 0.35rem">Renomear arquivos</h2>
+        <p class="renomear-lead">
+            Normalize nomes de documentos. Aceita arquivos soltos ou um .ZIP / .RAM.
+        </p>
 
-            <div class="panel-tratamento">
-                <div
-                    class="dropzone"
-                    id="dropzone"
-                    tabindex="0"
-                    role="button"
-                    aria-label="Arraste um pacote ou documento, ou clique para selecionar"
-                >
-                    <input type="file" id="file-input" accept=".zip,.ram,.rar,.7z,.pdf,.doc,.docx,.odt,.xls,.xlsx,.png,.jpg,.jpeg" hidden>
-                    <span class="dropzone-icone" aria-hidden="true">📦</span>
-                    <p class="dropzone-titulo">Arraste pacote ou documento aqui</p>
-                    <p class="dropzone-sub">ZIP, RAM, RAR, 7Z ou PDF/Office/imagem</p>
-                    <div class="file-chip" id="file-chip" hidden>
-                        <span class="file-chip-nome" id="file-name"></span>
-                        <button type="button" class="file-chip-limpar" id="btn-clear" title="Remover">×</button>
-                    </div>
-                </div>
+        <div class="renomear-dropzone" id="dropzone" tabindex="0" role="button" aria-label="Enviar arquivos">
+            <p><strong>Arraste arquivos aqui</strong> ou clique para selecionar</p>
+            <p class="hint">PDF, DOCX, XLSX, imagens e outros · ou um arquivo .ZIP / .RAM</p>
+            <input class="renomear-file-input" id="file-input" type="file" multiple
+                accept=".zip,.ram,.pdf,.doc,.docx,.odt,.rtf,.xls,.xlsx,.ods,.csv,.ppt,.pptx,.odp,.png,.jpg,.jpeg,.webp,.gif,.tif,.tiff,.bmp,.txt">
+        </div>
 
-                <label class="tratamento-opcao" for="manter-extras">
-                    <input type="checkbox" id="manter-extras" checked>
-                    <span>Manter outros arquivos do pacote (sem renomear o arquivo; pastas são normalizadas)</span>
-                </label>
-
-                <ul class="rules-list">
-                    <li>Remove <strong>assinado</strong>, <strong>scan</strong>, <strong>cópia</strong>, <strong>(1)</strong> e similares</li>
-                    <li>Troca <strong>_</strong> / <strong>-</strong> por espaços e separa CamelCase</li>
-                    <li>Capitaliza com artigos minúsculos (<strong>de</strong>, <strong>da</strong>, <strong>do</strong>…) e acentos</li>
-                    <li>Normaliza também <strong>pastas</strong> e exporta relatório CSV</li>
-                    <li>RAR/7Z saem como <strong>ZIP tratado</strong> (leitura suportada; gravação em ZIP)</li>
-                </ul>
-
-                <div class="tratamento-acoes">
-                    <button type="button" class="btn btn-primario" id="btn-processar" disabled>
-                        Normalizar nomes
-                    </button>
-                </div>
+        <div class="renomear-painel" id="painel-lista" hidden>
+            <div class="renomear-painel-titulo">
+                <h2>Arquivos selecionados</h2>
+                <span class="renomear-meta" id="meta-lista"></span>
             </div>
-
-            <div class="examples-panel">
-                <h3 class="examples-titulo">Exemplos</h3>
-                <div class="examples-grid">
-                    <div class="example-row">
-                        <span class="example-before">ATA_DE_REGISTRO_DE_PRECO.pdf</span>
-                        <span class="example-arrow">→</span>
-                        <span class="example-after">Ata de Registro de Preço.pdf</span>
-                    </div>
-                    <div class="example-row">
-                        <span class="example-before">DOCUMENTOS_ASSINADOS/edital_ass.pdf</span>
-                        <span class="example-arrow">→</span>
-                        <span class="example-after">Documentos/Edital.pdf</span>
-                    </div>
-                    <div class="example-row">
-                        <span class="example-before">PORTARIA_N_123_copia.pdf</span>
-                        <span class="example-arrow">→</span>
-                        <span class="example-after">Portaria nº 123.pdf</span>
-                    </div>
-                </div>
+            <ul class="renomear-lista" id="lista-arquivos"></ul>
+            <div class="renomear-acoes">
+                <button type="button" class="btn btn-primario" id="btn-renomear">Renomear</button>
+                <button type="button" class="btn btn-outline" id="btn-limpar">Limpar</button>
             </div>
-        </section>
+        </div>
 
-        <section id="step-processing" class="tratamento-step">
-            <header class="tratamento-cabecalho">
-                <h2>Processando…</h2>
-                <p class="tratamento-lead">Renomeando arquivos e pastas.</p>
-            </header>
-            <div class="panel-tratamento">
-                <pre id="log-mini" class="log-tratamento">Aguardando…</pre>
+        <div class="renomear-progresso" id="progresso" hidden>
+            <div class="renomear-barra"><span id="barra-fill"></span></div>
+            <p class="renomear-progresso-texto" id="progresso-texto">Processando…</p>
+        </div>
+
+        <div class="renomear-erro" id="erro" hidden></div>
+
+        <div class="renomear-resultado" id="resultado" hidden>
+            <div class="renomear-painel-titulo">
+                <h2>Resultado</h2>
+                <span class="renomear-meta" id="meta-resultado"></span>
             </div>
-        </section>
-
-        <section id="step-result" class="tratamento-step">
-            <header class="tratamento-cabecalho">
-                <h2>Concluído</h2>
-                <p class="tratamento-lead" id="result-sub"></p>
-            </header>
-
-            <div class="stat-card" id="stat-card" hidden>
-                <span class="stat-num" id="stat-renamed">0</span>
-                <span class="stat-label">documento(s) processado(s)</span>
+            <p class="renomear-resumo" id="resumo"></p>
+            <div style="overflow-x:auto">
+                <table class="renomear-tabela">
+                    <thead>
+                        <tr>
+                            <th>Nome original</th>
+                            <th class="seta"></th>
+                            <th>Novo nome</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-corpo"></tbody>
+                </table>
             </div>
-
-            <div class="panel-tratamento" id="rename-wrap" hidden>
-                <p class="panel-tratamento-titulo">Documentos no resultado</p>
-                <ul class="doc-list" id="rename-list"></ul>
+            <div class="renomear-acoes">
+                <a class="btn btn-sucesso-renomear" id="btn-download" href="#" download="arquivos_renomeados.zip">Baixar ZIP</a>
+                <button type="button" class="btn btn-outline" id="btn-novo">Novo lote</button>
             </div>
-
-            <div class="tratamento-acoes">
-                <a class="btn btn-primario" id="btn-download" href="#" download hidden>Baixar arquivo tratado</a>
-                <a class="btn btn-outline" id="btn-download-csv" href="#" download hidden>Baixar relatório CSV</a>
-                <button type="button" class="btn btn-outline" id="btn-novo">Enviar outro arquivo</button>
-            </div>
-        </section>
-
-        <section id="step-error" class="tratamento-step">
-            <header class="tratamento-cabecalho">
-                <h2>Erro</h2>
-            </header>
-            <div class="alerta-tratamento" id="error-msg">Tente novamente.</div>
-            <div class="tratamento-acoes">
-                <button type="button" class="btn btn-outline" id="btn-error-back">Voltar</button>
-            </div>
-        </section>
+        </div>
     </main>
 
     <footer class="footer">
@@ -148,7 +246,14 @@
     <script src="assets/js/ferramenta-tema.js"></script>
     <script src="assets/js/vida.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <script src="assets/js/tratamento-nomes.js"></script>
-    <script src="assets/js/tratamento.js"></script>
+    <script src="assets/js/renomeacao/dados.js"></script>
+    <script src="assets/js/renomeacao/motor.js"></script>
+    <script src="assets/js/renomeacao/ui.js"></script>
+    <script>
+        const botaoTema = document.getElementById("tema");
+        if (typeof iniciarTemaFerramenta === "function") {
+            iniciarTemaFerramenta(botaoTema);
+        }
+    </script>
 </body>
 </html>

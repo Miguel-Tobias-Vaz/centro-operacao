@@ -3,8 +3,12 @@
   "private": true,
   "scripts": {
     "build": "node scripts/generate-config.js",
+    "build:acentos": "node scripts/build-acentos-pt.js",
     "start": "python -m http.server 5500",
     "test:nomes": "node scripts/test-tratamento-nomes.js",
     "test:separador": "node scripts/test-separador-logic.js"
+  },
+  "devDependencies": {
+    "dictionary-pt": "^4.0.0"
   }
 }
