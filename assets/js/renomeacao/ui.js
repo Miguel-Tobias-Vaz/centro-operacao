@@ -275,4 +275,94 @@ btnRenomear.addEventListener("click", renomear);
 btnLimpar.addEventListener("click", limparTudo);
 btnNovo.addEventListener("click", limparTudo);
 
+/* —— Modo texto livre —— */
+
+const painelArquivos = document.getElementById("painel-arquivos");
+const painelTexto = document.getElementById("painel-texto");
+const btnModoArquivos = document.getElementById("modo-arquivos");
+const btnModoTexto = document.getElementById("modo-texto");
+const textoEntrada = document.getElementById("texto-entrada");
+const textoSaida = document.getElementById("texto-saida");
+const textoResultadoWrap = document.getElementById("texto-resultado-wrap");
+const btnNormalizarTexto = document.getElementById("btn-normalizar-texto");
+const btnLimparTexto = document.getElementById("btn-limpar-texto");
+const btnCopiarTexto = document.getElementById("btn-copiar-texto");
+const erroTextoEl = document.getElementById("erro-texto");
+
+function alternarModoRenomear(modo) {
+    const ehArquivos = modo === "arquivos";
+    painelArquivos?.classList.toggle("ativo", ehArquivos);
+    painelTexto?.classList.toggle("ativo", !ehArquivos);
+    btnModoArquivos?.classList.toggle("ativo", ehArquivos);
+    btnModoTexto?.classList.toggle("ativo", !ehArquivos);
+}
+
+function mostrarErroTexto(msg) {
+    if (!erroTextoEl) return;
+    erroTextoEl.hidden = !msg;
+    erroTextoEl.textContent = msg || "";
+}
+
+function limparModoTexto() {
+    if (textoEntrada) textoEntrada.value = "";
+    if (textoSaida) textoSaida.textContent = "";
+    if (textoResultadoWrap) textoResultadoWrap.hidden = true;
+    if (btnCopiarTexto) btnCopiarTexto.hidden = true;
+    mostrarErroTexto("");
+}
+
+async function normalizarTextoUi() {
+    const bruto = textoEntrada?.value || "";
+    if (!bruto.trim()) {
+        mostrarErroTexto("Cole um texto para normalizar.");
+        return;
+    }
+
+    mostrarErroTexto("");
+    if (btnNormalizarTexto) btnNormalizarTexto.disabled = true;
+
+    try {
+        await garantirDicionarioAcentos();
+        const tokens = tokensDoStem(bruto);
+        preaquecerCorrecoes(tokens);
+
+        const corrigido = normalizarTextoLivre(bruto);
+        if (textoSaida) textoSaida.textContent = corrigido;
+        if (textoResultadoWrap) textoResultadoWrap.hidden = false;
+        if (btnCopiarTexto) btnCopiarTexto.hidden = false;
+    } catch (e) {
+        mostrarErroTexto(e.message || "Falha ao normalizar o texto.");
+    } finally {
+        if (btnNormalizarTexto) btnNormalizarTexto.disabled = false;
+    }
+}
+
+async function copiarTextoResultado() {
+    const texto = textoSaida?.textContent || "";
+    if (!texto) return;
+    try {
+        await navigator.clipboard.writeText(texto);
+        const rotulo = btnCopiarTexto.textContent;
+        btnCopiarTexto.textContent = "Copiado!";
+        setTimeout(() => {
+            if (btnCopiarTexto) btnCopiarTexto.textContent = rotulo || "Copiar resultado";
+        }, 1500);
+    } catch (_) {
+        mostrarErroTexto("Não foi possível copiar. Selecione o texto e use Ctrl+C.");
+    }
+}
+
+btnModoArquivos?.addEventListener("click", () => alternarModoRenomear("arquivos"));
+btnModoTexto?.addEventListener("click", () => alternarModoRenomear("texto"));
+btnNormalizarTexto?.addEventListener("click", normalizarTextoUi);
+btnLimparTexto?.addEventListener("click", limparModoTexto);
+btnCopiarTexto?.addEventListener("click", copiarTextoResultado);
+
+textoEntrada?.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        normalizarTextoUi();
+    }
+});
+
 renderLista();

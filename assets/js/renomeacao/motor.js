@@ -284,7 +284,7 @@ function isSiglaDE(contexto, posicao) {
  * Conectivos: maiúscula só se forem a primeira palavra; minúscula no meio.
  * Exceção: "DE" sigla administrativa permanece "DE".
  */
-function capitalizarPalavra(palavra, indice, total, tokensOriginais) {
+function capitalizarPalavra(palavra, indice, total, tokensOriginais, opcoes) {
     if (!palavra) return palavra;
 
     const chave = foldAscii(palavra);
@@ -295,7 +295,13 @@ function capitalizarPalavra(palavra, indice, total, tokensOriginais) {
     }
 
     // 1) Conectivos no meio — sempre minúsculos (antes de sigla/léxico/dict)
-    if (ehConectivo(chave) && conectivoNoMeioDoTitulo(indice, total)) {
+    // Em texto livre, "menos" costuma ser nome próprio (ex.: Menos É Mais), não preposição.
+    const tratarComoConectivo =
+        ehConectivo(chave) &&
+        !(opcoes && opcoes.modoTexto && chave === "menos");
+
+    if (tratarComoConectivo && conectivoNoMeioDoTitulo(indice, total)) {
+        if (chave === "e" && /[éÉ]/.test(palavra)) return "é";
         return formaConectivoMinuscula(chave);
     }
 
@@ -347,7 +353,7 @@ function capitalizarPalavra(palavra, indice, total, tokensOriginais) {
  * Ajustes finais do título: locuções + conectivos minúsculos no meio.
  * Preserva "DE" quando for sigla administrativa.
  */
-function aplicarRegrasTitulo(palavras, tokensOriginais) {
+function aplicarRegrasTitulo(palavras, tokensOriginais, opcoes) {
     let out = palavras.slice();
     const folds = out.map((p) => foldAscii(p));
 
@@ -379,10 +385,13 @@ function aplicarRegrasTitulo(palavras, tokensOriginais) {
 
     // Conectivos isolados no meio + DE sigla
     const total = out.length;
+    const modoTexto = opcoes && opcoes.modoTexto;
     out = out.map((p, i) => {
         if (tokensOriginais && isSiglaDE(tokensOriginais, i)) return "DE";
         const chave = foldAscii(p);
+        if (modoTexto && chave === "menos") return p;
         if (ehConectivo(chave) && conectivoNoMeioDoTitulo(i, total)) {
+            if (chave === "e" && /[éÉ]/.test(tokensOriginais?.[i] || p)) return "é";
             return formaConectivoMinuscula(chave);
         }
         return p;
@@ -608,6 +617,105 @@ function normalizarNomeArquivo(nome) {
     }
 
     return titulo + ext;
+}
+
+/**
+ * Normaliza texto livre (não é nome de arquivo): Title Case, acentos, conectivos.
+ * Preserva quebras de linha, vírgulas e ponto final. Não remove "lixo" de arquivo.
+ */
+function normalizarTextoLivre(texto) {
+    const bruto = String(texto ?? "");
+    if (!bruto.trim()) return "";
+
+    return bruto
+        .split(/\r?\n/)
+        .map((linha) => normalizarLinhaTextoLivre(linha))
+        .join("\n");
+}
+
+function normalizarLinhaTextoLivre(linha) {
+    const original = String(linha ?? "");
+    if (!original.trim()) return original;
+
+    // Preserva indentação à esquerda
+    const indent = (original.match(/^\s*/) || [""])[0];
+    let corpo = limparInvisiveis(original).trim();
+    if (!corpo) return original;
+
+    // Trailing da frase (. ! ? …)
+    let trailing = "";
+    const mTrail = corpo.match(/([.!?…]+)$/);
+    if (mTrail) {
+        trailing = mTrail[1];
+        corpo = corpo.slice(0, -trailing.length).trim();
+    }
+
+    // Protege Município-UF (Conceição do Araguaia-PA)
+    // Marcadores só com letras — tokensDoStem separa letra+dígito.
+    const protegidosUf = [];
+    corpo = corpo.replace(
+        /\b([A-Za-zÀ-ü][A-Za-zÀ-ü']*)\s*[-–—]\s*([A-Za-z]{2})\b/g,
+        (_, cidade, uf) => {
+            const idx = protegidosUf.length;
+            protegidosUf.push({ cidade, uf: uf.toUpperCase() });
+            return `ZZUFPROT${String.fromCharCode(65 + (idx % 26))}${idx >= 26 ? "X" : ""}`;
+        }
+    );
+
+    // Travessões / hífens de pausa → marcador
+    corpo = corpo.replace(/\s+[-–—]\s+/g, " ZZDASHPROT ");
+
+    let tokens = tokensDoStem(corpo);
+    if (!tokens.length) return indent + corpo + trailing;
+
+    tokens = tokens.map((t) => {
+        const mUf = /^ZZUFPROT([A-Z])X?$/i.exec(t);
+        if (mUf) {
+            const idx = mUf[1].toUpperCase().charCodeAt(0) - 65;
+            const p = protegidosUf[idx];
+            if (p) return `${p.cidade}\u2011${p.uf}`;
+        }
+        if (/^ZZDASHPROT$/i.test(t)) return "–";
+        return t;
+    });
+
+    const opcoes = { modoTexto: true };
+    const total = tokens.length;
+    const palavras = aplicarRegrasTitulo(
+        tokens.map((t, i) => {
+            if (t === "–") return "–";
+            if (t.includes("\u2011")) {
+                const [cidade, uf] = t.split("\u2011");
+                const cid = capitalizarPalavra(cidade, i, total, tokens, opcoes);
+                return `${cid}-${uf}`;
+            }
+            return capitalizarPalavra(t, i, total, tokens, opcoes);
+        }),
+        tokens,
+        opcoes
+    );
+
+    let out = "";
+    for (let i = 0; i < palavras.length; i += 1) {
+        const p = palavras[i];
+        if (p === "–") {
+            out = out.trimEnd() + " – ";
+            continue;
+        }
+        if (!out) {
+            out = p;
+            continue;
+        }
+        // Vírgula/ponto-e-vírgula já vêm colados no token anterior ou neste
+        if (/^[,;:]/.test(p)) {
+            out += p;
+        } else {
+            out += " " + p;
+        }
+    }
+
+    out = out.replace(/\s+/g, " ").replace(/\s+([,;:])/g, "$1").trim();
+    return indent + out + trailing;
 }
 
 function ignorarCaminho(rel) {
