@@ -34,14 +34,15 @@
 
     <main class="tratamento-pagina tratamento-pagina-larga">
         <nav class="pdf-modos" aria-label="Modo de operação">
-            <button type="button" id="modo-separar" class="pdf-modo-btn ativo">Separar documentos</button>
-            <button type="button" id="modo-mesclar" class="pdf-modo-btn">Mesclar PDFs</button>
+            <button type="button" id="modo-separar" class="pdf-modo-btn ativo">Separar</button>
+            <button type="button" id="modo-mesclar" class="pdf-modo-btn">Mesclar</button>
+            <button type="button" id="modo-word" class="pdf-modo-btn">Word → PDF</button>
         </nav>
 
         <div id="painel-separar" class="pdf-modo-painel ativo">
             <section id="step-upload" class="tratamento-step ativo">
                 <header class="tratamento-cabecalho">
-                    <h2>Separar documentos em um PDF</h2>
+                    <h2>Separar documentos</h2>
                     <p class="tratamento-lead">
                         Agrupe páginas, remova ou gire páginas, renomeie cada documento e baixe em ZIP.
                         Tudo no navegador — nada é enviado para servidor.
@@ -75,7 +76,7 @@
                             <h2 id="editor-titulo">Agrupar documentos</h2>
                             <p class="tratamento-lead" id="editor-subtitulo"></p>
                         </div>
-                        <button type="button" class="btn btn-outline btn-sm" id="btn-trocar-arquivo">Trocar PDF</button>
+                        <button type="button" class="btn btn-outline btn-sm" id="btn-trocar-arquivo">Trocar arquivo</button>
                     </div>
                 </header>
 
@@ -125,17 +126,20 @@
                     <span class="stat-label">documento(s) no ZIP</span>
                 </div>
                 <div class="panel-tratamento" id="rename-wrap" hidden>
-                    <p class="panel-tratamento-titulo">Arquivos no ZIP</p>
+                    <p class="panel-tratamento-titulo">Arquivos gerados</p>
                     <ul class="doc-list" id="rename-list"></ul>
                 </div>
                 <div class="tratamento-acoes">
                     <a class="btn btn-primario" id="btn-download" href="#" download hidden>Baixar ZIP</a>
-                    <button type="button" class="btn btn-outline" id="btn-novo">Separar outro PDF</button>
+                    <button type="button" class="btn btn-outline" id="btn-novo">Começar de novo</button>
                 </div>
             </section>
 
             <section id="step-error" class="tratamento-step">
-                <header class="tratamento-cabecalho"><h2>Erro</h2></header>
+                <header class="tratamento-cabecalho">
+                    <h2>Erro</h2>
+                    <p class="tratamento-lead">Não foi possível concluir a operação.</p>
+                </header>
                 <div class="alerta-tratamento" id="error-msg">Tente novamente.</div>
                 <div class="tratamento-acoes">
                     <button type="button" class="btn btn-outline" id="btn-error-back">Voltar</button>
@@ -144,49 +148,73 @@
         </div>
 
         <div id="painel-mesclar" class="pdf-modo-painel">
-            <section id="step-merge-upload" class="pdf-modo-step ativo">
+            <section id="step-merge-upload" class="merge-step ativo">
                 <header class="tratamento-cabecalho">
                     <h2>Mesclar PDFs</h2>
                     <p class="tratamento-lead">
                         Selecione vários PDFs, defina a ordem e gere um único arquivo final.
+                        Tudo no navegador — nada é enviado para servidor.
                     </p>
                 </header>
                 <div class="panel-tratamento">
-                    <div class="dropzone" id="merge-dropzone" tabindex="0" role="button">
+                    <div class="dropzone" id="merge-dropzone" tabindex="0" role="button" aria-label="Arraste PDFs ou clique para selecionar">
                         <input type="file" id="merge-file-input" accept=".pdf,application/pdf" multiple hidden>
                         <span class="dropzone-icone" aria-hidden="true">📚</span>
                         <p class="dropzone-titulo">Arraste um ou mais PDFs</p>
                         <p class="dropzone-sub">ou clique para escolher · máximo 50 MB cada</p>
                     </div>
+                    <ul class="rules-list">
+                        <li>Arraste os itens da lista para definir a ordem das páginas no PDF final</li>
+                        <li>Escolha o nome do arquivo de saída antes de mesclar</li>
+                        <li>O resultado é um único PDF com todas as páginas na ordem definida</li>
+                    </ul>
                 </div>
             </section>
 
-            <section id="step-merge-editor" class="pdf-modo-step">
+            <section id="step-merge-editor" class="merge-step">
                 <header class="tratamento-cabecalho">
-                    <h2>Ordem dos arquivos</h2>
-                    <p class="tratamento-lead" id="merge-contador">Nenhum arquivo</p>
+                    <div class="pdf-editor-topo">
+                        <div>
+                            <h2>Ordem dos arquivos</h2>
+                            <p class="tratamento-lead" id="merge-subtitulo">Defina a ordem e o nome do PDF final.</p>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-sm" id="btn-merge-trocar">Trocar arquivos</button>
+                    </div>
                 </header>
 
                 <div class="pdf-editor-barra">
-                    <label class="merge-nome-label" for="merge-nome-saida">Nome do PDF final</label>
-                    <input type="text" id="merge-nome-saida" class="pdf-documento-nome merge-nome-input" value="documento_mesclado" placeholder="documento_mesclado">
+                    <p class="pdf-contador" id="merge-contador">Nenhum arquivo</p>
                     <div class="pdf-editor-acoes">
                         <button type="button" class="btn btn-outline btn-sm" id="btn-merge-limpar">Limpar lista</button>
                         <button type="button" class="btn btn-primario" id="btn-merge-processar" disabled>Mesclar e baixar</button>
                     </div>
                 </div>
 
+                <div class="pdf-secao-titulo">
+                    <h3>PDF final</h3>
+                    <p class="pdf-secao-ajuda">Nome do arquivo de saída (sem extensão).</p>
+                </div>
+                <label class="sr-only" for="merge-nome-saida">Nome do PDF final</label>
+                <input type="text" id="merge-nome-saida" class="pdf-documento-nome merge-nome-input" value="documento_mesclado" placeholder="documento_mesclado">
+
+                <div class="pdf-secao-titulo pdf-secao-documentos">
+                    <h3>Arquivos na ordem</h3>
+                    <p class="pdf-secao-ajuda">Arraste ≡ para reordenar · remova o que não quiser incluir.</p>
+                </div>
                 <div class="merge-lista-arquivos" id="merge-lista-arquivos"></div>
             </section>
 
-            <section id="step-merge-processing" class="pdf-modo-step">
-                <header class="tratamento-cabecalho"><h2>Mesclando…</h2></header>
+            <section id="step-merge-processing" class="merge-step">
+                <header class="tratamento-cabecalho">
+                    <h2>Processando…</h2>
+                    <p class="tratamento-lead">Unindo os PDFs em um único arquivo.</p>
+                </header>
                 <div class="panel-tratamento">
                     <pre id="merge-log" class="log-tratamento">Aguardando…</pre>
                 </div>
             </section>
 
-            <section id="step-merge-result" class="pdf-modo-step">
+            <section id="step-merge-result" class="merge-step">
                 <header class="tratamento-cabecalho">
                     <h2>Concluído</h2>
                     <p class="tratamento-lead" id="merge-result-sub"></p>
@@ -195,17 +223,122 @@
                     <span class="stat-num" id="merge-stat-paginas">0</span>
                     <span class="stat-label">página(s) no PDF final</span>
                 </div>
+                <div class="panel-tratamento" id="merge-result-wrap">
+                    <p class="panel-tratamento-titulo">Arquivos mesclados</p>
+                    <ul class="doc-list" id="merge-result-lista"></ul>
+                </div>
                 <div class="tratamento-acoes">
-                    <a class="btn btn-primario" id="btn-merge-download" href="#" download hidden>Baixar PDF mesclado</a>
-                    <button type="button" class="btn btn-outline" id="btn-merge-novo">Mesclar outros PDFs</button>
+                    <a class="btn btn-primario" id="btn-merge-download" href="#" download hidden>Baixar PDF</a>
+                    <button type="button" class="btn btn-outline" id="btn-merge-novo">Começar de novo</button>
                 </div>
             </section>
 
-            <section id="step-merge-error" class="pdf-modo-step">
-                <header class="tratamento-cabecalho"><h2>Erro</h2></header>
+            <section id="step-merge-error" class="merge-step">
+                <header class="tratamento-cabecalho">
+                    <h2>Erro</h2>
+                    <p class="tratamento-lead">Não foi possível concluir a operação.</p>
+                </header>
                 <div class="alerta-tratamento" id="merge-error-msg">Tente novamente.</div>
                 <div class="tratamento-acoes">
                     <button type="button" class="btn btn-outline" id="btn-merge-error-back">Voltar</button>
+                </div>
+            </section>
+        </div>
+
+        <div id="painel-word" class="pdf-modo-painel">
+            <section id="step-word-upload" class="word-step ativo">
+                <header class="tratamento-cabecalho">
+                    <h2>Word → PDF</h2>
+                    <p class="tratamento-lead">
+                        Converta um ou vários .docx em PDF A4 no navegador.
+                        Também aceita .zip / .ram com arquivos Word dentro.
+                        Tudo no navegador — nada é enviado para servidor.
+                    </p>
+                </header>
+                <div class="panel-tratamento">
+                    <div class="dropzone" id="word-dropzone" tabindex="0" role="button" aria-label="Arraste Word ou ZIP ou clique para selecionar">
+                        <input
+                            type="file"
+                            id="word-file-input"
+                            accept=".docx,.zip,.ram,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/zip"
+                            multiple
+                            hidden
+                        >
+                        <span class="dropzone-icone" aria-hidden="true">📝</span>
+                        <p class="dropzone-titulo">Arraste .docx ou ZIP/.ram</p>
+                        <p class="dropzone-sub">ou clique para escolher · só .docx (não .doc antigo) · máximo 50 MB</p>
+                    </div>
+                    <ul class="rules-list">
+                        <li>1 arquivo → 1 PDF · vários → ZIP com PDFs</li>
+                        <li>O PDF é visual (imagem) — o texto pode não ser selecionável</li>
+                        <li>Layouts muito complexos podem variar um pouco face ao Word</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="step-word-editor" class="word-step">
+                <header class="tratamento-cabecalho">
+                    <div class="pdf-editor-topo">
+                        <div>
+                            <h2>Arquivos a converter</h2>
+                            <p class="tratamento-lead" id="word-subtitulo">Confira a lista e converta para PDF A4.</p>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-sm" id="btn-word-trocar">Trocar arquivos</button>
+                    </div>
+                </header>
+
+                <div class="pdf-editor-barra">
+                    <p class="pdf-contador" id="word-contador">Nenhum arquivo</p>
+                    <div class="pdf-editor-acoes">
+                        <button type="button" class="btn btn-outline btn-sm" id="btn-word-limpar">Limpar lista</button>
+                        <button type="button" class="btn btn-primario" id="btn-word-processar" disabled>Converter e baixar</button>
+                    </div>
+                </div>
+
+                <div class="pdf-secao-titulo pdf-secao-documentos">
+                    <h3>Arquivos na lista</h3>
+                    <p class="pdf-secao-ajuda">Remova o que não quiser incluir na conversão.</p>
+                </div>
+                <div class="merge-lista-arquivos" id="word-lista-arquivos"></div>
+            </section>
+
+            <section id="step-word-processing" class="word-step">
+                <header class="tratamento-cabecalho">
+                    <h2>Processando…</h2>
+                    <p class="tratamento-lead">Convertendo Word para PDF A4.</p>
+                </header>
+                <div class="panel-tratamento">
+                    <pre id="word-log" class="log-tratamento">Aguardando…</pre>
+                </div>
+            </section>
+
+            <section id="step-word-result" class="word-step">
+                <header class="tratamento-cabecalho">
+                    <h2>Concluído</h2>
+                    <p class="tratamento-lead" id="word-result-sub"></p>
+                </header>
+                <div class="stat-card">
+                    <span class="stat-num" id="word-stat-ficheiros">0</span>
+                    <span class="stat-label">PDF(s) gerado(s)</span>
+                </div>
+                <div class="panel-tratamento" id="word-result-wrap">
+                    <p class="panel-tratamento-titulo">Arquivos gerados</p>
+                    <ul class="doc-list" id="word-result-lista"></ul>
+                </div>
+                <div class="tratamento-acoes">
+                    <a class="btn btn-primario" id="btn-word-download" href="#" download hidden>Baixar</a>
+                    <button type="button" class="btn btn-outline" id="btn-word-novo">Começar de novo</button>
+                </div>
+            </section>
+
+            <section id="step-word-error" class="word-step">
+                <header class="tratamento-cabecalho">
+                    <h2>Erro</h2>
+                    <p class="tratamento-lead">Não foi possível concluir a operação.</p>
+                </header>
+                <div class="alerta-tratamento" id="word-error-msg">Tente novamente.</div>
+                <div class="tratamento-acoes">
+                    <button type="button" class="btn btn-outline" id="btn-word-error-back">Voltar</button>
                 </div>
             </section>
         </div>
@@ -242,11 +375,15 @@
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="assets/js/separador-pdf-core.js"></script>
     <script src="assets/js/pagina-manager.js"></script>
     <script src="assets/js/separador-pdf-preview.js"></script>
     <script src="assets/js/lazy-preview.js"></script>
     <script src="assets/js/pdf-merge.js"></script>
+    <script src="assets/js/word-para-pdf.js"></script>
     <script src="assets/js/separador-pdf-visualizador.js"></script>
     <script src="assets/js/separador-pdf.js"></script>
 </body>

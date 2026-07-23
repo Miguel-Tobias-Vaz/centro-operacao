@@ -65,7 +65,7 @@ async function adicionarArquivosMerge(fileList) {
     }
 
     renderizarListaMerge();
-    mostrarPassoFerramenta("step-merge-editor", "pdf-modo-step");
+    mostrarPassoFerramenta("step-merge-editor", "merge-step");
 }
 
 function removerArquivoMerge(id) {
@@ -90,7 +90,7 @@ function renderizarListaMerge() {
     if (mergeArquivos.length === 0) {
         lista.replaceChildren();
         atualizarContadorMerge();
-        mostrarPassoFerramenta("step-merge-upload", "pdf-modo-step");
+        mostrarPassoFerramenta("step-merge-upload", "merge-step");
         return;
     }
 
@@ -155,7 +155,7 @@ async function processarMerge() {
     const btn = btnMergeProcessar();
     if (btn) btn.disabled = true;
 
-    mostrarPassoFerramenta("step-merge-processing", "pdf-modo-step");
+    mostrarPassoFerramenta("step-merge-processing", "merge-step");
     if (logEl) logEl.textContent = "Mesclando PDFs…\n";
 
     try {
@@ -187,10 +187,20 @@ async function processarMerge() {
         const stat = document.getElementById("merge-stat-paginas");
         if (stat) stat.textContent = String(totalPaginas);
 
-        mostrarPassoFerramenta("step-merge-result", "pdf-modo-step");
+        const listaResultado = document.getElementById("merge-result-lista");
+        if (listaResultado) {
+            listaResultado.replaceChildren();
+            mergeArquivos.forEach((a) => {
+                const li = document.createElement("li");
+                li.textContent = a.nome;
+                listaResultado.appendChild(li);
+            });
+        }
+
+        mostrarPassoFerramenta("step-merge-result", "merge-step");
     } catch (e) {
         document.getElementById("merge-error-msg").textContent = e.message || "Falha ao mesclar.";
-        mostrarPassoFerramenta("step-merge-error", "pdf-modo-step");
+        mostrarPassoFerramenta("step-merge-error", "merge-step");
     } finally {
         if (btn) btn.disabled = mergeArquivos.length === 0;
     }
@@ -282,17 +292,22 @@ function iniciarModoMesclar() {
     document.getElementById("btn-merge-processar")?.addEventListener("click", processarMerge);
     document.getElementById("btn-merge-novo")?.addEventListener("click", () => {
         limparEstadoMerge();
-        mostrarPassoFerramenta("step-merge-upload", "pdf-modo-step");
+        mostrarPassoFerramenta("step-merge-upload", "merge-step");
+    });
+    document.getElementById("btn-merge-trocar")?.addEventListener("click", () => {
+        limparEstadoMerge();
+        mostrarPassoFerramenta("step-merge-upload", "merge-step");
     });
     document.getElementById("btn-merge-error-back")?.addEventListener("click", () => {
         mostrarPassoFerramenta(
             mergeArquivos.length ? "step-merge-editor" : "step-merge-upload",
-            "pdf-modo-step"
+            "merge-step"
         );
     });
     document.getElementById("btn-merge-limpar")?.addEventListener("click", () => {
         if (!mergeArquivos.length || confirm("Limpar todos os arquivos da lista?")) {
             limparEstadoMerge();
+            mostrarPassoFerramenta("step-merge-upload", "merge-step");
         }
     });
 }
@@ -300,15 +315,17 @@ function iniciarModoMesclar() {
 function alternarModoPdf(modo) {
     const separar = document.getElementById("painel-separar");
     const mesclar = document.getElementById("painel-mesclar");
+    const word = document.getElementById("painel-word");
     const btnSep = document.getElementById("modo-separar");
     const btnMer = document.getElementById("modo-mesclar");
+    const btnWord = document.getElementById("modo-word");
 
-    const ehSeparar = modo === "separar";
-
-    separar?.classList.toggle("ativo", ehSeparar);
-    mesclar?.classList.toggle("ativo", !ehSeparar);
-    btnSep?.classList.toggle("ativo", ehSeparar);
-    btnMer?.classList.toggle("ativo", !ehSeparar);
+    separar?.classList.toggle("ativo", modo === "separar");
+    mesclar?.classList.toggle("ativo", modo === "mesclar");
+    word?.classList.toggle("ativo", modo === "word");
+    btnSep?.classList.toggle("ativo", modo === "separar");
+    btnMer?.classList.toggle("ativo", modo === "mesclar");
+    btnWord?.classList.toggle("ativo", modo === "word");
 }
 
 function iniciarAlternanciaModos() {
@@ -317,5 +334,8 @@ function iniciarAlternanciaModos() {
     });
     document.getElementById("modo-mesclar")?.addEventListener("click", () => {
         alternarModoPdf("mesclar");
+    });
+    document.getElementById("modo-word")?.addEventListener("click", () => {
+        alternarModoPdf("word");
     });
 }

@@ -611,4 +611,5 @@ configurarRotacaoVisualizador((indexOriginal) => obterRotacaoPagina(paginasOrdem
 iniciarVisualizadorPdf();
 iniciarAlternanciaModos();
 iniciarModoMesclar();
+iniciarModoWord();
 iniciarTemaFerramenta(botaoTema);

@@ -1120,8 +1120,10 @@ a {
 
 .pdf-modos {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
-    margin-bottom: 24px;
+    margin: 0 auto 24px;
     padding: 4px;
     background: var(--vidro-fundo);
     border: 1px solid var(--vidro-borda);
@@ -1160,10 +1162,14 @@ a {
     display: block;
 }
 
+.merge-step,
+.word-step,
 .pdf-modo-step {
     display: none;
 }
 
+.merge-step.ativo,
+.word-step.ativo,
 .pdf-modo-step.ativo {
     display: block;
 }
@@ -1178,8 +1184,9 @@ a {
 }
 
 .merge-nome-input {
-    margin-bottom: 0;
-    max-width: 320px;
+    margin-bottom: 16px;
+    max-width: 420px;
+    width: 100%;
 }
 
 .merge-lista-arquivos {
@@ -1235,6 +1242,21 @@ a {
 .merge-arquivo-meta {
     font-size: 0.78rem;
     color: var(--cor-fonte-suave);
+}
+
+/* Word → PDF — iframe limpo (nunca left:-10000px; corta texto) */
+
+.word-render-iframe {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 794px;
+    height: 1123px;
+    border: 0;
+    opacity: 0.01;
+    pointer-events: none;
+    z-index: -1;
+    background: #fff;
 }
 
 .grupo-seletor-cor {
