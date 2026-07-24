@@ -5,6 +5,7 @@
     "build": "node scripts/generate-config.js",
     "build:acentos": "node scripts/build-acentos-pt.js",
     "start": "python -m http.server 5500",
+    "test": "npm run test:nomes && npm run test:separador",
     "test:nomes": "node scripts/test-tratamento-nomes.js",
     "test:separador": "node scripts/test-separador-logic.js"
   },

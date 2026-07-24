@@ -6,89 +6,312 @@
     <link rel="icon" href="assets/icone/Icone.png" type="image/png">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/vida.css">
+    <link rel="stylesheet" href="assets/css/admin.css">
     <title>Administração — Central OPTO</title>
 </head>
-<body>
-    <header class="header">
-        <div class="container header-inner">
-            <h1 class="logo">Central OPTO <span>- Administração</span></h1>
+<body class="admin-body">
+    <div class="admin-shell">
+        <aside id="admin-sidebar" class="admin-sidebar" data-open="true">
+            <div class="admin-sidebar-brand">
+                <div class="admin-logo" aria-hidden="true">
+                    <img src="assets/icone/Icone.png" alt="" width="22" height="22">
+                </div>
+                <div class="admin-brand-text">
+                    <span class="admin-brand-nome">Central OPTO</span>
+                    <span class="admin-brand-plano">Administração</span>
+                </div>
+            </div>
 
-            <div class="container-buttons">
-                <a href="index.html" class="btn btn-outline btn-sm">← Voltar</a>
-                <button type="button" id="tema" class="btn btn-secundario" aria-label="Alternar tema">Claro</button>
-                <div id="auth-header" class="auth-header">
-                    <button type="button" id="btn-entrar" class="btn btn-outline btn-sm auth-so-deslogado">Entrar</button>
-                    <div id="auth-logado" class="auth-logado auth-so-logado" hidden>
-                        <div class="menu-usuario-wrap">
-                            <button
-                                type="button"
-                                id="btn-menu-usuario"
-                                class="usuario-avatar-btn"
-                                aria-haspopup="true"
-                                aria-expanded="false"
-                                aria-label="Menu da conta"
-                            >
-                                <span class="modulo-avatar modulo-avatar-sm">
-                                    <span class="modulo-avatar-inicial" id="auth-usuario-inicial">?</span>
-                                </span>
-                            </button>
-                            <div id="menu-usuario" class="menu-usuario" hidden>
-                                <p class="menu-usuario-nome" id="auth-usuario-nome"></p>
-                                <p class="menu-usuario-email" id="auth-usuario-email"></p>
-                                <button type="button" id="btn-sair" class="menu-usuario-item menu-usuario-sair">Sair</button>
+            <nav class="admin-nav" aria-label="Secções administrativas">
+                <button type="button" class="admin-nav-item is-active" data-painel="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button type="button" class="admin-nav-item" data-painel="usuarios">
+                    <i data-lucide="users"></i>
+                    <span>Utilizadores</span>
+                    <span id="badge-usuarios" class="admin-nav-badge" hidden>0</span>
+                </button>
+                <button type="button" class="admin-nav-item" data-painel="atividade">
+                    <i data-lucide="activity"></i>
+                    <span>Atividade</span>
+                    <span id="badge-logs" class="admin-nav-badge" hidden>0</span>
+                </button>
+                <button type="button" class="admin-nav-item" data-painel="config">
+                    <i data-lucide="settings"></i>
+                    <span>Configuração</span>
+                </button>
+            </nav>
+
+            <div class="admin-nav-secundaria">
+                <p class="admin-nav-label">Atalhos</p>
+                <a href="index.html" class="admin-nav-item admin-nav-link">
+                    <i data-lucide="monitor"></i>
+                    <span>Ver site</span>
+                </a>
+            </div>
+
+            <button type="button" id="admin-sidebar-toggle" class="admin-sidebar-toggle" aria-label="Recolher menu">
+                <i data-lucide="chevrons-right"></i>
+                <span>Recolher</span>
+            </button>
+        </aside>
+
+        <div class="admin-main">
+            <header class="admin-topbar">
+                <div class="admin-topbar-titulo">
+                    <button type="button" id="admin-menu-mobile" class="admin-menu-mobile" aria-label="Abrir menu">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div>
+                        <h1 id="admin-titulo-pagina">Dashboard</h1>
+                        <p id="admin-subtitulo-pagina">Resumo da operação e atividade recente</p>
+                    </div>
+                </div>
+                <div class="admin-topbar-acoes">
+                    <button type="button" id="tema" class="admin-icon-btn" aria-label="Alternar tema">
+                        <i data-lucide="moon" id="tema-icone"></i>
+                    </button>
+                    <div id="auth-header" class="auth-header">
+                        <button type="button" id="btn-entrar" class="btn btn-outline btn-sm auth-so-deslogado">Entrar</button>
+                        <div id="auth-logado" class="auth-logado auth-so-logado" hidden>
+                            <div class="menu-usuario-wrap">
+                                <button
+                                    type="button"
+                                    id="btn-menu-usuario"
+                                    class="usuario-avatar-btn"
+                                    aria-haspopup="true"
+                                    aria-expanded="false"
+                                    aria-label="Menu da conta"
+                                >
+                                    <span class="modulo-avatar modulo-avatar-sm">
+                                        <span class="modulo-avatar-inicial" id="auth-usuario-inicial">?</span>
+                                    </span>
+                                </button>
+                                <div id="menu-usuario" class="menu-usuario" hidden>
+                                    <p class="menu-usuario-nome" id="auth-usuario-nome"></p>
+                                    <p class="menu-usuario-email" id="auth-usuario-email"></p>
+                                    <button type="button" id="btn-sair" class="menu-usuario-item menu-usuario-sair">Sair</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </header>
+
+            <div class="admin-conteudo">
+                <!-- Dashboard -->
+                <section id="painel-dashboard" class="admin-painel is-visible" data-titulo="Dashboard" data-subtitulo="Resumo da operação e atividade recente">
+                    <div class="admin-stats">
+                        <article class="admin-stat-card">
+                            <div class="admin-stat-topo">
+                                <div class="admin-stat-icone admin-stat-icone--azul"><i data-lucide="users"></i></div>
+                            </div>
+                            <h3>Utilizadores</h3>
+                            <p id="stat-usuarios" class="admin-stat-valor">—</p>
+                            <p id="stat-usuarios-extra" class="admin-stat-extra">ativos / total</p>
+                        </article>
+                        <article class="admin-stat-card">
+                            <div class="admin-stat-topo">
+                                <div class="admin-stat-icone admin-stat-icone--verde"><i data-lucide="package"></i></div>
+                            </div>
+                            <h3>Módulos</h3>
+                            <p id="stat-modulos" class="admin-stat-valor">—</p>
+                            <p class="admin-stat-extra">no hub</p>
+                        </article>
+                        <article class="admin-stat-card">
+                            <div class="admin-stat-topo">
+                                <div class="admin-stat-icone admin-stat-icone--roxo"><i data-lucide="file-text"></i></div>
+                            </div>
+                            <h3>Publicações</h3>
+                            <p id="stat-publicacoes" class="admin-stat-valor">—</p>
+                            <p class="admin-stat-extra">conteúdos publicados</p>
+                        </article>
+                        <article class="admin-stat-card">
+                            <div class="admin-stat-topo">
+                                <div class="admin-stat-icone admin-stat-icone--laranja"><i data-lucide="activity"></i></div>
+                            </div>
+                            <h3>Atividade 24h</h3>
+                            <p id="stat-logs-24h" class="admin-stat-valor">—</p>
+                            <p id="stat-logs-total" class="admin-stat-extra">eventos no período</p>
+                        </article>
+                    </div>
+
+                    <div class="admin-grid-2">
+                        <section class="admin-card admin-card-stretch">
+                            <div class="admin-card-cabecalho">
+                                <h2>Atividade recente</h2>
+                                <button type="button" class="btn-link-admin" data-ir="atividade">Ver tudo</button>
+                            </div>
+                            <div id="dashboard-atividade" class="lista-logs lista-logs--compacta"></div>
+                        </section>
+
+                        <aside class="admin-stack">
+                            <section class="admin-card">
+                                <h2 class="admin-card-titulo">Quem mais age</h2>
+                                <div id="dashboard-top-usuarios" class="admin-ranking"></div>
+                            </section>
+                            <section class="admin-card">
+                                <h2 class="admin-card-titulo">Por tipo</h2>
+                                <div id="dashboard-por-entidade" class="admin-barras"></div>
+                            </section>
+                        </aside>
+                    </div>
+                </section>
+
+                <!-- Utilizadores -->
+                <section id="painel-usuarios" class="admin-painel" hidden data-titulo="Utilizadores" data-subtitulo="Crie contas, permissões e controle de acesso">
+                    <section class="admin-card">
+                        <h2 class="admin-card-titulo">Novo utilizador</h2>
+                        <form id="form-novo-usuario" class="form-admin form-admin-grid">
+                            <div>
+                                <label for="novo-usuario-nome">Nome</label>
+                                <input type="text" id="novo-usuario-nome" required placeholder="Nome completo">
+                            </div>
+                            <div>
+                                <label for="novo-usuario-email">E-mail</label>
+                                <input type="email" id="novo-usuario-email" required placeholder="usuario@email.com">
+                            </div>
+                            <div>
+                                <label for="novo-usuario-senha">Senha</label>
+                                <input type="password" id="novo-usuario-senha" required minlength="6" placeholder="Mínimo 6 caracteres">
+                            </div>
+                            <div>
+                                <label for="novo-usuario-role">Permissão</label>
+                                <select id="novo-usuario-role" class="modal-select">
+                                    <option value="editor">Editor — cria e edita conteúdo</option>
+                                    <option value="admin">Administrador — conteúdo + utilizadores</option>
+                                </select>
+                            </div>
+                            <p id="novo-usuario-erro" class="login-erro" hidden></p>
+                            <div class="form-admin-acoes">
+                                <button type="submit" class="btn btn-primario">Criar utilizador</button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <section class="admin-card">
+                        <h2 class="admin-card-titulo">Utilizadores cadastrados</h2>
+                        <div id="lista-usuarios" class="lista-usuarios"></div>
+                    </section>
+                </section>
+
+                <!-- Atividade / Logs -->
+                <section id="painel-atividade" class="admin-painel" hidden data-titulo="Atividade" data-subtitulo="Quem fez o quê — filtre por data, utilizador e tipo">
+                    <section class="admin-card">
+                        <form id="form-filtros-logs" class="admin-filtros">
+                            <div>
+                                <label for="filtro-log-q">Pesquisar</label>
+                                <input type="search" id="filtro-log-q" placeholder="Ação, detalhe, e-mail…">
+                            </div>
+                            <div>
+                                <label for="filtro-log-usuario">Utilizador</label>
+                                <input type="search" id="filtro-log-usuario" list="lista-autores-log" placeholder="Nome ou e-mail">
+                                <datalist id="lista-autores-log"></datalist>
+                            </div>
+                            <div>
+                                <label for="filtro-log-entidade">Tipo</label>
+                                <select id="filtro-log-entidade">
+                                    <option value="">Todos</option>
+                                    <option value="auth">Auth / login</option>
+                                    <option value="modulo">Módulo</option>
+                                    <option value="publicacao">Publicação</option>
+                                    <option value="categoria">Categoria</option>
+                                    <option value="usuario">Utilizador</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="filtro-log-de">De</label>
+                                <input type="date" id="filtro-log-de">
+                            </div>
+                            <div>
+                                <label for="filtro-log-ate">Até</label>
+                                <input type="date" id="filtro-log-ate">
+                            </div>
+                            <div class="admin-filtros-acoes">
+                                <button type="submit" class="btn btn-primario btn-sm">Filtrar</button>
+                                <button type="button" id="btn-limpar-filtros-logs" class="btn btn-outline btn-sm">Limpar</button>
+                                <button type="button" id="btn-atualizar-logs" class="btn btn-outline btn-sm">Atualizar</button>
+                            </div>
+                        </form>
+                        <p id="logs-resumo-filtro" class="admin-descricao-secao"></p>
+                        <div id="lista-logs" class="lista-logs"></div>
+                    </section>
+                </section>
+
+                <!-- Configuração -->
+                <section id="painel-config" class="admin-painel" hidden data-titulo="Configuração" data-subtitulo="Supabase e variáveis do projeto">
+                    <section class="admin-card">
+                        <h2 class="admin-card-titulo">Estado atual</h2>
+                        <dl class="admin-config-status">
+                            <div>
+                                <dt>SUPABASE_URL</dt>
+                                <dd id="config-status-url">—</dd>
+                            </div>
+                            <div>
+                                <dt>SUPABASE_ANON_KEY</dt>
+                                <dd id="config-status-key">—</dd>
+                            </div>
+                            <div>
+                                <dt>Tabela de logs</dt>
+                                <dd id="config-status-logs">—</dd>
+                            </div>
+                        </dl>
+                    </section>
+
+                    <section class="admin-card">
+                        <h2 class="admin-card-titulo">Gerar / atualizar config.js</h2>
+                        <p class="admin-descricao-secao">
+                            Preencha com os valores do Supabase (<strong>Project Settings → API</strong>).
+                            O browser não grava ficheiros no disco — copie ou descarregue e coloque como
+                            <code>config.js</code> na raiz do projeto (já está no <code>.gitignore</code>).
+                            Na Vercel, use as variáveis de ambiente com os mesmos nomes.
+                        </p>
+                        <form id="form-config-supabase" class="form-admin">
+                            <label for="config-supabase-url">Project URL</label>
+                            <input
+                                type="url"
+                                id="config-supabase-url"
+                                placeholder="https://xxxxxxxx.supabase.co"
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+
+                            <label for="config-supabase-anon">Anon public key</label>
+                            <textarea
+                                id="config-supabase-anon"
+                                rows="4"
+                                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                                autocomplete="off"
+                                spellcheck="false"
+                            ></textarea>
+
+                            <p id="config-feedback" class="login-erro" hidden></p>
+
+                            <div class="admin-config-acoes">
+                                <button type="button" id="btn-config-copiar" class="btn btn-primario">Copiar config.js</button>
+                                <button type="button" id="btn-config-baixar" class="btn btn-outline">Descarregar config.js</button>
+                                <button type="button" id="btn-config-preencher" class="btn btn-outline">Preencher com valores atuais</button>
+                            </div>
+                        </form>
+
+                        <pre id="config-preview" class="admin-config-preview" hidden></pre>
+                    </section>
+
+                    <section class="admin-card">
+                        <h2 class="admin-card-titulo">Vercel (produção)</h2>
+                        <ol class="admin-lista-passos">
+                            <li>Project → Settings → Environment Variables</li>
+                            <li>Adicione <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code></li>
+                            <li>O build corre <code>node scripts/generate-config.js</code> e gera o <code>config.js</code></li>
+                        </ol>
+                    </section>
+                </section>
             </div>
         </div>
-    </header>
+    </div>
 
-    <main class="admin-pagina">
-        <header class="admin-cabecalho">
-            <h2>Usuários</h2>
-            <p class="admin-descricao">Crie contas, defina permissões, ligue ou desligue o acesso e redefina senhas.</p>
-        </header>
-
-        <section class="admin-secao admin-card">
-            <h3 class="admin-secao-titulo">Novo usuário</h3>
-            <form id="form-novo-usuario" class="form-admin">
-                <label for="novo-usuario-nome">Nome</label>
-                <input type="text" id="novo-usuario-nome" required placeholder="Nome completo">
-
-                <label for="novo-usuario-email">E-mail</label>
-                <input type="email" id="novo-usuario-email" required placeholder="usuario@email.com">
-
-                <label for="novo-usuario-senha">Senha</label>
-                <input type="password" id="novo-usuario-senha" required minlength="6" placeholder="Mínimo 6 caracteres">
-
-                <label for="novo-usuario-role">Permissão</label>
-                <select id="novo-usuario-role" class="modal-select">
-                    <option value="editor">Editor — pode criar e editar conteúdo</option>
-                    <option value="admin">Administrador — edita conteúdo e gerencia usuários</option>
-                </select>
-
-                <p id="novo-usuario-erro" class="login-erro" hidden></p>
-                <button type="submit" class="btn btn-primario">Criar usuário</button>
-            </form>
-        </section>
-
-        <section class="admin-secao admin-card">
-            <h3 class="admin-secao-titulo">Usuários cadastrados</h3>
-            <div id="lista-usuarios" class="lista-usuarios"></div>
-        </section>
-
-        <section class="admin-secao admin-card">
-            <div class="admin-secao-cabecalho">
-                <h3 class="admin-secao-titulo">Log de atividades</h3>
-                <button type="button" id="btn-atualizar-logs" class="btn btn-outline btn-sm">Atualizar</button>
-            </div>
-            <p class="admin-descricao admin-descricao-secao">
-                Registro de logins, alterações de conteúdo e ações de usuários.
-            </p>
-            <div id="lista-logs" class="lista-logs"></div>
-        </section>
-    </main>
+    <div id="admin-sidebar-backdrop" class="admin-sidebar-backdrop" hidden></div>
 
     <div id="modal-overlay" class="modal-overlay" hidden>
         <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
@@ -114,6 +337,7 @@
     <div id="loading" class="loading" hidden><p>Carregando...</p></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
     <script src="config.js"></script>
     <script src="assets/js/ferramenta-tema.js"></script>
     <script src="assets/js/vida.js"></script>

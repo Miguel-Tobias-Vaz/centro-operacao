@@ -1,3 +1,6 @@
+-- LEGADO: preferir 001_schema_baseline.sql + 002_admin_excluir_usuario.sql
+-- Mantido para projetos que já correram este ficheiro.
+
 -- Gestão avançada de usuários (admin)
 
 ALTER TABLE public.profiles    ADD COLUMN IF NOT EXISTS ativo boolean NOT NULL DEFAULT true;

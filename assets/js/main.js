@@ -1654,6 +1654,15 @@ async function salvarModulo(e) {
         renderizarModulos();
         if (moduloAtivoId) renderizarPublicacoes();
         window.LogsAtividade?.registrar(acaoModulo, `${nome} (${categoria})`, "modulo");
+        if (imagemPendente) {
+            window.LogsAtividade?.registrar(
+                "Upload imagem módulo",
+                `${nome} · ${imagemPendente.name || "imagem"}`,
+                "modulo"
+            );
+        } else if (removerImagem && imagemAtual) {
+            window.LogsAtividade?.registrar("Remover arquivo", `Imagem do módulo ${nome}`, "modulo");
+        }
     } catch (erro) {
         tratarErro(erro, "salvar módulo");
     } finally {
@@ -1787,6 +1796,19 @@ async function salvarPublicacao(e) {
         renderizarModulos();
         renderizarPublicacoes();
         window.LogsAtividade?.registrar(acaoPub, `${titulo}${moduloNome ? ` · ${moduloNome}` : ""}`, "publicacao");
+        if (arquivoPendente) {
+            window.LogsAtividade?.registrar(
+                "Upload arquivo",
+                `${titulo} · ${arquivoPendente.name || arquivoNome || "arquivo"}${moduloNome ? ` · ${moduloNome}` : ""}`,
+                "publicacao"
+            );
+        } else if (removerArquivo && arquivoAtual?.url) {
+            window.LogsAtividade?.registrar(
+                "Remover arquivo",
+                `${titulo}${moduloNome ? ` · ${moduloNome}` : ""}`,
+                "publicacao"
+            );
+        }
     } catch (erro) {
         tratarErro(erro, "salvar publicação");
     } finally {

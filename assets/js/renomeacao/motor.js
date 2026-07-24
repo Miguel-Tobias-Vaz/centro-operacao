@@ -129,16 +129,19 @@ function limparInvisiveis(s) {
         .replace(/[\u2013\u2014]/g, "-");
 }
 
-function ehSigla(token) {
+function ehSigla(token, opcoes) {
     const limpo = token.replace(/\./g, "");
     const chave = foldAscii(limpo);
     // Preposições/conectivos nunca são siglas (ex.: DE, COM, A)
     if (ehConectivo(chave)) return false;
     if (SIGLAS.has(chave)) return true;
-    // 2–5 letras todas maiúsculas no original (ex.: TCE, PNCP)
-    if (/^[A-ZÀ-Ü]{2,5}$/.test(limpo) && limpo === limpo.toUpperCase()) return true;
     // Padrão com pontos: C.N.P.J. / T.C.E.
     if (/^(?:[A-Za-zÀ-ü]\.){2,6}$/.test(token)) return true;
+    // Em texto livre, NÃO tratar 2–5 letras MAIÚSCULAS como sigla
+    // (senão "DIA", "SHOW", "PRAIA" ficam em CAPS no meio da frase).
+    if (opcoes && opcoes.modoTexto) return false;
+    // 2–5 letras todas maiúsculas no original (ex.: TCE, PNCP) — só nomes de arquivo
+    if (/^[A-ZÀ-Ü]{2,5}$/.test(limpo) && limpo === limpo.toUpperCase()) return true;
     return false;
 }
 
@@ -162,7 +165,8 @@ function ehConectivo(palavraOuChave) {
 }
 
 /** No meio do título (não primeira nem última palavra). */
-function conectivoNoMeioDoTitulo(indice, total) {
+function conectivoNoMeioDoTitulo(indice, total, iniciosFrase) {
+    if (iniciosFrase && iniciosFrase.has(indice)) return false;
     return total > 1 && indice > 0 && indice < total - 1;
 }
 
@@ -287,34 +291,46 @@ function isSiglaDE(contexto, posicao) {
 function capitalizarPalavra(palavra, indice, total, tokensOriginais, opcoes) {
     if (!palavra) return palavra;
 
+    const modoTexto = !!(opcoes && opcoes.modoTexto);
+    const iniciosFrase = opcoes && opcoes.iniciosFrase;
     const chave = foldAscii(palavra);
 
-    // "DE" como sigla (DE FISCAL, SEMSA DE CONTRATO, …)
-    if (chave === "de" && tokensOriginais && isSiglaDE(tokensOriginais, indice)) {
+    // "DE" como sigla administrativa — só em nomes de arquivo, não em frases
+    if (
+        !modoTexto &&
+        chave === "de" &&
+        tokensOriginais &&
+        isSiglaDE(tokensOriginais, indice)
+    ) {
         return "DE";
     }
 
     // 1) Conectivos no meio — sempre minúsculos (antes de sigla/léxico/dict)
-    // Em texto livre, "menos" costuma ser nome próprio (ex.: Menos É Mais), não preposição.
+    // Em texto livre, "menos" costuma ser nome próprio (ex.: Menos É Mais).
     const tratarComoConectivo =
-        ehConectivo(chave) &&
-        !(opcoes && opcoes.modoTexto && chave === "menos");
+        ehConectivo(chave) && !(modoTexto && chave === "menos");
 
-    if (tratarComoConectivo && conectivoNoMeioDoTitulo(indice, total)) {
-        if (chave === "e" && /[éÉ]/.test(palavra)) return "é";
+    if (tratarComoConectivo && conectivoNoMeioDoTitulo(indice, total, iniciosFrase)) {
+        if (chave === "e") {
+            const orig = tokensOriginais?.[indice] || palavra;
+            if (/[éÉ]/.test(orig)) return "é";
+            return "e";
+        }
         return formaConectivoMinuscula(chave);
     }
 
     const canon = resolverFormaCanonica(chave);
     if (canon) {
-        // Conectivo na primeira posição: Title Case do léxico/rápida
         if (ehConectivo(chave) && indice === 0) {
             return canon;
+        }
+        if (tratarComoConectivo && conectivoNoMeioDoTitulo(indice, total, iniciosFrase)) {
+            return formaConectivoMinuscula(chave);
         }
         return canon;
     }
 
-    if (ehSigla(palavra)) {
+    if (ehSigla(palavra, opcoes)) {
         return palavra.replace(/\./g, "").toUpperCase();
     }
 
@@ -323,7 +339,6 @@ function capitalizarPalavra(palavra, indice, total, tokensOriginais, opcoes) {
     }
 
     if (ehNumeroOuCodigo(palavra)) {
-        // Garante "Nº" (N maiúsculo) em numeração
         if (/^n[ºo°.]?\s*\d/i.test(palavra)) {
             return palavra.replace(/^n[ºo°.]?\s*/i, "Nº ");
         }
@@ -331,11 +346,11 @@ function capitalizarPalavra(palavra, indice, total, tokensOriginais, opcoes) {
     }
 
     // Conectivo sozinho / início sem léxico
-    if (ehConectivo(chave)) {
-        if (conectivoNoMeioDoTitulo(indice, total)) {
+    if (ehConectivo(chave) && !(modoTexto && chave === "menos")) {
+        if (conectivoNoMeioDoTitulo(indice, total, iniciosFrase)) {
+            if (chave === "e" && /[éÉ]/.test(palavra)) return "é";
             return formaConectivoMinuscula(chave);
         }
-        // Início do título
         const forma = formaConectivoMinuscula(chave);
         return forma.charAt(0).toUpperCase() + forma.slice(1);
     }
@@ -383,15 +398,20 @@ function aplicarRegrasTitulo(palavras, tokensOriginais, opcoes) {
         }
     }
 
-    // Conectivos isolados no meio + DE sigla
+    // Conectivos isolados no meio + DE sigla (só nomes de arquivo)
     const total = out.length;
     const modoTexto = opcoes && opcoes.modoTexto;
+    const iniciosFrase = opcoes && opcoes.iniciosFrase;
     out = out.map((p, i) => {
-        if (tokensOriginais && isSiglaDE(tokensOriginais, i)) return "DE";
+        if (!modoTexto && tokensOriginais && isSiglaDE(tokensOriginais, i)) return "DE";
         const chave = foldAscii(p);
         if (modoTexto && chave === "menos") return p;
-        if (ehConectivo(chave) && conectivoNoMeioDoTitulo(i, total)) {
-            if (chave === "e" && /[éÉ]/.test(tokensOriginais?.[i] || p)) return "é";
+        if (ehConectivo(chave) && conectivoNoMeioDoTitulo(i, total, iniciosFrase)) {
+            if (chave === "e") {
+                const orig = tokensOriginais?.[i] || p;
+                if (/[éÉ]/.test(orig)) return "é";
+                return "e";
+            }
             return formaConectivoMinuscula(chave);
         }
         return p;
@@ -633,16 +653,85 @@ function normalizarTextoLivre(texto) {
         .join("\n");
 }
 
+/** Tokenizer para frases: não trata CAPS curtas como sigla nem hífen de UF como separador. */
+function tokensDoTexto(texto) {
+    let s = limparInvisiveis(texto).trim();
+    if (!s) return [];
+
+    // Isola pontuação de frase (não parte decimais / CNPJ: só letra antes do ponto)
+    s = s.replace(/([,;:!?…«»""()[\]{}])/g, " $1 ");
+    s = s.replace(/([A-Za-zÀ-ü])\.(?=\s|[A-Za-zÀ-ü]|$)/g, "$1 . ");
+    s = s.replace(/[_·•]+/g, " ");
+    s = s.replace(/\s+/g, " ").trim();
+    if (!s) return [];
+
+    let tokens = s.split(" ").filter(Boolean);
+    tokens = fundirAbrevComNumero(tokens);
+    tokens = fundirNumeroComAno(tokens);
+    tokens = fundirNComNumeroTexto(tokens);
+    return tokens;
+}
+
+/** N / N. / Nr + número → Nº 123 (texto livre). */
+function fundirNComNumeroTexto(tokens) {
+    const pref = /^(?:n[ºo°.]?|nr|nro|num|n\.)$/i;
+    const out = [];
+    for (let i = 0; i < tokens.length; i += 1) {
+        const atual = tokens[i];
+        const prox = tokens[i + 1];
+        if (prox && pref.test(atual) && /^\d/.test(prox)) {
+            out.push(`Nº ${prox}`);
+            i += 1;
+            continue;
+        }
+        if (
+            prox &&
+            /^n$/i.test(atual) &&
+            tokens[i + 1] === "." &&
+            tokens[i + 2] &&
+            /^\d/.test(tokens[i + 2])
+        ) {
+            out.push(`Nº ${tokens[i + 2]}`);
+            i += 2;
+            continue;
+        }
+        out.push(atual);
+    }
+    return out;
+}
+
+function ehPontuacaoSolta(token) {
+    return /^[,;:!?…«»""()[\]{}–—.-]+$/.test(token);
+}
+
+function marcarIniciosDeFrase(tokens) {
+    const inicios = new Set([0]);
+    for (let i = 0; i < tokens.length - 1; i += 1) {
+        if (/^[.!?…]+$/.test(tokens[i])) {
+            for (let j = i + 1; j < tokens.length; j += 1) {
+                if (tokens[j] === "–" || ehPontuacaoSolta(tokens[j])) continue;
+                inicios.add(j);
+                break;
+            }
+        }
+    }
+    return inicios;
+}
+
+function protegerTokenMarcador(lista, valor) {
+    const idx = lista.length;
+    lista.push(valor);
+    return `ZZPROT${String.fromCharCode(65 + (idx % 26))}${Math.floor(idx / 26) || ""}`;
+}
+
 function normalizarLinhaTextoLivre(linha) {
     const original = String(linha ?? "");
     if (!original.trim()) return original;
 
-    // Preserva indentação à esquerda
     const indent = (original.match(/^\s*/) || [""])[0];
     let corpo = limparInvisiveis(original).trim();
     if (!corpo) return original;
 
-    // Trailing da frase (. ! ? …)
     let trailing = "";
     const mTrail = corpo.match(/([.!?…]+)$/);
     if (mTrail) {
@@ -650,40 +739,65 @@ function normalizarLinhaTextoLivre(linha) {
         corpo = corpo.slice(0, -trailing.length).trim();
     }
 
-    // Protege Município-UF (Conceição do Araguaia-PA)
-    // Marcadores só com letras — tokensDoStem separa letra+dígito.
-    const protegidosUf = [];
+    const protegidos = [];
+
+    // CNPJ / CPF
     corpo = corpo.replace(
-        /\b([A-Za-zÀ-ü][A-Za-zÀ-ü']*)\s*[-–—]\s*([A-Za-z]{2})\b/g,
-        (_, cidade, uf) => {
-            const idx = protegidosUf.length;
-            protegidosUf.push({ cidade, uf: uf.toUpperCase() });
-            return `ZZUFPROT${String.fromCharCode(65 + (idx % 26))}${idx >= 26 ? "X" : ""}`;
-        }
+        /\b(\d{1,3}(?:\.\d{3}){1,3}\/\d{4}-\d{2})\b/g,
+        (m) => protegerTokenMarcador(protegidos, m)
+    );
+    corpo = corpo.replace(
+        /\b(\d{3}\.\d{3}\.\d{3}-\d{2})\b/g,
+        (m) => protegerTokenMarcador(protegidos, m)
     );
 
-    // Travessões / hífens de pausa → marcador
+    // Município-UF ou Município/UF
+    corpo = corpo.replace(
+        /\b([A-Za-zÀ-ü][A-Za-zÀ-ü']*)\s*[-–—/]\s*([A-Za-z]{2})\b/g,
+        (_, cidade, uf) =>
+            protegerTokenMarcador(protegidos, {
+                tipo: "uf",
+                cidade,
+                uf: uf.toUpperCase()
+            })
+    );
+
     corpo = corpo.replace(/\s+[-–—]\s+/g, " ZZDASHPROT ");
 
-    let tokens = tokensDoStem(corpo);
-    if (!tokens.length) return indent + corpo + trailing;
+    let tokens = tokensDoTexto(corpo);
+    if (!tokens.length) return indent + limparInvisiveis(original).trim();
 
     tokens = tokens.map((t) => {
-        const mUf = /^ZZUFPROT([A-Z])X?$/i.exec(t);
-        if (mUf) {
-            const idx = mUf[1].toUpperCase().charCodeAt(0) - 65;
-            const p = protegidosUf[idx];
-            if (p) return `${p.cidade}\u2011${p.uf}`;
+        const m = /^ZZPROT([A-Z])(\d*)$/i.exec(t);
+        if (m) {
+            const idx =
+                m[1].toUpperCase().charCodeAt(0) -
+                65 +
+                (m[2] ? Number(m[2]) * 26 : 0);
+            const p = protegidos[idx];
+            if (p && typeof p === "object" && p.tipo === "uf") {
+                return `${p.cidade}\u2011${p.uf}`;
+            }
+            if (typeof p === "string") return p;
         }
         if (/^ZZDASHPROT$/i.test(t)) return "–";
         return t;
     });
 
-    const opcoes = { modoTexto: true };
+    // Depois de restaurar CNPJ/CPF (marcadores não começam com dígito)
+    tokens = fundirNComNumeroTexto(tokens);
+    tokens = fundirAbrevComNumero(tokens);
+    tokens = fundirNumeroComAno(tokens);
+
+    const iniciosFrase = marcarIniciosDeFrase(tokens);
+    const opcoes = { modoTexto: true, iniciosFrase };
     const total = tokens.length;
     const palavras = aplicarRegrasTitulo(
         tokens.map((t, i) => {
-            if (t === "–") return "–";
+            if (t === "–" || ehPontuacaoSolta(t)) return t;
+            if (/^\d{1,3}(?:\.\d{3})+/.test(t) || /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(t)) {
+                return t;
+            }
             if (t.includes("\u2011")) {
                 const [cidade, uf] = t.split("\u2011");
                 const cid = capitalizarPalavra(cidade, i, total, tokens, opcoes);
@@ -699,22 +813,33 @@ function normalizarLinhaTextoLivre(linha) {
     for (let i = 0; i < palavras.length; i += 1) {
         const p = palavras[i];
         if (p === "–") {
-            out = out.trimEnd() + " – ";
+            out = `${out.trimEnd()} – `;
+            continue;
+        }
+        if (ehPontuacaoSolta(p)) {
+            if (/^[«""(\[{]$/.test(p)) {
+                out = out ? `${out.trimEnd()} ${p}` : p;
+            } else {
+                out = `${out.trimEnd()}${p}`;
+            }
             continue;
         }
         if (!out) {
             out = p;
             continue;
         }
-        // Vírgula/ponto-e-vírgula já vêm colados no token anterior ou neste
-        if (/^[,;:]/.test(p)) {
+        if (/[«""(\[{]$/.test(out)) {
             out += p;
         } else {
-            out += " " + p;
+            out += ` ${p}`;
         }
     }
 
-    out = out.replace(/\s+/g, " ").replace(/\s+([,;:])/g, "$1").trim();
+    out = out.replace(/\s+/g, " ").replace(/\s+([,;:!?…])/g, "$1").trim();
+    out = out.replace(/([,;:])(\S)/g, "$1 $2");
+    // Espaço após pontuação de frase — sem partir decimais/CNPJ/CPF (dígito.dígito)
+    out = out.replace(/([!?…])(\S)/g, "$1 $2");
+    out = out.replace(/(\.)([A-Za-zÀ-ü«""(\[{])/g, "$1 $2");
     return indent + out + trailing;
 }
 
@@ -882,5 +1007,47 @@ async function processarArquivoTratamento(file, opcoes = {}) {
         totalDocumentos: documentos.length,
         totalIgnorados: ignorados.length,
         ignorados
+    };
+}
+
+/**
+ * Normaliza um caminho relativo (pastas + ficheiro).
+ * @param {string} caminho
+ * @param {{ renomearArquivo?: boolean }} [opcoes]
+ */
+function normalizarCaminho(caminho, opcoes = {}) {
+    const renomearArquivo = opcoes.renomearArquivo !== false;
+    const norm = String(caminho || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+    if (!norm) return "";
+
+    const partes = norm.split("/").filter(Boolean);
+    if (!partes.length) return "";
+
+    const arquivo = partes.pop();
+    const pastas = partes.map((pasta) => normalizarNomeArquivo(pasta) || "Pasta");
+
+    const nomeArquivo = renomearArquivo ? normalizarNomeArquivo(arquivo) : arquivo;
+    return [...pastas, nomeArquivo].join("/");
+}
+
+/**
+ * Gera CSV (nome_antigo;nome_novo). No browser devolve Blob; no Node um objeto com .text().
+ * @param {Array<[string, string]>} pares
+ */
+function gerarCsvAlteracoes(pares) {
+    const linhas = ["nome_antigo;nome_novo"];
+    for (const par of pares || []) {
+        const antigo = String(par?.[0] ?? "");
+        const novo = String(par?.[1] ?? "");
+        linhas.push(`${antigo};${novo}`);
+    }
+    const texto = `${linhas.join("\n")}\n`;
+
+    if (typeof Blob !== "undefined") {
+        return new Blob([texto], { type: "text/csv;charset=utf-8" });
+    }
+
+    return {
+        text: async () => texto
     };
 }

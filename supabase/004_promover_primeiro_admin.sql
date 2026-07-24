@@ -1,7 +1,5 @@
--- LEGADO: preferir 004_promover_primeiro_admin.sql
-
--- Promove o primeiro usuário a admin (quando ainda não existe nenhum).
--- Execute no SQL Editor do Supabase.
+-- Promove o primeiro utilizador a admin (quando ainda não existe nenhum).
+-- Requer 001_schema_baseline.sql
 
 CREATE OR REPLACE FUNCTION public.promover_primeiro_admin()
 RETURNS boolean
@@ -34,7 +32,7 @@ $$;
 REVOKE ALL ON FUNCTION public.promover_primeiro_admin() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.promover_primeiro_admin() TO authenticated;
 
--- Atalho manual: force admin no seu e-mail (descomente e ajuste se precisar)
+-- Atalho manual (descomente e ajuste o e-mail se precisar):
 -- UPDATE public.profiles
 -- SET role = 'admin', ativo = true
--- WHERE email = 'tobiasmiguel007@gmail.com';
+-- WHERE email = 'seu@email.com';

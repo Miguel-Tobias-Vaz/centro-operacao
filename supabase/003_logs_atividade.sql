@@ -1,7 +1,5 @@
--- LEGADO: preferir 003_logs_atividade.sql
-
 -- Log de atividades (admin)
--- Execute no SQL Editor do Supabase
+-- Requer 001_schema_baseline.sql (is_admin)
 
 CREATE TABLE IF NOT EXISTS public.logs_atividade (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -9,7 +7,7 @@ CREATE TABLE IF NOT EXISTS public.logs_atividade (
     acao text NOT NULL,
     detalhe text,
     entidade text,
-    usuario_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    usuario_id uuid REFERENCES auth.users (id) ON DELETE SET NULL,
     usuario_nome text,
     usuario_email text
 );
@@ -32,6 +30,6 @@ CREATE POLICY "logs_insert_autenticado"
     ON public.logs_atividade
     FOR INSERT
     TO authenticated
-    WITH CHECK (auth.uid() IS NOT NULL);
+    WITH CHECK (auth.uid() IS NOT NULL AND public.is_active_user());
 
 GRANT SELECT, INSERT ON public.logs_atividade TO authenticated;

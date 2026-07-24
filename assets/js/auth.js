@@ -608,6 +608,11 @@ const Auth = (() => {
 
                         if (error) throw error;
                         usuario.role = novoRole;
+                        window.LogsAtividade?.registrar(
+                            "Alterar permissão",
+                            `${usuario.nome || usuario.email}: ${anterior} → ${novoRole}`,
+                            "usuario"
+                        );
                     } catch (erro) {
                         select.value = anterior;
                         alert(`Erro ao atualizar permissão: ${erro.message}`);
@@ -863,6 +868,7 @@ const Auth = (() => {
         fecharModalAuth,
         fecharOverlayModal,
         atualizarUIModo,
+        listarUsuarios,
         renderizarListaUsuarios
     };
 })();

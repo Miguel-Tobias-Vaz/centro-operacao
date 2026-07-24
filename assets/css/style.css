@@ -54,6 +54,8 @@ body.tema-claro {
 
 html {
     scroll-behavior: smooth;
+    overflow-x: clip;
+    max-width: 100%;
 }
 
 body {
@@ -69,6 +71,7 @@ body {
         radial-gradient(ellipse 700px 400px at 85% 105%, rgba(255, 255, 255, 0.025), transparent 50%);
     color: var(--cor-fonte);
     transition: background-color var(--transicao), color var(--transicao);
+    max-width: 100%;
 }
 
 body.tema-claro {
@@ -2510,8 +2513,13 @@ body.tema-claro .card-modulo-grid.sobre-arrasto {
 }
 
 @media (max-width: 1280px) {
-    html, body {
-        overflow-x: hidden;
+    /* Só no html: overflow-x:hidden em html+body faz overflow-y virar auto nos dois → 2 scrollbars */
+    html {
+        overflow-x: clip;
+        max-width: 100%;
+    }
+
+    body {
         max-width: 100%;
     }
 

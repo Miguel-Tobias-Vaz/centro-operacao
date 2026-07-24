@@ -4,9 +4,33 @@
  */
 const LogsAtividade = (() => {
     const STORAGE_KEY = "centro_logs_atividade";
-    const LIMITE_LOCAL = 300;
+    const LIMITE_LOCAL = 400;
     let client = null;
     let supabaseDisponivel = null;
+
+    const META_ACAO = {
+        Login: { cor: "azul", icone: "log-in" },
+        Logout: { cor: "cinza", icone: "log-out" },
+        "Criar módulo": { cor: "verde", icone: "package-plus" },
+        "Editar módulo": { cor: "azul", icone: "package" },
+        "Excluir módulo": { cor: "vermelho", icone: "trash-2" },
+        "Upload imagem módulo": { cor: "roxo", icone: "image-up" },
+        "Criar publicação": { cor: "verde", icone: "file-plus" },
+        "Editar publicação": { cor: "azul", icone: "file-pen" },
+        "Excluir publicação": { cor: "vermelho", icone: "trash-2" },
+        "Upload arquivo": { cor: "laranja", icone: "upload" },
+        "Remover arquivo": { cor: "laranja", icone: "file-x" },
+        "Criar categoria": { cor: "verde", icone: "folder-plus" },
+        "Editar categoria": { cor: "azul", icone: "folder" },
+        "Excluir categoria": { cor: "vermelho", icone: "trash-2" },
+        "Reordenar categorias": { cor: "cinza", icone: "arrow-up-down" },
+        "Criar usuário": { cor: "verde", icone: "user-plus" },
+        "Excluir usuário": { cor: "vermelho", icone: "user-x" },
+        "Alterar permissão": { cor: "roxo", icone: "shield" },
+        "Ativar usuário": { cor: "verde", icone: "user-check" },
+        "Desativar usuário": { cor: "laranja", icone: "user-minus" },
+        "Redefinir senha": { cor: "laranja", icone: "key-round" }
+    };
 
     function iniciar(supabaseClient) {
         client = supabaseClient || null;
@@ -92,10 +116,46 @@ const LogsAtividade = (() => {
             console.warn("Falha ao gravar log no Supabase:", erro);
         }
 
+        window.dispatchEvent(new CustomEvent("logs:novo", { detail: entrada }));
         return entrada;
     }
 
-    async function listar(limite = 100) {
+    function aplicarFiltros(entradas, filtros = {}) {
+        const q = String(filtros.q || "").trim().toLowerCase();
+        const entidade = String(filtros.entidade || "").trim().toLowerCase();
+        const usuario = String(filtros.usuario || "").trim().toLowerCase();
+        const de = filtros.de ? new Date(filtros.de) : null;
+        const ate = filtros.ate ? new Date(filtros.ate) : null;
+
+        if (de && !Number.isNaN(de.getTime())) de.setHours(0, 0, 0, 0);
+        if (ate && !Number.isNaN(ate.getTime())) ate.setHours(23, 59, 59, 999);
+
+        return entradas.filter((item) => {
+            if (entidade && String(item.entidade || "").toLowerCase() !== entidade) return false;
+
+            if (usuario) {
+                const nome = String(item.usuario_nome || "").toLowerCase();
+                const email = String(item.usuario_email || "").toLowerCase();
+                if (!nome.includes(usuario) && !email.includes(usuario)) return false;
+            }
+
+            if (de || ate) {
+                const t = new Date(item.criado_em).getTime();
+                if (Number.isNaN(t)) return false;
+                if (de && t < de.getTime()) return false;
+                if (ate && t > ate.getTime()) return false;
+            }
+
+            if (q) {
+                const blob = `${item.acao || ""} ${item.detalhe || ""} ${item.entidade || ""} ${item.usuario_nome || ""} ${item.usuario_email || ""}`.toLowerCase();
+                if (!blob.includes(q)) return false;
+            }
+
+            return true;
+        });
+    }
+
+    async function listar(limite = 200, filtros = {}) {
         const locais = lerLocal();
         let remotos = [];
 
@@ -105,7 +165,7 @@ const LogsAtividade = (() => {
                     .from("logs_atividade")
                     .select("*")
                     .order("criado_em", { ascending: false })
-                    .limit(limite);
+                    .limit(Math.max(limite, 300));
 
                 if (error) throw error;
                 remotos = data || [];
@@ -119,9 +179,39 @@ const LogsAtividade = (() => {
             if (item?.id) mapa.set(item.id, item);
         });
 
-        return [...mapa.values()]
-            .sort((a, b) => String(b.criado_em).localeCompare(String(a.criado_em)))
-            .slice(0, limite);
+        const unidos = [...mapa.values()].sort((a, b) =>
+            String(b.criado_em).localeCompare(String(a.criado_em))
+        );
+
+        return aplicarFiltros(unidos, filtros).slice(0, limite);
+    }
+
+    function estatisticas(entradas) {
+        const agora = Date.now();
+        const dia = 24 * 60 * 60 * 1000;
+        const ultimas24h = entradas.filter((e) => agora - new Date(e.criado_em).getTime() <= dia);
+        const porEntidade = {};
+        const porUsuario = {};
+
+        entradas.forEach((e) => {
+            const ent = e.entidade || "outro";
+            porEntidade[ent] = (porEntidade[ent] || 0) + 1;
+            const chave = e.usuario_email || e.usuario_nome || "Sistema";
+            porUsuario[chave] = (porUsuario[chave] || 0) + 1;
+        });
+
+        const topUsuarios = Object.entries(porUsuario)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([nome, total]) => ({ nome, total }));
+
+        return {
+            total: entradas.length,
+            ultimas24h: ultimas24h.length,
+            porEntidade,
+            topUsuarios,
+            recentes: entradas.slice(0, 8)
+        };
     }
 
     function formatarData(iso) {
@@ -138,6 +228,23 @@ const LogsAtividade = (() => {
         }
     }
 
+    function formatarRelativo(iso) {
+        try {
+            const diff = Date.now() - new Date(iso).getTime();
+            if (Number.isNaN(diff) || diff < 0) return formatarData(iso);
+            const min = Math.floor(diff / 60000);
+            if (min < 1) return "agora";
+            if (min < 60) return `${min} min`;
+            const h = Math.floor(min / 60);
+            if (h < 24) return `${h} h`;
+            const d = Math.floor(h / 24);
+            if (d < 7) return `${d} d`;
+            return formatarData(iso);
+        } catch {
+            return formatarData(iso);
+        }
+    }
+
     function escapar(texto) {
         return String(texto ?? "")
             .replaceAll("&", "&amp;")
@@ -146,41 +253,85 @@ const LogsAtividade = (() => {
             .replaceAll('"', "&quot;");
     }
 
-    async function renderizar(containerId = "lista-logs") {
+    function metaAcao(acao) {
+        return META_ACAO[acao] || { cor: "cinza", icone: "activity" };
+    }
+
+    function montarItemHtml(item, { relativo = false } = {}) {
+        const meta = metaAcao(item.acao);
+        const quando = relativo ? formatarRelativo(item.criado_em) : formatarData(item.criado_em);
+        return `
+            <article class="log-item log-item--${meta.cor}" data-entidade="${escapar(item.entidade || "")}">
+                <div class="log-item-icone" aria-hidden="true">
+                    <i data-lucide="${meta.icone}"></i>
+                </div>
+                <div class="log-item-corpo">
+                    <div class="log-item-topo">
+                        <span class="log-acao">${escapar(item.acao)}</span>
+                        <time class="log-data" datetime="${escapar(item.criado_em)}" title="${escapar(formatarData(item.criado_em))}">${escapar(quando)}</time>
+                    </div>
+                    <p class="log-detalhe">${escapar(item.detalhe || "—")}</p>
+                    <p class="log-autor">
+                        ${escapar(item.usuario_nome || "Sistema")}
+                        ${item.usuario_email ? ` · ${escapar(item.usuario_email)}` : ""}
+                        ${item.entidade ? ` · <span class="log-entidade">${escapar(item.entidade)}</span>` : ""}
+                    </p>
+                </div>
+            </article>
+        `;
+    }
+
+    async function renderizar(containerId = "lista-logs", opcoes = {}) {
         const lista = document.getElementById(containerId);
-        if (!lista) return;
+        if (!lista) return [];
 
         lista.innerHTML = `<p class="lista-vazia">Carregando log…</p>`;
 
         try {
-            const entradas = await listar(150);
+            const entradas = await listar(opcoes.limite || 150, opcoes.filtros || {});
 
             if (!entradas.length) {
-                lista.innerHTML = `<p class="lista-vazia">Nenhuma atividade registrada ainda.</p>`;
-                return;
+                lista.innerHTML = `<p class="lista-vazia">Nenhuma atividade encontrada com estes filtros.</p>`;
+                return [];
             }
 
-            lista.replaceChildren();
-            entradas.forEach((item) => {
-                const el = document.createElement("article");
-                el.className = "log-item";
-                el.innerHTML = `
-                    <div class="log-item-topo">
-                        <span class="log-acao">${escapar(item.acao)}</span>
-                        <time class="log-data" datetime="${escapar(item.criado_em)}">${escapar(formatarData(item.criado_em))}</time>
-                    </div>
-                    <p class="log-detalhe">${escapar(item.detalhe || "—")}</p>
-                    <p class="log-autor">${escapar(item.usuario_nome || "Sistema")}${item.usuario_email ? ` · ${escapar(item.usuario_email)}` : ""}</p>
-                `;
-                lista.appendChild(el);
-            });
+            lista.innerHTML = entradas
+                .map((item) => montarItemHtml(item, { relativo: !!opcoes.relativo }))
+                .join("");
+
+            if (window.lucide?.createIcons) window.lucide.createIcons();
+            return entradas;
         } catch (erro) {
             console.error(erro);
             lista.innerHTML = `<p class="lista-vazia">Não foi possível carregar o log.</p>`;
+            return [];
         }
     }
 
-    return { iniciar, registrar, listar, renderizar };
+    function listarUsuariosUnicos(entradas) {
+        const set = new Map();
+        entradas.forEach((e) => {
+            const email = e.usuario_email || "";
+            const nome = e.usuario_nome || "Sistema";
+            const chave = email || nome;
+            if (!set.has(chave)) set.set(chave, { nome, email });
+        });
+        return [...set.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt"));
+    }
+
+    return {
+        iniciar,
+        registrar,
+        listar,
+        estatisticas,
+        renderizar,
+        formatarData,
+        formatarRelativo,
+        metaAcao,
+        montarItemHtml,
+        listarUsuariosUnicos,
+        detectarTabela
+    };
 })();
 
 window.LogsAtividade = LogsAtividade;

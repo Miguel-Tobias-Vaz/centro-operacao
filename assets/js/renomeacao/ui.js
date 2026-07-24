@@ -311,20 +311,22 @@ function limparModoTexto() {
     mostrarErroTexto("");
 }
 
-async function normalizarTextoUi() {
+async function normalizarTextoUi(opcoes = {}) {
+    const silencioso = !!opcoes.silencioso;
     const bruto = textoEntrada?.value || "";
     if (!bruto.trim()) {
-        mostrarErroTexto("Cole um texto para normalizar.");
+        if (!silencioso) mostrarErroTexto("Cole um texto para normalizar.");
+        if (textoResultadoWrap) textoResultadoWrap.hidden = true;
+        if (btnCopiarTexto) btnCopiarTexto.hidden = true;
         return;
     }
 
     mostrarErroTexto("");
-    if (btnNormalizarTexto) btnNormalizarTexto.disabled = true;
+    if (btnNormalizarTexto && !silencioso) btnNormalizarTexto.disabled = true;
 
     try {
         await garantirDicionarioAcentos();
-        const tokens = tokensDoStem(bruto);
-        preaquecerCorrecoes(tokens);
+        preaquecerCorrecoes(tokensDoTexto(bruto));
 
         const corrigido = normalizarTextoLivre(bruto);
         if (textoSaida) textoSaida.textContent = corrigido;
@@ -354,7 +356,7 @@ async function copiarTextoResultado() {
 
 btnModoArquivos?.addEventListener("click", () => alternarModoRenomear("arquivos"));
 btnModoTexto?.addEventListener("click", () => alternarModoRenomear("texto"));
-btnNormalizarTexto?.addEventListener("click", normalizarTextoUi);
+btnNormalizarTexto?.addEventListener("click", () => normalizarTextoUi());
 btnLimparTexto?.addEventListener("click", limparModoTexto);
 btnCopiarTexto?.addEventListener("click", copiarTextoResultado);
 
@@ -363,6 +365,20 @@ textoEntrada?.addEventListener("keydown", (e) => {
         e.preventDefault();
         normalizarTextoUi();
     }
+});
+
+textoEntrada?.addEventListener("paste", () => {
+    setTimeout(() => {
+        if (textoEntrada.value.trim()) normalizarTextoUi({ silencioso: true });
+    }, 0);
+});
+
+let debounceTexto = null;
+textoEntrada?.addEventListener("input", () => {
+    clearTimeout(debounceTexto);
+    debounceTexto = setTimeout(() => {
+        if (textoEntrada.value.trim()) normalizarTextoUi({ silencioso: true });
+    }, 450);
 });
 
 renderLista();
