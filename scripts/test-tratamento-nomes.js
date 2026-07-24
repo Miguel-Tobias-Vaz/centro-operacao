@@ -143,6 +143,21 @@ assertTexto(
     "Versão 14.3 do Edital",
     "decimal sem partir"
 );
+assertTexto(
+    [
+        "REGISTRO DE PREÇO PARA EVENTUAL CONTRATAÇÃO DE",
+        "EMPRESA PARA O FORNECIMENTO DE MATERIAL DE CONSUMO \"GÊNEROS ALIMENTÍCIOS E",
+        "CORRELATOS\" PARA CASA DE APOIO EM MANAUS-AM, PARA ATENDER AS NECESSIDADES DA",
+        "SECRETARIA MUNICIPAL DE SAÚDE DO MUNICÍPIO DE APUÍ"
+    ].join("\n"),
+    [
+        "Registro de Preço para Eventual Contratação de",
+        "Empresa para o Fornecimento de Material de Consumo \"Gêneros Alimentícios e",
+        "Correlatos\" para Casa de Apoio em Manaus-AM, para Atender as Necessidades da",
+        "Secretaria Municipal de Saúde do Município de Apuí"
+    ].join("\n"),
+    "objeto licitatório multilinha (conectivos, aspas, DA≠Dª)"
+);
 
 (async () => {
     console.log("\n— CSV —");
