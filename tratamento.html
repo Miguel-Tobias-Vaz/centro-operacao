@@ -104,14 +104,26 @@
         }
         .renomear-lista li {
             display: flex;
+            align-items: center;
             justify-content: space-between;
             gap: 0.75rem;
             padding: 0.55rem 0.75rem;
             border-bottom: 1px solid var(--cor-borda);
             font-size: 0.9rem;
+            transition: background 0.15s, opacity 0.15s;
         }
         .renomear-lista li:last-child { border-bottom: none; }
+        .renomear-lista li.excluido {
+            background: color-mix(in srgb, #c44 14%, var(--cor-superficie));
+            opacity: 0.72;
+        }
+        .renomear-lista li.excluido .nome {
+            text-decoration: line-through;
+            color: var(--cor-fonte-suave);
+        }
         .renomear-lista .nome {
+            flex: 1;
+            min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -120,6 +132,36 @@
             flex-shrink: 0;
             color: var(--cor-fonte-suave);
             font-size: 0.8rem;
+        }
+        .renomear-lista-acao {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--cor-fonte-suave);
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .renomear-lista-acao:hover {
+            background: color-mix(in srgb, #c44 12%, var(--cor-superficie));
+            border-color: color-mix(in srgb, #c44 40%, transparent);
+            color: #c44;
+        }
+        .renomear-lista-acao.restaurar:hover {
+            background: color-mix(in srgb, #1b7a4e 12%, var(--cor-superficie));
+            border-color: color-mix(in srgb, #1b7a4e 40%, transparent);
+            color: #1b7a4e;
+        }
+        .renomear-lista-acao svg {
+            width: 1.05rem;
+            height: 1.05rem;
+            display: block;
         }
         .renomear-acoes {
             display: flex;
@@ -192,10 +234,41 @@
         }
         .renomear-tabela .alterado .novo { color: #1b7a4e; font-weight: 600; }
         .renomear-tabela .igual .novo { color: var(--cor-fonte-suave); }
+        .renomear-tabela .acao-dl {
+            width: 2.75rem;
+            text-align: center;
+            padding-left: 0.35rem;
+            padding-right: 0.35rem;
+        }
+        .renomear-dl-item {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 6px;
+            color: var(--cor-destaque);
+            background: transparent;
+            border: 1px solid transparent;
+            text-decoration: none;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .renomear-dl-item:hover {
+            background: color-mix(in srgb, var(--cor-destaque) 12%, var(--cor-superficie));
+            border-color: color-mix(in srgb, var(--cor-destaque) 35%, transparent);
+            color: var(--cor-destaque);
+        }
+        .renomear-dl-item svg {
+            width: 1.05rem;
+            height: 1.05rem;
+            display: block;
+        }
+        .renomear-acoes #btn-download[hidden] { display: none !important; }
         .btn-sucesso-renomear {
             background: #1b7a4e;
             color: #fff;
             border: none;
+            margin-left: auto;
         }
         .btn-sucesso-renomear:hover { filter: brightness(0.95); }
         .renomear-texto-area {
@@ -235,6 +308,17 @@
             font-size: 0.85rem;
             font-weight: 600;
         }
+        .renomear-link-pasta {
+            border: none;
+            background: none;
+            padding: 0;
+            font: inherit;
+            font-size: 0.85rem;
+            color: var(--cor-destaque);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .renomear-link-pasta:hover { filter: brightness(1.08); }
     </style>
 </head>
 <body>
@@ -263,15 +347,19 @@
 
         <div id="painel-arquivos" class="renomear-modo-painel ativo">
             <p class="renomear-lead">
-                Normalize nomes de documentos. Aceita arquivos soltos ou um .ZIP / .RAM.
+                Normalize nomes de documentos. Aceita arquivos soltos, pastas ou um .ZIP / .RAM.
             </p>
 
-            <div class="renomear-dropzone" id="dropzone" tabindex="0" role="button" aria-label="Enviar arquivos">
-                <p><strong>Arraste arquivos aqui</strong> ou clique para selecionar</p>
-                <p class="hint">PDF, DOCX, XLSX, imagens e outros · ou um arquivo .ZIP / .RAM</p>
+            <div class="renomear-dropzone" id="dropzone" tabindex="0" role="button" aria-label="Enviar arquivos ou pastas">
+                <p><strong>Arraste arquivos ou pastas aqui</strong> ou clique para selecionar</p>
+                <p class="hint">PDF, DOCX, XLSX, imagens e outros · pasta (sem ZIP) · ou um arquivo .ZIP / .RAM</p>
                 <input class="renomear-file-input" id="file-input" type="file" multiple
                     accept=".zip,.ram,.pdf,.doc,.docx,.odt,.rtf,.xls,.xlsx,.ods,.csv,.ppt,.pptx,.odp,.png,.jpg,.jpeg,.webp,.gif,.tif,.tiff,.bmp,.txt">
+                <input class="renomear-file-input" id="folder-input" type="file" webkitdirectory directory multiple>
             </div>
+            <p class="renomear-meta" style="margin-top:0.55rem;text-align:center">
+                <button type="button" class="renomear-link-pasta" id="btn-selecionar-pasta">Selecionar pasta</button>
+            </p>
 
             <div class="renomear-painel" id="painel-lista" hidden>
                 <div class="renomear-painel-titulo">
@@ -282,6 +370,7 @@
                 <div class="renomear-acoes">
                     <button type="button" class="btn btn-primario" id="btn-renomear">Renomear</button>
                     <button type="button" class="btn btn-outline" id="btn-limpar">Limpar</button>
+                    <a class="btn btn-sucesso-renomear" id="btn-download" href="#" download="arquivos_renomeados.zip" hidden>Baixar ZIP</a>
                 </div>
             </div>
 
@@ -305,14 +394,11 @@
                                 <th>Nome original</th>
                                 <th class="seta"></th>
                                 <th>Novo nome</th>
+                                <th class="acao-dl" aria-label="Baixar"></th>
                             </tr>
                         </thead>
                         <tbody id="tabela-corpo"></tbody>
                     </table>
-                </div>
-                <div class="renomear-acoes">
-                    <a class="btn btn-sucesso-renomear" id="btn-download" href="#" download="arquivos_renomeados.zip">Baixar ZIP</a>
-                    <button type="button" class="btn btn-outline" id="btn-novo">Novo lote</button>
                 </div>
             </div>
         </div>

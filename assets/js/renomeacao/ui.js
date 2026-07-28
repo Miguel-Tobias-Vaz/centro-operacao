@@ -7,6 +7,8 @@ const EXT_ZIP = new Set([".zip", ".ram"]);
 
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("file-input");
+const folderInput = document.getElementById("folder-input");
+const btnSelecionarPasta = document.getElementById("btn-selecionar-pasta");
 const painelLista = document.getElementById("painel-lista");
 const listaEl = document.getElementById("lista-arquivos");
 const metaLista = document.getElementById("meta-lista");
@@ -21,11 +23,21 @@ const tabelaCorpo = document.getElementById("tabela-corpo");
 const resumo = document.getElementById("resumo");
 const metaResultado = document.getElementById("meta-resultado");
 const btnDownload = document.getElementById("btn-download");
-const btnNovo = document.getElementById("btn-novo");
 
-/** @type {{ nome: string, rel: string, blob: Blob, origem: string }[]} */
+/** @type {{ nome: string, rel: string, blob: Blob, origem: string, excluido?: boolean }[]} */
 let fila = [];
 let downloadUrl = null;
+/** @type {string[]} */
+let downloadUrlsIndividuais = [];
+
+const ICONE_DOWNLOAD =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+
+const ICONE_LIXEIRA =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+
+const ICONE_RESTAURAR =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.59"/></svg>';
 
 function formatBytes(n) {
     if (n < 1024) return n + " B";
@@ -38,11 +50,40 @@ function mostrarErro(msg) {
     erroEl.textContent = msg || "";
 }
 
+function revogarDownloadsIndividuais() {
+    for (const url of downloadUrlsIndividuais) {
+        URL.revokeObjectURL(url);
+    }
+    downloadUrlsIndividuais = [];
+}
+
 function revogarDownload() {
     if (downloadUrl) {
         URL.revokeObjectURL(downloadUrl);
         downloadUrl = null;
     }
+    revogarDownloadsIndividuais();
+    if (btnDownload) {
+        btnDownload.hidden = true;
+        btnDownload.removeAttribute("href");
+    }
+}
+
+function basenameCaminho(caminho) {
+    const norm = String(caminho || "").replace(/\\/g, "/");
+    return norm.split("/").pop() || norm;
+}
+
+function itensAtivos() {
+    return fila.filter((item) => !item.excluido);
+}
+
+function alternarExclusao(indice) {
+    const item = fila[indice];
+    if (!item) return;
+    item.excluido = !item.excluido;
+    limparResultado();
+    renderLista();
 }
 
 function setProgresso(atual, total, texto) {
@@ -65,11 +106,18 @@ function renderLista() {
         return;
     }
     painelLista.hidden = false;
-    btnRenomear.disabled = false;
-    metaLista.textContent = fila.length + (fila.length === 1 ? " arquivo" : " arquivos");
+    const ativos = itensAtivos().length;
+    const excluidos = fila.length - ativos;
+    btnRenomear.disabled = ativos === 0;
+    metaLista.textContent =
+        ativos +
+        (ativos === 1 ? " arquivo" : " arquivos") +
+        (excluidos ? " · " + excluidos + " excluído" + (excluidos === 1 ? "" : "s") : "");
 
-    for (const item of fila) {
+    fila.forEach((item, indice) => {
         const li = document.createElement("li");
+        if (item.excluido) li.classList.add("excluido");
+
         const nome = document.createElement("span");
         nome.className = "nome";
         const rotulo = item.rel || item.nome;
@@ -77,12 +125,26 @@ function renderLista() {
             ? item.origem.split(" → ")[0] + " → " + item.rel
             : rotulo;
         nome.title = nome.textContent;
+
         const tag = document.createElement("span");
         tag.className = "tag";
         tag.textContent = formatBytes(item.blob.size);
-        li.append(nome, tag);
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "renomear-lista-acao" + (item.excluido ? " restaurar" : "");
+        btn.title = item.excluido ? "Restaurar arquivo" : "Excluir do lote";
+        btn.setAttribute("aria-label", btn.title);
+        btn.innerHTML = item.excluido ? ICONE_RESTAURAR : ICONE_LIXEIRA;
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            alternarExclusao(indice);
+        });
+
+        li.append(nome, tag, btn);
         listaEl.appendChild(li);
-    }
+    });
 }
 
 function limparResultado() {
@@ -96,11 +158,92 @@ function limparResultado() {
 function limparTudo() {
     fila = [];
     fileInput.value = "";
+    if (folderInput) folderInput.value = "";
     renderLista();
     limparResultado();
 }
 
-async function lerArquivoComoItem(file, origem = "") {
+/**
+ * Lê todos os filhos de um DirectoryEntry (readEntries devolve lotes).
+ * @param {FileSystemDirectoryEntry} dirEntry
+ * @returns {Promise<FileSystemEntry[]>}
+ */
+function lerFilhosDiretorio(dirEntry) {
+    const reader = dirEntry.createReader();
+    return new Promise((resolve, reject) => {
+        const todos = [];
+        const lerLote = () => {
+            reader.readEntries(
+                (lote) => {
+                    if (!lote.length) {
+                        resolve(todos);
+                        return;
+                    }
+                    todos.push(...lote);
+                    lerLote();
+                },
+                reject
+            );
+        };
+        lerLote();
+    });
+}
+
+/**
+ * Percorre arquivo/pasta do DataTransfer e devolve { file, rel }.
+ * @param {FileSystemEntry} entry
+ * @param {string} prefixo
+ * @returns {Promise<{ file: File, rel: string }[]>}
+ */
+async function coletarDeEntry(entry, prefixo = "") {
+    if (!entry) return [];
+
+    if (entry.isFile) {
+        const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+        const rel = (prefixo + file.name).replace(/\\/g, "/");
+        return [{ file, rel }];
+    }
+
+    if (entry.isDirectory) {
+        const filhos = await lerFilhosDiretorio(entry);
+        const base = prefixo + entry.name + "/";
+        const saida = [];
+        for (const filho of filhos) {
+            saida.push(...(await coletarDeEntry(filho, base)));
+        }
+        return saida;
+    }
+
+    return [];
+}
+
+/**
+ * Coleta arquivos de um drop (pastas inclusive). Fallback para FileList.
+ * @param {DataTransfer} dataTransfer
+ * @returns {Promise<{ file: File, rel: string }[]>}
+ */
+async function coletarDoDataTransfer(dataTransfer) {
+    const items = dataTransfer && dataTransfer.items ? [...dataTransfer.items] : [];
+    const comEntry = items.filter((it) => it.kind === "file" && typeof it.webkitGetAsEntry === "function");
+
+    if (comEntry.length) {
+        const coletados = [];
+        for (const item of comEntry) {
+            const entry = item.webkitGetAsEntry();
+            if (!entry) continue;
+            coletados.push(...(await coletarDeEntry(entry)));
+        }
+        if (coletados.length) return coletados;
+    }
+
+    const files = dataTransfer && dataTransfer.files ? [...dataTransfer.files] : [];
+    return files.map((file) => ({
+        file,
+        rel: (file.webkitRelativePath || file.name).replace(/\\/g, "/")
+    }));
+}
+
+async function lerArquivoComoItem(file, origem = "", relForcado = "") {
     const ext = extensaoArquivo(file.name);
     if (EXT_ZIP.has(ext)) {
         const zip = await JSZip.loadAsync(file);
@@ -123,7 +266,8 @@ async function lerArquivoComoItem(file, origem = "") {
                 nome,
                 rel,
                 blob: data,
-                origem: origem || file.name + (pasta ? " → " + pasta : "")
+                origem: origem || file.name + (pasta ? " → " + pasta : ""),
+                excluido: false
             });
         }
         return itens;
@@ -131,29 +275,51 @@ async function lerArquivoComoItem(file, origem = "") {
 
     if (!EXTENSOES_PERMITIDAS.has(ext)) return [];
     if (ehArquivoLixoNome(file.name)) return [];
-    return [{ nome: file.name, rel: file.name, blob: file, origem }];
+
+    const rel = String(relForcado || file.webkitRelativePath || file.name).replace(/\\/g, "/");
+    if (ignorarCaminho(rel)) return [];
+
+    const pasta = rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "";
+    return [
+        {
+            nome: file.name,
+            rel,
+            blob: file,
+            origem: origem || (pasta ? pasta : ""),
+            excluido: false
+        }
+    ];
 }
 
-async function adicionarArquivos(fileList) {
+/**
+ * @param {ArrayLike<File>|{ file: File, rel?: string }[]} entrada
+ */
+async function adicionarArquivos(entrada) {
     mostrarErro("");
     limparResultado();
-    const files = [...fileList];
-    if (!files.length) return;
 
-    setProgresso(0, files.length, "Lendo arquivos…");
+    const lista = [...entrada].map((item) => {
+        if (item && item.file instanceof Blob) {
+            return { file: item.file, rel: item.rel || "" };
+        }
+        return { file: item, rel: "" };
+    });
+    if (!lista.length) return;
+
+    setProgresso(0, lista.length, "Lendo arquivos…");
     btnRenomear.disabled = true;
 
     try {
         let lidos = 0;
-        for (const file of files) {
-            const itens = await lerArquivoComoItem(file);
+        for (const { file, rel } of lista) {
+            const itens = await lerArquivoComoItem(file, "", rel);
             if (itens.length) fila.push(...itens);
             lidos += 1;
-            setProgresso(lidos, files.length, "Lendo: " + file.name);
+            setProgresso(lidos, lista.length, "Lendo: " + (rel || file.name));
         }
         if (!fila.length) {
             mostrarErro(
-                "Nenhum documento válido encontrado. Use PDF, Office, imagens ou um ZIP com esses arquivos."
+                "Nenhum documento válido encontrado. Use PDF, Office, imagens, uma pasta ou um ZIP com esses arquivos."
             );
         }
     } catch (e) {
@@ -165,7 +331,8 @@ async function adicionarArquivos(fileList) {
 }
 
 async function renomear() {
-    if (!fila.length) return;
+    const ativos = itensAtivos();
+    if (!ativos.length) return;
     mostrarErro("");
     limparResultado();
     btnRenomear.disabled = true;
@@ -175,7 +342,7 @@ async function renomear() {
         await garantirDicionarioAcentos();
 
         const tokens = [];
-        for (const item of fila) {
+        for (const item of ativos) {
             const stem = item.nome.includes(".")
                 ? item.nome.slice(0, item.nome.lastIndexOf("."))
                 : item.nome;
@@ -188,10 +355,10 @@ async function renomear() {
         const linhas = [];
         let alterados = 0;
 
-        for (let i = 0; i < fila.length; i += 1) {
-            const item = fila[i];
+        for (let i = 0; i < ativos.length; i += 1) {
+            const item = ativos[i];
             const original = item.rel || item.nome;
-            setProgresso(i + 1, fila.length, "Renomeando: " + original);
+            setProgresso(i + 1, ativos.length, "Renomeando: " + original);
 
             const novoNome = normalizarNomeArquivo(item.nome);
             const pasta = original.includes("/")
@@ -203,12 +370,17 @@ async function renomear() {
 
             const mudou = caminho !== original;
             if (mudou) alterados += 1;
-            linhas.push({ original, novo: caminho, mudou });
+            linhas.push({
+                original,
+                novo: caminho,
+                mudou,
+                blob: item.blob
+            });
 
             await new Promise((r) => setTimeout(r, 0));
         }
 
-        setProgresso(fila.length, fila.length, "Gerando ZIP…");
+        setProgresso(ativos.length, ativos.length, "Gerando ZIP…");
         const blob = await saida.generateAsync({
             type: "blob",
             compression: "DEFLATE",
@@ -219,6 +391,7 @@ async function renomear() {
         downloadUrl = URL.createObjectURL(blob);
         btnDownload.href = downloadUrl;
         btnDownload.download = "arquivos_renomeados.zip";
+        btnDownload.hidden = false;
 
         tabelaCorpo.replaceChildren();
         for (const row of linhas) {
@@ -232,7 +405,21 @@ async function renomear() {
             const td2 = document.createElement("td");
             td2.className = "novo";
             td2.textContent = row.novo;
-            tr.append(td1, tdSeta, td2);
+
+            const tdDl = document.createElement("td");
+            tdDl.className = "acao-dl";
+            const urlItem = URL.createObjectURL(row.blob);
+            downloadUrlsIndividuais.push(urlItem);
+            const link = document.createElement("a");
+            link.className = "renomear-dl-item";
+            link.href = urlItem;
+            link.download = basenameCaminho(row.novo);
+            link.title = "Baixar " + basenameCaminho(row.novo);
+            link.setAttribute("aria-label", "Baixar " + basenameCaminho(row.novo));
+            link.innerHTML = ICONE_DOWNLOAD;
+            tdDl.appendChild(link);
+
+            tr.append(td1, tdSeta, td2, tdDl);
             tabelaCorpo.appendChild(tr);
         }
 
@@ -245,7 +432,7 @@ async function renomear() {
         mostrarErro(e.message || "Falha ao renomear.");
     } finally {
         esconderProgresso();
-        btnRenomear.disabled = !fila.length;
+        btnRenomear.disabled = !itensAtivos().length;
     }
 }
 
@@ -258,6 +445,20 @@ dropzone.addEventListener("keydown", (e) => {
 });
 fileInput.addEventListener("change", () => {
     if (fileInput.files && fileInput.files.length) adicionarArquivos(fileInput.files);
+});
+folderInput?.addEventListener("change", () => {
+    if (folderInput.files && folderInput.files.length) {
+        const lista = [...folderInput.files].map((file) => ({
+            file,
+            rel: (file.webkitRelativePath || file.name).replace(/\\/g, "/")
+        }));
+        adicionarArquivos(lista);
+    }
+});
+btnSelecionarPasta?.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    folderInput?.click();
 });
 
 ["dragenter", "dragover"].forEach((ev) => {
@@ -274,14 +475,17 @@ fileInput.addEventListener("change", () => {
         dropzone.classList.remove("arrasto");
     });
 });
-dropzone.addEventListener("drop", (e) => {
-    const files = e.dataTransfer && e.dataTransfer.files;
-    if (files && files.length) adicionarArquivos(files);
+dropzone.addEventListener("drop", async (e) => {
+    try {
+        const coletados = await coletarDoDataTransfer(e.dataTransfer);
+        if (coletados.length) await adicionarArquivos(coletados);
+    } catch (err) {
+        mostrarErro(err.message || "Falha ao ler a pasta arrastada.");
+    }
 });
 
 btnRenomear.addEventListener("click", renomear);
 btnLimpar.addEventListener("click", limparTudo);
-btnNovo.addEventListener("click", limparTudo);
 
 /* —— Modo texto livre —— */
 
