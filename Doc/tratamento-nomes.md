@@ -37,7 +37,7 @@ flowchart TD
     A[Usuário solta / seleciona arquivos] --> B{É .zip ou .ram?}
     B -->|Sim| C[JSZip: extrai entradas]
     C --> D[Filtra pastas macOS, thumbs, Página N.csv…]
-    D --> E[Fila: nome + blob + origem]
+    D --> E[Fila: nome + rel + blob + origem]
     B -->|Não| F{Extensão permitida e não é lixo?}
     F -->|Não| G[Ignora]
     F -->|Sim| E
@@ -54,8 +54,8 @@ flowchart TD
 
 1. Dropzone ou `<input type="file">` dispara `adicionarArquivos`.
 2. Para cada `File`:
-   - **ZIP/RAM:** abre com JSZip, ignora diretórios e caminhos em `ignorarCaminho` (`__MACOSX`, arquivos ocultos, `thumbs.db`, nomes tipo “Página 1.csv”). Mantém só extensões permitidas. Cada entrada vira `{ nome, blob, origem }`.
-   - **Arquivo solto:** mesma validação de extensão / lixo; entra na fila com `origem` vazia.
+   - **ZIP/RAM:** abre com JSZip, ignora diretórios e caminhos em `ignorarCaminho` (`__MACOSX`, arquivos ocultos, `thumbs.db`, nomes tipo “Página 1.csv”). Mantém só extensões permitidas. Cada entrada vira `{ nome, rel, blob, origem }` (`rel` = caminho relativo no ZIP).
+   - **Arquivo solto:** mesma validação de extensão / lixo; entra na fila com `rel` = nome do arquivo e `origem` vazia.
 3. A fila é renderizada no painel “Arquivos selecionados”.
 
 ### 2. Renomear (`ui.js` → `renomear`)
@@ -64,11 +64,11 @@ flowchart TD
 2. Extrai tokens de todos os stems e chama `preaquecerCorrecoes` (cache).
 3. Para cada item da fila:
    - `novoNome = normalizarNomeArquivo(item.nome)`
-   - `caminho = nomeUnico(novoNome, usados)` — se já existir, vira `Nome (2).ext`
+   - Mantém a pasta relativa de `item.rel` (ex.: `Licitação1/`) e aplica `nomeUnico(pasta + novoNome, usados)` — se já existir na mesma pasta, vira `Nome (2).ext`
    - Copia bytes do blob para o ZIP de saída com o novo caminho
 4. Gera o blob ZIP, cria URL de download e preenche a tabela de resultados.
 
-> A pasta interna do ZIP de origem **não é recriada** na UI atual: os arquivos saem “achatados” no ZIP final (só o nome do arquivo). A API legada `processarArquivoTratamento` em `motor.js` preserva pasta relativa.
+> A estrutura de pastas relativa do ZIP de origem é **preservada** no ZIP final: só o nome do arquivo é normalizado. A API `processarArquivoTratamento` em `motor.js` segue o mesmo critério.
 
 ---
 
@@ -160,7 +160,7 @@ Ordem em `capitalizarPalavra` / `resolverFormaCanonica`:
 
 ## API auxiliar (ZIP legado)
 
-`processarArquivoTratamento(file, opcoes)` em `motor.js` processa um ZIP de uma vez, **preserva pastas relativas** e retorna `{ alteracoes, blob, totalRenomeados, … }`. A página atual usa o fluxo da fila em `ui.js`; esta função fica disponível para outros integradores.
+`processarArquivoTratamento(file, opcoes)` em `motor.js` processa um ZIP de uma vez, **preserva pastas relativas** e retorna `{ alteracoes, blob, totalRenomeados, … }`. A página atual (`ui.js`) também preserva a estrutura de pastas no ZIP de saída; esta função fica disponível para outros integradores.
 
 ---
 

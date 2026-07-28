@@ -23,7 +23,7 @@ const metaResultado = document.getElementById("meta-resultado");
 const btnDownload = document.getElementById("btn-download");
 const btnNovo = document.getElementById("btn-novo");
 
-/** @type {{ nome: string, blob: Blob, origem: string }[]} */
+/** @type {{ nome: string, rel: string, blob: Blob, origem: string }[]} */
 let fila = [];
 let downloadUrl = null;
 
@@ -72,7 +72,10 @@ function renderLista() {
         const li = document.createElement("li");
         const nome = document.createElement("span");
         nome.className = "nome";
-        nome.textContent = item.origem ? item.origem + " / " + item.nome : item.nome;
+        const rotulo = item.rel || item.nome;
+        nome.textContent = item.origem && item.rel && item.rel.includes("/")
+            ? item.origem.split(" → ")[0] + " → " + item.rel
+            : rotulo;
         nome.title = nome.textContent;
         const tag = document.createElement("span");
         tag.className = "tag";
@@ -118,6 +121,7 @@ async function lerArquivoComoItem(file, origem = "") {
             const pasta = rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "";
             itens.push({
                 nome,
+                rel,
                 blob: data,
                 origem: origem || file.name + (pasta ? " → " + pasta : "")
             });
@@ -127,7 +131,7 @@ async function lerArquivoComoItem(file, origem = "") {
 
     if (!EXTENSOES_PERMITIDAS.has(ext)) return [];
     if (ehArquivoLixoNome(file.name)) return [];
-    return [{ nome: file.name, blob: file, origem }];
+    return [{ nome: file.name, rel: file.name, blob: file, origem }];
 }
 
 async function adicionarArquivos(fileList) {
@@ -186,16 +190,20 @@ async function renomear() {
 
         for (let i = 0; i < fila.length; i += 1) {
             const item = fila[i];
-            setProgresso(i + 1, fila.length, "Renomeando: " + item.nome);
+            const original = item.rel || item.nome;
+            setProgresso(i + 1, fila.length, "Renomeando: " + original);
 
             const novoNome = normalizarNomeArquivo(item.nome);
-            const caminho = nomeUnico(novoNome, usados);
+            const pasta = original.includes("/")
+                ? original.slice(0, original.lastIndexOf("/") + 1)
+                : "";
+            const caminho = nomeUnico(pasta + novoNome, usados);
             const bytes = await item.blob.arrayBuffer();
             saida.file(caminho, bytes);
 
-            const mudou = caminho !== item.nome;
+            const mudou = caminho !== original;
             if (mudou) alterados += 1;
-            linhas.push({ original: item.nome, novo: caminho, mudou });
+            linhas.push({ original, novo: caminho, mudou });
 
             await new Promise((r) => setTimeout(r, 0));
         }
