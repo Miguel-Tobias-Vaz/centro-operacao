@@ -2,7 +2,8 @@ let supabaseClient = null;
 let modulos = [];
 let categoriasModuloLista = [];
 let moduloAtivoId = null;
-let termoBuscaGlobal = "";
+let termoBuscaTopo = "";
+let termoBuscaModulos = "";
 let termoBuscaItem = "";
 let editandoModuloId = null;
 let editandoCategoriaId = null;
@@ -12,13 +13,12 @@ let ordemCategoriasTemp = [];
 const CACHE_DADOS_PREFIXO = "centro-op-dados:";
 const CACHE_DADOS_TTL_MS = 30 * 60 * 1000;
 
-const listaModulos = document.getElementById("lista-modulos");
 const categoriasModulos = document.getElementById("categorias-modulos");
 const painelModulo = document.getElementById("painel-modulo");
 const painelExplorar = document.getElementById("painel-explorar");
-const sidebar = document.getElementById("sidebar");
 const moduloTitulo = document.getElementById("modulo-titulo");
 const listaPublicacoes = document.getElementById("lista-publicacoes");
+const buscaTopo = document.getElementById("busca-topo");
 const buscaGlobal = document.getElementById("busca-global");
 const buscaItem = document.getElementById("busca-item");
 const botaoTema = document.getElementById("tema");
@@ -70,7 +70,7 @@ const CATEGORIAS_PADRAO = [
     {
         id: "interno",
         titulo: "Interno",
-        descricao: "Ferramentas e referências de uso interno da equipe.",
+        descricao: "",
         ordem: 2
     },
     {
@@ -615,19 +615,42 @@ function obterModulo(id) {
     return modulos.find((m) => m.id === id);
 }
 
-function filtrarModulos() {
-    if (!termoBuscaGlobal.trim()) return modulos;
+function publicacaoCorrespondeTermo(publicacao, termo) {
+    return (
+        (publicacao.titulo || "").toLowerCase().includes(termo) ||
+        textoPuro(publicacao.conteudo).toLowerCase().includes(termo) ||
+        (publicacao.arquivo_nome || "").toLowerCase().includes(termo)
+    );
+}
 
-    const termo = termoBuscaGlobal.toLowerCase();
+function obterMatchBuscaTopo(modulo, termo) {
+    if (!termo) return null;
+    if ((modulo.nome || "").toLowerCase().includes(termo)) {
+        return { tipo: "modulo" };
+    }
+    const publicacao = (modulo.publicacoes || []).find((p) => publicacaoCorrespondeTermo(p, termo));
+    if (publicacao) {
+        return { tipo: "conteudo", publicacao };
+    }
+    return null;
+}
+
+function haFiltroModulosAtivo() {
+    return !!(termoBuscaTopo.trim() || termoBuscaModulos.trim());
+}
+
+function filtrarModulos() {
+    const termoTopo = termoBuscaTopo.trim().toLowerCase();
+    const termoNome = termoBuscaModulos.trim().toLowerCase();
+
     return modulos.filter((modulo) => {
-        const nomeCombina = modulo.nome.toLowerCase().includes(termo);
-        const publicacaoCombina = modulo.publicacoes.some(
-            (p) =>
-                p.titulo.toLowerCase().includes(termo) ||
-                textoPuro(p.conteudo).toLowerCase().includes(termo) ||
-                (p.arquivo_nome || "").toLowerCase().includes(termo)
-        );
-        return nomeCombina || publicacaoCombina;
+        if (termoNome && !(modulo.nome || "").toLowerCase().includes(termoNome)) {
+            return false;
+        }
+        if (termoTopo && !obterMatchBuscaTopo(modulo, termoTopo)) {
+            return false;
+        }
+        return true;
     });
 }
 
@@ -635,12 +658,7 @@ function filtrarPublicacoes(modulo) {
     if (!termoBuscaItem.trim()) return modulo.publicacoes;
 
     const termo = termoBuscaItem.toLowerCase();
-    return modulo.publicacoes.filter(
-        (p) =>
-            p.titulo.toLowerCase().includes(termo) ||
-            textoPuro(p.conteudo).toLowerCase().includes(termo) ||
-            (p.arquivo_nome || "").toLowerCase().includes(termo)
-    );
+    return modulo.publicacoes.filter((p) => publicacaoCorrespondeTermo(p, termo));
 }
 
 function tratarErro(erro, acao) {
@@ -1056,37 +1074,15 @@ function abrirModalPublicacao(id = null) {
     inputPublicacaoTitulo.focus();
 }
 
-function criarCardModuloSidebar(modulo) {
-    const card = document.createElement("article");
-    card.className = "card-modulo";
-    if (modulo.id === moduloAtivoId) card.classList.add("ativo");
-
-    card.innerHTML = `
-        <div class="card-modulo-topo">
-            ${htmlAvatarModulo(modulo, "modulo-avatar-sm")}
-            <div class="card-modulo-info">
-                <h3 class="card-modulo-nome">${escaparHtml(modulo.nome)}</h3>
-                <p class="card-modulo-qtd">${rotuloPublicacoes(modulo.publicacoes.length)}</p>
-            </div>
-        </div>
-        <button type="button" class="btn btn-primario btn-sm btn-selecionar" data-id="${modulo.id}">
-            Selecionar
-        </button>
-    `;
-
-    card.querySelector(".btn-selecionar").addEventListener("click", () => {
-        selecionarModulo(modulo.id);
-    });
-
-    return card;
-}
-
 function criarCardModuloGrid(modulo) {
     const card = document.createElement("article");
     card.className = "card-modulo-grid";
     card.dataset.id = modulo.id;
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `Abrir ${modulo.nome}`);
 
-    const arrastar = termoBuscaGlobal.trim() || !window.Auth?.podeEditar()
+    const arrastar = haFiltroModulosAtivo() || !window.Auth?.podeEditar()
         ? ""
         : `
         <div class="modulo-arrastar item-arrastar" role="button" tabindex="0" aria-label="Arrastar para reordenar" title="Arrastar para reordenar">
@@ -1094,20 +1090,54 @@ function criarCardModuloGrid(modulo) {
         </div>
     `;
 
+    const temImagem = moduloTemImagem(modulo);
+    const mediaHtml = temImagem
+        ? `<img
+                class="card-modulo-capa"
+                src="${obterUrlPublicaImagemModulo(modulo.imagem_url)}"
+                alt=""
+                loading="lazy"
+            >`
+        : `<div class="card-modulo-capa-fallback">${htmlAvatarModulo(modulo, "modulo-avatar-lg")}</div>`;
+
+    if (temImagem) card.classList.add("tem-capa");
+
+    const matchTopo = obterMatchBuscaTopo(modulo, termoBuscaTopo.trim().toLowerCase());
+    const dicaConteudo = matchTopo?.tipo === "conteudo"
+        ? `<p class="card-modulo-match">Conteúdo: ${escaparHtml(matchTopo.publicacao.titulo)}</p>`
+        : "";
+
     card.innerHTML = `
         <div class="card-modulo-grid-topo">
             ${arrastar}
-            ${htmlAvatarModulo(modulo, "modulo-avatar-md")}
         </div>
-        <h3 class="card-modulo-nome">${escaparHtml(modulo.nome)}</h3>
-        <p class="card-modulo-qtd">${rotuloPublicacoes(modulo.publicacoes.length)}</p>
-        <button type="button" class="btn btn-primario btn-selecionar" data-id="${modulo.id}">
-            Selecionar
-        </button>
+        <div class="card-modulo-grid-media" aria-hidden="true">
+            ${mediaHtml}
+        </div>
+        <div class="card-modulo-grid-corpo">
+            <h3 class="card-modulo-nome">${escaparHtml(modulo.nome)}</h3>
+            <p class="card-modulo-qtd">${rotuloPublicacoes(modulo.publicacoes.length)}</p>
+            ${dicaConteudo}
+            <div class="card-modulo-grid-rodape">
+                <span class="card-modulo-abrir">Abrir →</span>
+            </div>
+        </div>
     `;
 
-    card.querySelector(".btn-selecionar").addEventListener("click", () => {
-        selecionarModulo(modulo.id);
+    const abrir = (e) => {
+        if (e.target.closest(".modulo-arrastar")) return;
+        const opts = matchTopo?.tipo === "conteudo" && termoBuscaTopo.trim()
+            ? { termoPublicacao: termoBuscaTopo.trim() }
+            : {};
+        selecionarModulo(modulo.id, opts);
+    };
+    card.addEventListener("click", abrir);
+    card.addEventListener("keydown", (e) => {
+        if (e.target.closest(".modulo-arrastar")) return;
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            abrir(e);
+        }
     });
 
     return card;
@@ -1197,16 +1227,26 @@ function criarSecaoCategoria(categoria, modulosDaCategoria) {
     secao.className = "categoria-modulos painel-explorar";
     secao.dataset.categoria = categoria.id;
 
+    const totalPubs = modulosDaCategoria.reduce(
+        (acc, m) => acc + (m.publicacoes?.length || 0),
+        0
+    );
+
     const cabecalho = document.createElement("header");
     cabecalho.className = "explorar-header";
 
     const topo = document.createElement("div");
     topo.className = "explorar-header-topo";
+    const descricao = String(categoria.descricao || "").trim();
+    const mostrarDescricao =
+        descricao &&
+        !/^ferramentas e refer[eê]ncias de uso interno da equipe\.?$/i.test(descricao);
+
     topo.innerHTML = `
         <div class="explorar-header-texto">
-            <p class="explorar-rotulo">Explorar</p>
             <h2 class="explorar-titulo">${escaparHtml(categoria.titulo)}</h2>
-            <p class="explorar-descricao">${escaparHtml(categoria.descricao)}</p>
+            ${mostrarDescricao ? `<p class="explorar-descricao">${escaparHtml(descricao)}</p>` : ""}
+            <p class="explorar-meta">${rotuloPublicacoes(totalPubs)} · ${modulosDaCategoria.length} módulo${modulosDaCategoria.length === 1 ? "" : "s"}</p>
         </div>
     `;
 
@@ -1214,7 +1254,7 @@ function criarSecaoCategoria(categoria, modulosDaCategoria) {
         const btnEditar = document.createElement("button");
         btnEditar.type = "button";
         btnEditar.className = "btn btn-outline btn-sm explorar-btn-editar";
-        btnEditar.textContent = "Editar categoria";
+        btnEditar.textContent = "Editar";
         btnEditar.addEventListener("click", () => abrirModalCategoria(categoria.id));
         topo.appendChild(btnEditar);
     }
@@ -1242,17 +1282,19 @@ function criarSecaoCategoria(categoria, modulosDaCategoria) {
 
 function renderizarModulos() {
     const modulosFiltrados = filtrarModulos();
-    listaModulos.replaceChildren();
     if (categoriasModulos) categoriasModulos.replaceChildren();
+
+    atualizarHubDashboard();
+
+    if (!categoriasModulos) return;
 
     if (modulosFiltrados.length === 0) {
         const vazio = document.createElement("p");
         vazio.className = "lista-vazia";
         vazio.textContent = modulos.length === 0
-            ? 'Nenhum módulo criado. Clique em "Novo Módulo +".'
-            : "Nenhum módulo encontrado.";
-        listaModulos.appendChild(vazio);
-        if (categoriasModulos) categoriasModulos.appendChild(vazio.cloneNode(true));
+            ? "Nenhum módulo criado. Use ＋ Novo módulo."
+            : "Nenhum módulo ou conteúdo encontrado.";
+        categoriasModulos.appendChild(vazio);
         return;
     }
 
@@ -1261,27 +1303,9 @@ function renderizarModulos() {
             .filter((m) => normalizarCategoria(m.categoria) === categoria.id)
             .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
 
-        const mostrarSecao = daCategoria.length > 0 || !termoBuscaGlobal.trim();
-        if (categoriasModulos && mostrarSecao) {
+        const mostrarSecao = daCategoria.length > 0 || !haFiltroModulosAtivo();
+        if (mostrarSecao) {
             categoriasModulos.appendChild(criarSecaoCategoria(categoria, daCategoria));
-        }
-
-        if (daCategoria.length > 0) {
-            const grupo = document.createElement("div");
-            grupo.className = "sidebar-grupo-categoria";
-
-            const tituloGrupo = document.createElement("h3");
-            tituloGrupo.className = "sidebar-categoria-titulo";
-            tituloGrupo.textContent = categoria.titulo;
-
-            const lista = document.createElement("div");
-            lista.className = "lista-modulos-interna";
-            daCategoria.forEach((modulo) => {
-                lista.appendChild(criarCardModuloSidebar(modulo));
-            });
-
-            grupo.append(tituloGrupo, lista);
-            listaModulos.appendChild(grupo);
         }
     });
 }
@@ -1306,7 +1330,7 @@ function renderizarPublicacoes() {
         const vazio = document.createElement("p");
         vazio.className = "lista-vazia";
         vazio.textContent = modulo.publicacoes.length === 0
-            ? 'Nenhuma publicação neste módulo. Clique em "Criar Publicação".'
+            ? 'Nenhuma publicação neste módulo. Clique em "＋ Nova publicação".'
             : "Nenhuma publicação encontrada neste módulo.";
         listaPublicacoes.appendChild(vazio);
         return;
@@ -1317,31 +1341,45 @@ function renderizarPublicacoes() {
     });
 }
 
-function selecionarModulo(id) {
+function irAoTopoPagina() {
+    const html = document.documentElement;
+    const comportamento = html.style.scrollBehavior;
+    html.style.scrollBehavior = "auto";
+    window.scrollTo(0, 0);
+    html.scrollTop = 0;
+    document.body.scrollTop = 0;
+    html.style.scrollBehavior = comportamento;
+}
+
+function selecionarModulo(id, opcoes = {}) {
     if (!obterModulo(id)) return;
 
     moduloAtivoId = id;
-    termoBuscaItem = "";
-    buscaItem.value = "";
-    sidebar.hidden = false;
+    const termoPub = String(opcoes.termoPublicacao || "").trim();
+    termoBuscaItem = termoPub;
+    if (buscaItem) buscaItem.value = termoPub;
     painelExplorar.hidden = true;
     painelModulo.hidden = false;
-    renderizarModulos();
     renderizarPublicacoes();
+    irAoTopoPagina();
+    requestAnimationFrame(() => irAoTopoPagina());
 }
 
 function voltarParaExplorar() {
     moduloAtivoId = null;
     termoBuscaItem = "";
     if (buscaItem) buscaItem.value = "";
-    sidebar.hidden = true;
     painelModulo.hidden = true;
     painelExplorar.hidden = false;
     renderizarModulos();
+    irAoTopoPagina();
+    requestAnimationFrame(() => irAoTopoPagina());
 }
 
 function irParaHome() {
-    termoBuscaGlobal = "";
+    termoBuscaTopo = "";
+    termoBuscaModulos = "";
+    if (buscaTopo) buscaTopo.value = "";
     if (buscaGlobal) buscaGlobal.value = "";
     voltarParaExplorar();
 }
@@ -1424,7 +1462,7 @@ function iniciarArrastarGrid() {
     arrastarGridIniciado = true;
 
     categoriasModulos.addEventListener("pointerdown", (e) => {
-        if (termoBuscaGlobal.trim()) return;
+        if (haFiltroModulosAtivo()) return;
 
         const handle = e.target.closest(".modulo-arrastar");
         if (!handle) return;
@@ -1647,7 +1685,6 @@ async function salvarModulo(e) {
         if (moduloAtivoId) {
             painelExplorar.hidden = true;
             painelModulo.hidden = false;
-            sidebar.hidden = false;
         }
 
         const acaoModulo = editandoModuloId ? "Editar módulo" : "Criar módulo";
@@ -1856,19 +1893,164 @@ async function excluirPublicacao() {
 
 function aplicarTema(claro) {
     document.body.classList.toggle("tema-claro", claro);
-    botaoTema.textContent = claro ? "Escuro" : "Claro";
+    if (botaoTema) {
+        botaoTema.textContent = claro ? "☾" : "◐";
+        botaoTema.title = claro ? "Tema escuro" : "Tema claro";
+    }
     localStorage.setItem("tema", claro ? "claro" : "escuro");
     carregarCorDestaqueSalva();
 }
 
-document.getElementById("criar-modulo").addEventListener("click", () => abrirModalModulo());
-document.getElementById("criar-categoria").addEventListener("click", () => abrirModalCategoria());
-document.getElementById("ordenar-categorias")?.addEventListener("click", () => abrirModalOrdenarCategorias());
+function primeiroNome() {
+    const nome = window.Auth?.getPerfil?.()?.nome || "";
+    return nome.trim().split(/\s+/)[0] || "equipe";
+}
+
+function textoSaudacao() {
+    const h = new Date().getHours();
+    if (h < 12) return "Bom dia";
+    if (h < 18) return "Boa tarde";
+    return "Boa noite";
+}
+
+function atualizarHubDashboard() {
+    const saudacao = document.getElementById("hub-saudacao");
+    if (saudacao) {
+        saudacao.textContent = `${textoSaudacao()}, ${primeiroNome()}.`;
+    }
+
+    const novoWrap = document.getElementById("hub-novo-wrap");
+    if (novoWrap) {
+        const pode = !!window.Auth?.podeEditar?.();
+        novoWrap.hidden = !window.Auth?.getSession?.() || !pode;
+    }
+
+    const heroAcoes = document.getElementById("hub-hero-acoes");
+    if (heroAcoes) heroAcoes.hidden = !window.Auth?.podeEditar?.();
+}
+
+let menuNovoParent = null;
+
+function fecharMenuNovo() {
+    const menu = document.getElementById("menu-novo");
+    const btn = document.getElementById("btn-menu-novo");
+    if (menu) {
+        menu.hidden = true;
+        menu.classList.remove("hub-menu-novo-portal");
+        menu.style.top = "";
+        menu.style.left = "";
+        menu.style.right = "";
+        menu.style.bottom = "";
+        menu.style.width = "";
+        if (menuNovoParent && menu.parentElement === document.body) {
+            menuNovoParent.appendChild(menu);
+        }
+    }
+    if (btn) btn.setAttribute("aria-expanded", "false");
+}
+
+function posicionarMenuNovo() {
+    const menu = document.getElementById("menu-novo");
+    const btn = document.getElementById("btn-menu-novo");
+    if (!menu || !btn || menu.hidden) return;
+
+    // Sai do header (backdrop-filter cria stacking context e corta/sobrepor o menu)
+    if (menu.parentElement !== document.body) {
+        menuNovoParent = menu.parentElement;
+        document.body.appendChild(menu);
+    }
+
+    const rect = btn.getBoundingClientRect();
+    const larguraMenu = Math.min(260, window.innerWidth - 16);
+    let left = rect.right - larguraMenu;
+    left = Math.max(8, Math.min(left, window.innerWidth - larguraMenu - 8));
+    let top = rect.bottom + 8;
+    const alturaEstimada = menu.offsetHeight || 220;
+    if (top + alturaEstimada > window.innerHeight - 8) {
+        top = Math.max(8, rect.top - alturaEstimada - 8);
+    }
+
+    menu.classList.add("hub-menu-novo-portal");
+    menu.style.top = `${Math.round(top)}px`;
+    menu.style.left = `${Math.round(left)}px`;
+    menu.style.right = "auto";
+    menu.style.bottom = "auto";
+    menu.style.width = `${larguraMenu}px`;
+}
+
+function dispararAcaoHub(acao) {
+    fecharMenuNovo();
+    if (acao === "modulo") abrirModalModulo();
+    else if (acao === "categoria") abrirModalCategoria();
+    else if (acao === "ordenar") abrirModalOrdenarCategorias();
+}
+
+function focarBuscaTopo() {
+    if (moduloAtivoId) voltarParaExplorar();
+    const input = document.getElementById("busca-topo") || document.getElementById("busca-global");
+    if (!input) return;
+    input.focus({ preventScroll: true });
+}
+
+function aplicarBuscaExplorar() {
+    if (moduloAtivoId) voltarParaExplorar();
+    else renderizarModulos();
+}
+
+document.getElementById("criar-modulo").addEventListener("click", () => {
+    fecharMenuNovo();
+    abrirModalModulo();
+});
+document.getElementById("criar-categoria").addEventListener("click", () => {
+    fecharMenuNovo();
+    abrirModalCategoria();
+});
+document.getElementById("ordenar-categorias")?.addEventListener("click", () => {
+    fecharMenuNovo();
+    abrirModalOrdenarCategorias();
+});
 document.getElementById("logo-home")?.addEventListener("click", irParaHome);
 document.getElementById("voltar-modulos").addEventListener("click", voltarParaExplorar);
-document.getElementById("criar-publicacao").addEventListener("click", () => abrirModalPublicacao());
+document.getElementById("criar-publicacao").addEventListener("click", () => {
+    fecharMenuNovo();
+    abrirModalPublicacao();
+});
 document.getElementById("editar-modulo").addEventListener("click", () => {
     if (moduloAtivoId) abrirModalModulo(moduloAtivoId);
+});
+
+document.getElementById("btn-menu-novo")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const menu = document.getElementById("menu-novo");
+    const btn = document.getElementById("btn-menu-novo");
+    if (!menu) return;
+    if (!menu.hidden) {
+        fecharMenuNovo();
+        return;
+    }
+    menu.hidden = false;
+    btn?.setAttribute("aria-expanded", "true");
+    posicionarMenuNovo();
+    requestAnimationFrame(() => posicionarMenuNovo());
+});
+
+document.addEventListener("click", (e) => {
+    if (e.target.closest("#hub-novo-wrap") || e.target.closest("#menu-novo")) return;
+    fecharMenuNovo();
+});
+
+window.addEventListener("resize", () => {
+    const menu = document.getElementById("menu-novo");
+    if (menu && !menu.hidden) posicionarMenuNovo();
+});
+
+window.addEventListener("scroll", () => {
+    const menu = document.getElementById("menu-novo");
+    if (menu && !menu.hidden) posicionarMenuNovo();
+}, true);
+
+document.querySelectorAll("[data-acao-hub]").forEach((el) => {
+    el.addEventListener("click", () => dispararAcaoHub(el.getAttribute("data-acao-hub")));
 });
 
 formModulo.addEventListener("submit", salvarModulo);
@@ -1889,18 +2071,36 @@ document.querySelectorAll("[data-acao='cancelar']").forEach((btn) => {
 });
 
 document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !modalOverlay.hidden) fecharModal();
+    const meta = e.metaKey || e.ctrlKey;
+    if (meta && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        focarBuscaTopo();
+        return;
+    }
+    if (e.key === "Escape") {
+        fecharMenuNovo();
+        if (buscaTopo && document.activeElement === buscaTopo && buscaTopo.value) {
+            buscaTopo.value = "";
+            termoBuscaTopo = "";
+            renderizarModulos();
+        }
+        if (buscaGlobal && document.activeElement === buscaGlobal && buscaGlobal.value) {
+            buscaGlobal.value = "";
+            termoBuscaModulos = "";
+            renderizarModulos();
+        }
+        if (!modalOverlay.hidden) fecharModal();
+    }
 });
 
-buscaGlobal.addEventListener("input", (e) => {
-    termoBuscaGlobal = e.target.value;
-    renderizarModulos();
+buscaTopo?.addEventListener("input", (e) => {
+    termoBuscaTopo = e.target.value;
+    aplicarBuscaExplorar();
+});
 
-    if (moduloAtivoId) {
-        const aindaVisivel = filtrarModulos().some((m) => m.id === moduloAtivoId);
-        if (!aindaVisivel) voltarParaExplorar();
-        else renderizarPublicacoes();
-    }
+buscaGlobal?.addEventListener("input", (e) => {
+    termoBuscaModulos = e.target.value;
+    aplicarBuscaExplorar();
 });
 
 buscaItem.addEventListener("input", (e) => {
@@ -1908,8 +2108,13 @@ buscaItem.addEventListener("input", (e) => {
     renderizarPublicacoes();
 });
 
-document.getElementById("busca-global-form").addEventListener("submit", (e) => e.preventDefault());
 document.getElementById("busca-item-form").addEventListener("submit", (e) => e.preventDefault());
+buscaTopo?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") e.preventDefault();
+});
+buscaGlobal?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") e.preventDefault();
+});
 
 botaoTema.addEventListener("click", () => {
     aplicarTema(!document.body.classList.contains("tema-claro"));
@@ -1942,12 +2147,13 @@ async function iniciar() {
         if (!window.Auth.getSession()) {
             limparCacheDados();
             moduloAtivoId = null;
-            termoBuscaGlobal = "";
+            termoBuscaTopo = "";
+            termoBuscaModulos = "";
             termoBuscaItem = "";
             modulos = [];
+            if (buscaTopo) buscaTopo.value = "";
             if (buscaGlobal) buscaGlobal.value = "";
             if (buscaItem) buscaItem.value = "";
-            if (sidebar) sidebar.hidden = true;
             if (painelModulo) painelModulo.hidden = true;
             if (painelExplorar) painelExplorar.hidden = false;
             mostrarLoading(false);

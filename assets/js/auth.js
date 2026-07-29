@@ -303,11 +303,12 @@ const Auth = (() => {
 
         const painelInicio = document.getElementById("painel-inicio");
         const appLayout = document.getElementById("app-layout");
-        const buscaForm = document.getElementById("busca-global-form");
 
         if (painelInicio) painelInicio.hidden = logado;
         if (appLayout) appLayout.hidden = !logado;
-        if (buscaForm) buscaForm.hidden = !logado;
+
+        const novoWrap = document.getElementById("hub-novo-wrap");
+        if (novoWrap) novoWrap.hidden = !logado || !podeEditar();
 
         if (!logado) fecharMenuUsuario();
     }

@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS public.categorias_modulo (
 INSERT INTO public.categorias_modulo (id, titulo, descricao, ordem)
 VALUES
     ('site', 'Site', 'Módulos e conteúdos voltados ao site público.', 1),
-    ('interno', 'Interno', 'Ferramentas e referências de uso interno da equipe.', 2),
+    ('interno', 'Interno', '', 2),
     ('portal', 'Portal', 'Conteúdos e acessos do portal institucional.', 3)
 ON CONFLICT (id) DO NOTHING;
 

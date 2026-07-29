@@ -4,67 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="assets/icone/Icone.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/vida.css">
+    <link rel="stylesheet" href="assets/css/hub.css">
     <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
     <title>Central OPTO - Suporte</title>
 </head>
 <body>
-    <header class="header">
-        <div class="container header-inner">
-            <button type="button" id="logo-home" class="logo-home" title="Voltar ao início" aria-label="Voltar ao início">
-                <h1 class="logo">Central OPTO <span>- Suporte</span></h1>
+    <header class="header hub-topbar">
+        <div class="hub-topbar-inner">
+            <button type="button" id="logo-home" class="hub-logo" title="Voltar ao início" aria-label="Voltar ao início">
+                <img src="assets/icone/Icone.png" alt="">
+                <span class="hub-logo-texto">Central OPTO <span>Suporte</span></span>
             </button>
 
-            <form action="" class="form-busca" role="search" id="busca-global-form" hidden>
-                <label for="busca-global" class="sr-only">Pesquisar em tudo</label>
-                <div class="busca-wrapper">
-                    <span class="busca-icone" aria-hidden="true">🔍</span>
-                    <input
-                        id="busca-global"
-                        type="search"
-                        placeholder="Pesquisar..."
-                        autocomplete="off"
-                    >
-                </div>
-            </form>
+            <label class="hub-busca-topo" for="busca-topo">
+                <span class="hub-busca-topo-icone" aria-hidden="true">⌕</span>
+                <input
+                    id="busca-topo"
+                    type="search"
+                    placeholder="Pesquisar módulos e conteúdos…"
+                    autocomplete="off"
+                    aria-label="Pesquisar módulos e conteúdos"
+                >
+                <kbd class="hub-busca-topo-kbd" aria-hidden="true">Ctrl K</kbd>
+            </label>
 
-            <div class="container-buttons">
-                <div class="header-acoes">
-                    <div class="grupo-ferramenta-pdf">
-                        <a href="separador-pdf.html" class="btn btn-outline btn-sm btn-header-ferramenta btn-com-icone" title="Separar PDF em um arquivo por página">
-                            <span class="icone-pdf" aria-hidden="true"></span>
-                            <span class="btn-label-largo">Separador de PDF</span>
-                            <span class="btn-label-curto" aria-hidden="true">PDF</span>
-                        </a>
-                        <a
-                            href="https://automacoes-documentos.lovable.app"
-                            class="btn btn-outline btn-sm btn-header-ferramenta btn-header-icone"
-                            title="Configurador de Scraper — Baixar PDFs em lote"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            <span class="icone-pdf icone-pdf-lg" aria-hidden="true"></span>
-                            <span class="sr-only">Baixar PDFs (scraper)</span>
-                        </a>
-                    </div>
-                    <a href="tratamento.html" class="btn btn-outline btn-sm btn-header-ferramenta" title="Renomear arquivos e normalizar texto">
-                        <span class="btn-label-largo">Normalizar</span>
-                        <span class="btn-label-curto" aria-hidden="true">Nomes</span>
-                    </a>
-                    <div class="grupo-seletor-cor">
-                        <label class="seletor-cor" for="cor-destaque" title="Cor de destaque">
-                            <span class="seletor-cor-amostra" id="cor-destaque-amostra" aria-hidden="true"></span>
-                            <input type="color" id="cor-destaque" value="#00588f" aria-label="Escolher cor de destaque">
-                        </label>
-                        <button type="button" id="cor-destaque-reset" class="btn-reset-cor" title="Restaurar cor padrão" aria-label="Restaurar cor padrão">
-                            ↺
-                        </button>
-                    </div>
-                    <button type="button" id="tema" class="btn btn-secundario" aria-label="Alternar tema">
-                        Claro
+            <div class="hub-topbar-acoes container-buttons">
+                <div class="hub-novo-wrap auth-so-logado" id="hub-novo-wrap" hidden>
+                    <button type="button" class="hub-btn-novo" id="btn-menu-novo" aria-haspopup="true" aria-expanded="false">
+                        ＋ <span>Novo</span>
                     </button>
+                    <div id="menu-novo" class="hub-menu-novo" hidden>
+                        <button type="button" id="criar-modulo">＋ Novo módulo</button>
+                        <button type="button" id="criar-categoria">＋ Nova categoria</button>
+                        <button type="button" id="ordenar-categorias">Organizar categorias</button>
+                        <a href="separador-pdf.html">Separador de PDF</a>
+                        <a href="tratamento.html">Normalizar nomes</a>
+                    </div>
                 </div>
+
+                <a href="separador-pdf.html" class="hub-icon-btn" title="Separador de PDF" aria-label="Separador de PDF">📄</a>
+                <a href="tratamento.html" class="hub-icon-btn" title="Normalizar" aria-label="Normalizar">Aa</a>
+
+                <div class="grupo-seletor-cor" hidden>
+                    <label class="seletor-cor" for="cor-destaque" title="Cor de destaque">
+                        <span class="seletor-cor-amostra" id="cor-destaque-amostra" aria-hidden="true"></span>
+                        <input type="color" id="cor-destaque" value="#2b8cff" aria-label="Escolher cor de destaque">
+                    </label>
+                    <button type="button" id="cor-destaque-reset" class="btn-reset-cor" title="Restaurar cor padrão" aria-label="Restaurar cor padrão">↺</button>
+                </div>
+
+                <button type="button" id="tema" class="hub-icon-btn" aria-label="Alternar tema" title="Alternar tema">◐</button>
+
                 <div id="auth-header" class="auth-header">
                     <button type="button" id="btn-entrar" class="btn btn-outline btn-sm auth-so-deslogado">Entrar</button>
                     <div id="auth-logado" class="auth-logado auth-so-logado" hidden>
@@ -102,13 +97,13 @@
                 <p class="inicio-subtitulo">Suporte</p>
             </div>
             <p class="inicio-descricao">
-                Acesse módulos, publicações e referências da equipe. Faça login para entrar no centro de operações.
+                Gerencie conteúdos, módulos e publicações em um único lugar.
             </p>
             <button type="button" id="btn-entrar-inicio" class="btn btn-primario inicio-btn-entrar">
                 Entrar
             </button>
             <p class="inicio-ferramentas">
-                Ferramentas disponíveis sem login:
+                Ferramentas sem login:
                 <a href="separador-pdf.html">Separador de PDF</a>
                 ·
                 <a href="tratamento.html">Normalizar</a>
@@ -116,28 +111,8 @@
         </div>
     </section>
 
-    <div class="app-layout" id="app-layout" hidden>
-        <aside id="sidebar" class="sidebar" aria-label="Lista de módulos" hidden>
-            <h2 class="sidebar-titulo">Módulos</h2>
-            <div id="lista-modulos" class="lista-modulos"></div>
-        </aside>
-
+    <div class="app-layout hub-app" id="app-layout" hidden>
         <main class="conteudo">
-            <div class="conteudo-toolbar" id="toolbar-admin">
-                <button type="button" id="criar-publicacao" class="btn btn-primario">
-                    Criar Publicação
-                </button>
-                <button type="button" id="criar-modulo" class="btn btn-outline">
-                    Novo Módulo +
-                </button>
-                <button type="button" id="criar-categoria" class="btn btn-outline">
-                    Nova Categoria +
-                </button>
-                <button type="button" id="ordenar-categorias" class="btn btn-outline">
-                    Organizar categorias
-                </button>
-            </div>
-
             <section id="painel-modulo" class="painel-modulo" hidden>
                 <header class="modulo-header">
                     <div class="modulo-header-esquerda">
@@ -147,19 +122,24 @@
                         <div id="modulo-avatar-header" class="modulo-avatar modulo-avatar-header" hidden aria-hidden="true"></div>
                         <h2 id="modulo-titulo" class="modulo-titulo"></h2>
                     </div>
-                <button type="button" id="editar-modulo" class="btn btn-outline btn-sm">
-                    Editar Módulo
-                </button>
+                    <div class="modulo-header-acoes">
+                        <button type="button" id="criar-publicacao" class="btn btn-primario btn-sm">
+                            ＋ Nova publicação
+                        </button>
+                        <button type="button" id="editar-modulo" class="btn btn-outline btn-sm">
+                            Editar módulo
+                        </button>
+                    </div>
                 </header>
 
                 <form action="" class="form-busca form-busca-item" role="search" id="busca-item-form">
                     <label for="busca-item" class="sr-only">Buscar publicação no módulo</label>
                     <div class="busca-wrapper">
-                        <span class="busca-icone" aria-hidden="true">🔍</span>
+                        <span class="busca-icone" aria-hidden="true">⌕</span>
                         <input
                             id="busca-item"
                             type="search"
-                            placeholder="Buscar por item"
+                            placeholder="Buscar publicação"
                             autocomplete="off"
                         >
                     </div>
@@ -168,14 +148,52 @@
                 <div id="lista-publicacoes" class="lista-publicacoes"></div>
             </section>
 
-            <section id="painel-explorar" class="painel-explorar-wrapper">
-                <div id="categorias-modulos" class="categorias-modulos"></div>
+            <section id="painel-explorar" class="painel-explorar-wrapper hub-dashboard">
+                <div class="hub-hero">
+                    <p class="hub-hero-saudacao" id="hub-saudacao">Olá</p>
+                    <p class="hub-hero-lead">
+                        Gerencie conteúdos, módulos e publicações em um único lugar.
+                    </p>
+
+                    <div class="hub-hero-busca">
+                        <label class="hub-hero-busca-campo" for="busca-global">
+                            <span class="hub-hero-busca-icone" aria-hidden="true">⌕</span>
+                            <input
+                                id="busca-global"
+                                type="search"
+                                placeholder="Filtrar só por nome do módulo…"
+                                autocomplete="off"
+                                aria-label="Filtrar módulos pelo nome"
+                            >
+                        </label>
+                    </div>
+
+                    <div class="hub-hero-acoes" id="hub-hero-acoes">
+                        <button type="button" class="hub-chip hub-chip-primario" data-acao-hub="modulo">＋ Novo módulo</button>
+                        <button type="button" class="hub-chip" data-acao-hub="categoria">＋ Nova categoria</button>
+                    </div>
+                </div>
+
+                <div class="hub-grid">
+                    <div id="categorias-modulos" class="categorias-modulos"></div>
+
+                    <aside class="hub-aside" id="hub-quick-actions">
+                        <h3>Ações rápidas</h3>
+                        <div class="hub-quick-list">
+                            <button type="button" data-acao-hub="modulo">＋ Módulo</button>
+                            <button type="button" data-acao-hub="categoria">＋ Categoria</button>
+                            <a href="separador-pdf.html">Upload / Separar PDF</a>
+                            <a href="tratamento.html">Normalizar texto</a>
+                            <button type="button" data-acao-hub="ordenar">Organizar categorias</button>
+                        </div>
+                    </aside>
+                </div>
             </section>
         </main>
     </div>
 
     <footer class="footer">
-        <p>© 2026 Central OPTO - Suporte. Vai te ajudar.</p>
+        <p>© 2026 Central OPTO - Suporte</p>
         <p>© Direitos Reservados a Miguel Tobias e Caio Lucas</p>
     </footer>
 
@@ -194,7 +212,7 @@
                 <select id="modulo-categoria" class="modal-select" required></select>
 
                 <label>Imagem <span class="label-opcional">(opcional)</span></label>
-                <p class="campo-ajuda">Ícone circular para identificar o módulo na grade.</p>
+                <p class="campo-ajuda">Ícone para identificar o módulo na grade.</p>
                 <input type="file" id="modulo-imagem-input" class="sr-only" accept="image/*">
 
                 <div class="modulo-imagem-editor">
@@ -231,7 +249,7 @@
             </form>
 
             <div id="painel-ordenar-categorias" class="modal-form" hidden>
-                <p class="campo-ajuda">Defina a ordem das seções na tela inicial. As categorias no topo aparecem primeiro.</p>
+                <p class="campo-ajuda">Defina a ordem das seções na tela inicial.</p>
                 <ol id="lista-ordenar-categorias" class="lista-ordenar-categorias"></ol>
 
                 <div class="modal-acoes">
@@ -266,7 +284,7 @@
                 </div>
 
                 <label>Arquivo <span class="label-opcional">(opcional)</span></label>
-                <p class="campo-ajuda">Anexe código, PDF, planilha ou outro documento para download.</p>
+                <p class="campo-ajuda">Anexe PDF, planilha ou outro documento.</p>
                 <input type="file" id="publicacao-arquivo-input" class="sr-only" accept="*/*">
 
                 <div id="zona-upload-arquivo" class="zona-upload" tabindex="0" role="button" aria-label="Selecionar arquivo para upload">

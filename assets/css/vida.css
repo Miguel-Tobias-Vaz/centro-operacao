@@ -13,7 +13,7 @@
     overflow: hidden;
 }
 
-/* Sobe o conteúdo acima do fundo — sem tocar no modal/loading/menu. */
+/* Sobe o conteúdo acima do fundo — sem tocar no modal/loading/menu/busca. */
 .vida-ambiente ~ *:not(.modal-overlay):not(.loading):not(.menu-usuario) {
     position: relative;
     z-index: 1;
@@ -235,7 +235,6 @@ body.tema-claro .vida-cursor {
 
 /* Cards de módulo — profundidade sutil */
 
-.card-modulo,
 .card-modulo-grid {
     transition:
         transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
@@ -244,15 +243,11 @@ body.tema-claro .vida-cursor {
         background var(--transicao);
 }
 
-.card-modulo:hover,
 .card-modulo-grid:hover {
     transform: translateY(-2px);
     box-shadow:
         var(--sombra-card),
         0 10px 28px rgba(0, 0, 0, 0.18);
-}
-
-.card-modulo-grid:hover {
     border-color: color-mix(in srgb, var(--cor-destaque) 28%, var(--vidro-borda-sutil));
 }
 
@@ -260,7 +255,6 @@ body.tema-claro .vida-cursor {
     transition: box-shadow 0.35s ease, transform 0.35s ease;
 }
 
-.card-modulo:hover .modulo-avatar,
 .card-modulo-grid:hover .modulo-avatar {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-destaque) 18%, transparent);
 }
@@ -293,9 +287,7 @@ body.tema-claro .vida-cursor {
 
 /* Cards de módulo nunca usam reveal — evita ficarem invisíveis no grid dinâmico */
 .card-modulo-grid,
-.card-modulo,
-.card-modulo-grid.revelar,
-.card-modulo.revelar {
+.card-modulo-grid.revelar {
     opacity: 1 !important;
     transform: none !important;
     filter: none !important;
@@ -364,7 +356,6 @@ body.tema-claro .vida-cursor {
     }
 
     .btn:hover,
-    .card-modulo:hover,
     .card-modulo-grid:hover {
         transform: none;
     }

@@ -35,7 +35,7 @@ function luminanciaCor(hex) {
     return 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
 }
 
-const COR_DESTAQUE_PADRAO = "#00588f";
+const COR_DESTAQUE_PADRAO = "#2b8cff";
 
 function obterCorDestaqueAtiva() {
     return localStorage.getItem("corDestaque") || COR_DESTAQUE_PADRAO;

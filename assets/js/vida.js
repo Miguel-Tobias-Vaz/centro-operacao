@@ -24,12 +24,12 @@
     }
 
     function prepararRevelacao() {
-        // Não incluir .card-modulo-grid / .card-modulo: são criados depois do load
+        // Não incluir .card-modulo-grid: são criados depois do load
         // e ficavam com opacity:0 sem nunca receber .revelar-visivel.
         const seletores = [
             ".inicio-card",
-            ".categoria-bloco",
-            ".publicacao-item",
+            ".categoria-modulos",
+            ".card-publicacao",
             ".admin-card",
             ".panel-tratamento",
             ".examples-panel",
