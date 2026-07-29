@@ -9,7 +9,7 @@
         fundo: { maxLado: 1920, qualidade: 0.88, maxBytes: 900 * 1024, rotulo: "fundo" }
     };
 
-    const LIMITE_GIF = 8 * 1024 * 1024;
+    const LIMITE_GIF = 15 * 1024 * 1024;
     const LIMITE_UPLOAD = 3 * 1024 * 1024;
 
     const EXT_MIME = {
@@ -120,7 +120,7 @@
         if (ehGif(file)) {
             if (file.size > LIMITE_GIF) {
                 throw new Error(
-                    "GIF demasiado grande (máx. 8 MB). Usa um GIF mais curto/leve."
+                    "GIF demasiado grande (máx. 15 MB). Usa um GIF mais curto/leve."
                 );
             }
             return {

@@ -52,9 +52,9 @@ Anon **não** lê conteúdo do hub (é preciso login).
 Buckets públicos (leitura via URL):
 
 - `publicacoes-arquivos` (máx. 10 MB)
-- `modulos-imagens` (máx. 8 MB) — ícones/capas; o cliente otimiza fotos para WebP
-- `perfis-midia` (máx. 8 MB) — avatars e fundos; o cliente otimiza fotos para WebP
-  - GIFs animados até 8 MB são mantidos sem recompressão (MIME corrigido no cliente)
+- `modulos-imagens` (máx. 15 MB) — ícones/capas; o cliente otimiza fotos para WebP
+- `perfis-midia` (máx. 15 MB) — avatars e fundos; o cliente otimiza fotos para WebP
+  - GIFs animados até 15 MB são mantidos sem recompressão (MIME corrigido no cliente)
   - Imagens estáticas continuam com teto prático de ~3 MB antes da otimização
 
 | Operação | Quem |

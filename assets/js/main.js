@@ -173,7 +173,7 @@ function obterCategoriasParaExibir() {
 
 const TAMANHO_MAX_ARQUIVO = 10 * 1024 * 1024;
 const TAMANHO_MAX_IMAGEM_MODULO = 3 * 1024 * 1024;
-const TAMANHO_MAX_GIF_MODULO = 8 * 1024 * 1024;
+const TAMANHO_MAX_GIF_MODULO = 15 * 1024 * 1024;
 
 let imagemModuloPendente = null;
 let imagemModuloPreviewUrl = null;
@@ -472,7 +472,7 @@ async function selecionarImagemModulo(file) {
     const limite = ehGif ? TAMANHO_MAX_GIF_MODULO : TAMANHO_MAX_IMAGEM_MODULO;
     if (file.size > limite) {
         alert(ehGif
-            ? "O GIF deve ter no máximo 8 MB."
+            ? "O GIF deve ter no máximo 15 MB."
             : "A imagem deve ter no máximo 3 MB.");
         return;
     }
