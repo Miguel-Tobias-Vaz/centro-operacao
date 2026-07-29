@@ -13,8 +13,9 @@
     overflow: hidden;
 }
 
-/* Sobe o conteúdo acima do fundo — sem tocar no modal/loading/menu/busca. */
-.vida-ambiente ~ *:not(.modal-overlay):not(.loading):not(.menu-usuario) {
+/* Sobe o conteúdo acima do fundo — sem tocar no modal/loading/menu/busca
+ * nem no wallpaper do perfil (precisa de position:fixed). */
+.vida-ambiente ~ *:not(.modal-overlay):not(.loading):not(.menu-usuario):not(.perfil-fundo) {
     position: relative;
     z-index: 1;
 }
@@ -259,11 +260,34 @@ body.tema-claro .vida-cursor {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-destaque) 18%, transparent);
 }
 
-/* Header glass um pouco mais profundo (mesmas cores) */
+/* Header glass — blur só no ::before (ver style.css / hub.css) */
 
 .header {
-    backdrop-filter: blur(20px) saturate(1.15);
-    -webkit-backdrop-filter: blur(20px) saturate(1.15);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.categoria-modulos.revelar,
+.categoria-modulos.revelar-visivel,
+.card-modulo-grid.tem-gif,
+.card-modulo-grid.tem-gif:hover,
+.card-modulo-grid.tem-gif:focus-within,
+.card-modulo-grid.tem-gif.revelar,
+.card-modulo-grid.tem-gif.revelar-visivel {
+    filter: none !important;
+    transform: none !important;
+    will-change: auto !important;
+    animation: none !important;
+}
+
+.card-modulo-grid.tem-gif .modulo-avatar,
+.card-modulo-grid.tem-gif:hover .modulo-avatar {
+    transform: none !important;
+}
+
+.card-modulo-grid.tem-gif,
+.card-modulo-grid.tem-gif .card-modulo-grid-media {
+    overflow: visible !important;
 }
 
 /* Scroll reveal */

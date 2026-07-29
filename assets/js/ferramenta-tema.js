@@ -87,11 +87,26 @@ function iniciarSeletorCorDestaque() {
     carregarCorDestaqueSalva();
 }
 
+function atualizarRotuloBotaoTema(botaoTema, claro) {
+    if (!botaoTema) return;
+    const usarIcone = botaoTema.id === "tema"
+        || botaoTema.classList.contains("hub-icon-btn")
+        || botaoTema.classList.contains("btn-tema-icone");
+    if (usarIcone) {
+        botaoTema.textContent = claro ? "☾" : "◐";
+        botaoTema.title = claro ? "Tema escuro" : "Tema claro";
+        botaoTema.setAttribute("aria-label", claro ? "Mudar para tema escuro" : "Mudar para tema claro");
+        return;
+    }
+    botaoTema.textContent = claro ? "Escuro" : "Claro";
+}
+
 function aplicarTemaFerramenta(claro, botaoTema) {
     document.body.classList.toggle("tema-claro", claro);
-    if (botaoTema) botaoTema.textContent = claro ? "Escuro" : "Claro";
+    atualizarRotuloBotaoTema(botaoTema, claro);
     localStorage.setItem("tema", claro ? "claro" : "escuro");
     carregarCorDestaqueSalva();
+    window.dispatchEvent(new CustomEvent("tema:changed", { detail: { claro: !!claro } }));
 }
 
 function iniciarTemaFerramenta(botaoTema) {

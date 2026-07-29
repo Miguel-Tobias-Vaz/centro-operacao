@@ -72,13 +72,14 @@
                                 aria-expanded="false"
                                 aria-label="Menu da conta"
                             >
-                                <span class="modulo-avatar modulo-avatar-sm">
+                                <span class="modulo-avatar modulo-avatar-sm" id="auth-usuario-avatar">
                                     <span class="modulo-avatar-inicial" id="auth-usuario-inicial">?</span>
                                 </span>
                             </button>
                             <div id="menu-usuario" class="menu-usuario" hidden>
                                 <p class="menu-usuario-nome" id="auth-usuario-nome"></p>
                                 <p class="menu-usuario-email" id="auth-usuario-email"></p>
+                                <a href="perfil.html" class="menu-usuario-item" id="link-meu-perfil">Meu perfil</a>
                                 <a href="admin.html" id="link-admin" class="menu-usuario-item" hidden>Administração</a>
                                 <button type="button" id="btn-sair" class="menu-usuario-item menu-usuario-sair">Sair</button>
                             </div>
@@ -212,17 +213,20 @@
                 <select id="modulo-categoria" class="modal-select" required></select>
 
                 <label>Imagem <span class="label-opcional">(opcional)</span></label>
-                <p class="campo-ajuda">Ícone para identificar o módulo na grade.</p>
+                <p class="campo-ajuda">PNG, JPG, WebP ou GIF. Fotos são otimizadas automaticamente; GIFs até 8&nbsp;MB mantêm a animação.</p>
                 <input type="file" id="modulo-imagem-input" class="sr-only" accept="image/*">
 
                 <div class="modulo-imagem-editor">
-                    <button type="button" id="modulo-imagem-preview" class="modulo-imagem-circulo" aria-label="Escolher imagem">
+                    <button type="button" id="modulo-imagem-preview" class="modulo-imagem-circulo" aria-label="Escolher ou reposicionar imagem" title="Arrasta para reposicionar · clique para trocar">
                         <span id="modulo-imagem-placeholder" class="modulo-imagem-placeholder">+</span>
                         <img id="modulo-imagem-img" class="modulo-imagem-preview" alt="" hidden>
                     </button>
-                    <button type="button" id="btn-remover-imagem-modulo" class="btn btn-outline btn-sm" hidden>
-                        Remover imagem
-                    </button>
+                    <div class="modulo-imagem-editor-acoes">
+                        <button type="button" id="btn-remover-imagem-modulo" class="btn btn-outline btn-sm" hidden>
+                            Remover imagem
+                        </button>
+                        <p class="img-pos-dica" id="modulo-imagem-pos-dica" hidden>Arrasta para centralizar · clique para trocar</p>
+                    </div>
                 </div>
 
                 <div class="modal-acoes">
@@ -322,6 +326,9 @@
     <script src="assets/js/ferramenta-tema.js"></script>
     <script src="assets/js/vida.js"></script>
     <script src="assets/js/logs.js"></script>
+    <script src="assets/js/imagem-posicao.js"></script>
+    <script src="assets/js/imagem-otimizar.js"></script>
+    <script src="assets/js/gif-vivo.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/main.js"></script>
 </body>

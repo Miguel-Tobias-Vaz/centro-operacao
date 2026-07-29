@@ -6,11 +6,14 @@
     "build:acentos": "node scripts/build-acentos-pt.js",
     "start": "node scripts/serve.js",
     "start:python": "python -m http.server 5500",
-    "test": "npm run test:nomes && npm run test:separador",
+    "test": "npm run test:nomes && npm run test:separador && npm run test:gif",
     "test:nomes": "node scripts/test-tratamento-nomes.js",
-    "test:separador": "node scripts/test-separador-logic.js"
+    "test:separador": "node scripts/test-separador-logic.js",
+    "test:gif": "node scripts/test-gif-animacao.mjs"
   },
   "devDependencies": {
-    "dictionary-pt": "^4.0.0"
+    "dictionary-pt": "^4.0.0",
+    "playwright": "^1.62.0",
+    "pngjs": "^7.0.0"
   }
 }

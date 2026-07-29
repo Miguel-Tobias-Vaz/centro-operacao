@@ -100,18 +100,34 @@ a {
     color: var(--cor-destaque);
 }
 
-/* Header */
+/* Header — blur num ::before para não congelar GIF do avatar */
 
 .header {
     position: sticky;
     top: 0;
     z-index: 100;
     overflow: visible;
-    background: color-mix(in srgb, var(--cor-superficie) 82%, transparent);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: color-mix(in srgb, var(--cor-superficie) 92%, transparent);
     border-bottom: 1px solid var(--cor-borda);
     transition: background-color var(--transicao), border-color var(--transicao);
+}
+
+.header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--cor-superficie) 55%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.header > *,
+.header .header-inner,
+.header .hub-topbar-inner {
+    position: relative;
+    z-index: 1;
 }
 
 .header-inner {
@@ -1525,6 +1541,15 @@ a {
     border: 1px solid color-mix(in srgb, var(--cor-destaque) 35%, transparent);
 }
 
+/* GIF: overflow:hidden + border-radius no pai congela animação no Chromium */
+.modulo-avatar:has(img.is-gif) {
+    overflow: visible;
+}
+
+.modulo-avatar img.is-gif {
+    border-radius: 50%;
+}
+
 .modulo-avatar-sm {
     width: 40px;
     height: 40px;
@@ -1549,6 +1574,7 @@ a {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
 }
 
 .modulo-avatar-inicial {
@@ -1604,8 +1630,7 @@ a {
 .painel-explorar,
 .categoria-modulos {
     background: var(--vidro-fundo);
-    backdrop-filter: blur(var(--vidro-blur));
-    -webkit-backdrop-filter: blur(var(--vidro-blur));
+    /* Sem backdrop-filter: congela GIFs animados nos cards (Chromium) */
     border: 1px solid var(--vidro-borda);
     border-radius: calc(var(--raio) + 4px);
     padding: 32px;
@@ -1664,8 +1689,7 @@ a {
     padding: 24px 20px;
     min-height: 180px;
     background: var(--vidro-fundo-card);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    /* Sem backdrop-filter: no Chromium congela GIFs animados dentro do card */
     border: 1px solid var(--vidro-borda-sutil);
     border-radius: var(--raio);
     box-shadow:
@@ -1795,8 +1819,7 @@ body.tema-claro .card-modulo-grid.sobre-arrasto {
 
 .painel-modulo {
     background: var(--vidro-fundo);
-    backdrop-filter: blur(var(--vidro-blur));
-    -webkit-backdrop-filter: blur(var(--vidro-blur));
+    /* Sem backdrop-filter: congela GIF do avatar do módulo */
     border: 1px solid var(--vidro-borda);
     border-radius: calc(var(--raio) + 4px);
     padding: 28px 32px;
@@ -2007,8 +2030,23 @@ body.tema-claro .card-modulo-grid.sobre-arrasto {
     align-items: center;
     justify-content: center;
     padding: 20px;
+    background-color: transparent;
+}
+
+.modal-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
     background-color: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.modal-overlay > * {
+    position: relative;
+    z-index: 1;
 }
 
 .modal-overlay[hidden] {
@@ -2149,6 +2187,14 @@ body.tema-claro .card-modulo-grid.sobre-arrasto {
     margin-bottom: 4px;
 }
 
+.modulo-imagem-editor-acoes {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+}
+
 .modulo-imagem-circulo {
     width: 72px;
     height: 72px;
@@ -2162,6 +2208,26 @@ body.tema-claro .card-modulo-grid.sobre-arrasto {
     align-items: center;
     justify-content: center;
     transition: border-color var(--transicao), background var(--transicao);
+}
+
+.modulo-imagem-circulo:has(img.is-gif) {
+    overflow: visible;
+}
+
+.modulo-imagem-preview.is-gif {
+    border-radius: 50%;
+    filter: none !important;
+    transform: none !important;
+}
+
+.modulo-imagem-circulo.img-pos-arrastavel {
+    cursor: grab;
+    border-style: solid;
+    touch-action: none;
+}
+
+.modulo-imagem-circulo.img-pos-arrastavel.is-arrastando {
+    cursor: grabbing;
 }
 
 .modulo-imagem-circulo:hover {
@@ -2179,6 +2245,25 @@ body.tema-claro .card-modulo-grid.sobre-arrasto {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
+    pointer-events: none;
+}
+
+.img-pos-dica {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--cor-fonte-suave);
+    line-height: 1.35;
+}
+
+.img-pos-arrastavel {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.img-pos-arrastavel.is-arrastando {
+    cursor: grabbing;
 }
 
 .zona-upload {
@@ -2776,8 +2861,32 @@ body.usuario-logado .auth-so-logado {
     transition: transform var(--transicao), box-shadow var(--transicao);
 }
 
+.usuario-avatar-btn .auth-avatar-img,
+.modulo-avatar .auth-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    border-radius: inherit;
+    display: block;
+}
+
 .usuario-avatar-btn:hover {
     transform: scale(1.04);
+}
+
+.usuario-avatar-btn:has(img.is-gif) {
+    overflow: visible;
+}
+
+.usuario-avatar-btn:has(img.is-gif):hover {
+    transform: none;
+}
+
+.auth-avatar-img.is-gif {
+    border-radius: 50%;
+    filter: none !important;
+    transform: none !important;
 }
 
 .usuario-avatar-btn:focus-visible {

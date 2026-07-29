@@ -29,7 +29,9 @@ const LogsAtividade = (() => {
         "Alterar permissão": { cor: "roxo", icone: "shield" },
         "Ativar usuário": { cor: "verde", icone: "user-check" },
         "Desativar usuário": { cor: "laranja", icone: "user-minus" },
-        "Redefinir senha": { cor: "laranja", icone: "key-round" }
+        "Redefinir senha": { cor: "laranja", icone: "key-round" },
+        "Editar perfil": { cor: "azul", icone: "user-pen" },
+        "Editar anotações": { cor: "azul", icone: "notebook-pen" }
     };
 
     function iniciar(supabaseClient) {
@@ -133,7 +135,9 @@ const LogsAtividade = (() => {
         return entradas.filter((item) => {
             if (entidade && String(item.entidade || "").toLowerCase() !== entidade) return false;
 
-            if (usuario) {
+            if (filtros.usuario_id) {
+                if (String(item.usuario_id || "") !== String(filtros.usuario_id)) return false;
+            } else if (usuario) {
                 const nome = String(item.usuario_nome || "").toLowerCase();
                 const email = String(item.usuario_email || "").toLowerCase();
                 if (!nome.includes(usuario) && !email.includes(usuario)) return false;
@@ -158,14 +162,21 @@ const LogsAtividade = (() => {
     async function listar(limite = 200, filtros = {}) {
         const locais = lerLocal();
         let remotos = [];
+        const lim = Math.max(1, Math.min(Number(limite) || 200, 300));
 
         try {
             if (await detectarTabela()) {
-                const { data, error } = await client
+                let query = client
                     .from("logs_atividade")
                     .select("*")
                     .order("criado_em", { ascending: false })
-                    .limit(Math.max(limite, 300));
+                    .limit(lim);
+
+                if (filtros.usuario_id) {
+                    query = query.eq("usuario_id", filtros.usuario_id);
+                }
+
+                const { data, error } = await query;
 
                 if (error) throw error;
                 remotos = data || [];
@@ -183,7 +194,7 @@ const LogsAtividade = (() => {
             String(b.criado_em).localeCompare(String(a.criado_em))
         );
 
-        return aplicarFiltros(unidos, filtros).slice(0, limite);
+        return aplicarFiltros(unidos, filtros).slice(0, lim);
     }
 
     function estatisticas(entradas) {

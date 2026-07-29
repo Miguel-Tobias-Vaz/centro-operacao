@@ -11,8 +11,14 @@ const Auth = (() => {
     let colunaAtivoDisponivel = null;
     let ultimoUserIdNotificado = null;
 
-    const CAMPOS_PERFIL_BASE = "id, email, nome, role, created_at";
+    const CAMPOS_PERFIL_BASE_SEM_POS = "id, email, nome, role, created_at, bio, cargo, avatar_url, fundo_url, cor_destaque, tema_perfil, barra_esq_url, barra_dir_url, barra_esq_cor, barra_dir_cor, meio_cor, anotacoes";
+    const CAMPOS_PERFIL_BASE = `${CAMPOS_PERFIL_BASE_SEM_POS}, avatar_pos, fundo_pos, barra_esq_pos, barra_dir_pos`;
     const CAMPOS_PERFIL_COM_ATIVO = `${CAMPOS_PERFIL_BASE}, ativo`;
+    const CAMPOS_PERFIL_COM_ATIVO_SEM_POS = `${CAMPOS_PERFIL_BASE_SEM_POS}, ativo`;
+    const CAMPOS_PERFIL_LEGACY = "id, email, nome, role, created_at";
+    const CAMPOS_PERFIL_LEGACY_ATIVO = `${CAMPOS_PERFIL_LEGACY}, ativo`;
+    let colunasPersonalizacaoDisponiveis = null;
+    let colunasPosicaoDisponiveis = null;
 
     function erroColunaAtivoAusente(error) {
         const msg = error?.message || "";
@@ -52,7 +58,62 @@ const Auth = (() => {
     }
 
     function camposPerfilSelect() {
+        if (colunasPersonalizacaoDisponiveis === false) {
+            return colunaAtivoDisponivel ? CAMPOS_PERFIL_LEGACY_ATIVO : CAMPOS_PERFIL_LEGACY;
+        }
+        if (colunasPosicaoDisponiveis === false) {
+            return colunaAtivoDisponivel ? CAMPOS_PERFIL_COM_ATIVO_SEM_POS : CAMPOS_PERFIL_BASE_SEM_POS;
+        }
         return colunaAtivoDisponivel ? CAMPOS_PERFIL_COM_ATIVO : CAMPOS_PERFIL_BASE;
+    }
+
+    function erroColunasPosicao(error) {
+        const msg = error?.message || "";
+        return /avatar_pos|fundo_pos|barra_esq_pos|barra_dir_pos/i.test(msg);
+    }
+
+    function erroColunasPersonalizacao(error) {
+        const msg = error?.message || "";
+        const code = error?.code || "";
+        if (erroColunasPosicao(error)) return false;
+        return (
+            code === "42703" ||
+            code === "PGRST204" ||
+            /bio|cargo|avatar_url|fundo_url|cor_destaque|tema_perfil|barra_esq|barra_dir|meio_cor|anotacoes/i.test(msg)
+        );
+    }
+
+    async function selecionarPerfilPorId(userId) {
+        let { data, error } = await client
+            .from("profiles")
+            .select(camposPerfilSelect())
+            .eq("id", userId)
+            .maybeSingle();
+
+        if (error && erroColunasPosicao(error) && colunasPosicaoDisponiveis !== false) {
+            colunasPosicaoDisponiveis = false;
+            ({ data, error } = await client
+                .from("profiles")
+                .select(camposPerfilSelect())
+                .eq("id", userId)
+                .maybeSingle());
+        } else if (!error && colunasPosicaoDisponiveis == null) {
+            colunasPosicaoDisponiveis = true;
+        }
+
+        if (error && erroColunasPersonalizacao(error) && colunasPersonalizacaoDisponiveis !== false) {
+            colunasPersonalizacaoDisponiveis = false;
+            ({ data, error } = await client
+                .from("profiles")
+                .select(camposPerfilSelect())
+                .eq("id", userId)
+                .maybeSingle());
+        } else if (!error && colunasPersonalizacaoDisponiveis == null) {
+            colunasPersonalizacaoDisponiveis = true;
+        }
+
+        if (error) throw error;
+        return data;
     }
 
     function getSession() {
@@ -190,20 +251,14 @@ const Auth = (() => {
 
         await detectarColunaAtivo();
 
-        const { data, error } = await client
-            .from("profiles")
-            .select(camposPerfilSelect())
-            .eq("id", session.user.id)
-            .maybeSingle();
-
-        if (error) {
+        try {
+            const data = await selecionarPerfilPorId(session.user.id);
+            perfil = normalizarAtivo(data);
+            await garantirAdminInicial();
+        } catch (error) {
             console.warn("Erro ao carregar perfil:", error);
             perfil = null;
-            return;
         }
-
-        perfil = normalizarAtivo(data);
-        await garantirAdminInicial();
     }
 
     /**
@@ -265,15 +320,58 @@ const Auth = (() => {
     }
 
     async function recarregarPerfilSemBootstrap() {
-        const { data, error } = await client
-            .from("profiles")
-            .select(camposPerfilSelect())
-            .eq("id", session.user.id)
-            .maybeSingle();
+        if (!session?.user?.id || !client) return;
+        try {
+            const data = await selecionarPerfilPorId(session.user.id);
+            if (data) {
+                perfil = normalizarAtivo(data);
+                atualizarUIModo();
+            }
+        } catch (error) {
+            console.warn("Erro ao recarregar perfil:", error);
+        }
+    }
 
-        if (!error && data) {
-            perfil = normalizarAtivo(data);
-            atualizarUIModo();
+    function urlAvatarPublica(caminho) {
+        if (!caminho || !client) return "";
+        if (/^https?:\/\//i.test(caminho)) return caminho;
+        const { data } = client.storage.from("perfis-midia").getPublicUrl(caminho);
+        return data?.publicUrl || "";
+    }
+
+    function atualizarAvatarHeader(nome) {
+        const wrap = document.getElementById("auth-usuario-avatar");
+        const inicial = document.getElementById("auth-usuario-inicial");
+        const url = urlAvatarPublica(perfil?.avatar_url);
+
+        if (!wrap) {
+            if (inicial) inicial.textContent = obterInicial(nome);
+            return;
+        }
+
+        const imgExistente = wrap.querySelector("img.auth-avatar-img");
+        const pos = window.ImagemPosicao?.normalizar?.(perfil?.avatar_pos) || "50% 50%";
+        const ehGif = /\.gif(\?|#|$)/i.test(String(perfil?.avatar_url || url || ""));
+        if (url) {
+            if (inicial) inicial.hidden = true;
+            if (imgExistente) {
+                imgExistente.src = url;
+                imgExistente.classList.toggle("is-gif", ehGif);
+                window.ImagemPosicao?.aplicarImg?.(imgExistente, pos);
+            } else {
+                const img = document.createElement("img");
+                img.className = ehGif ? "auth-avatar-img is-gif" : "auth-avatar-img";
+                img.alt = "";
+                img.src = url;
+                window.ImagemPosicao?.aplicarImg?.(img, pos);
+                wrap.appendChild(img);
+            }
+        } else {
+            imgExistente?.remove();
+            if (inicial) {
+                inicial.hidden = false;
+                inicial.textContent = obterInicial(nome);
+            }
         }
     }
 
@@ -287,18 +385,22 @@ const Auth = (() => {
 
         const btnE = document.getElementById("btn-entrar");
         const area = document.getElementById("auth-logado");
-        const inicial = document.getElementById("auth-usuario-inicial");
         const nomeEl = document.getElementById("auth-usuario-nome");
         const emailEl = document.getElementById("auth-usuario-email");
         const linkAdmin = document.getElementById("link-admin");
         const btnMenu = document.getElementById("btn-menu-usuario");
+        const linkMeuPerfil = document.getElementById("link-meu-perfil");
 
         if (btnE) btnE.hidden = logado;
         if (area) area.hidden = !logado;
-        if (inicial) inicial.textContent = obterInicial(nome);
+        atualizarAvatarHeader(nome);
         if (nomeEl) nomeEl.textContent = perfil?.nome || nome;
         if (emailEl) emailEl.textContent = session?.user?.email || "";
         if (linkAdmin) linkAdmin.hidden = !ehAdmin();
+        if (linkMeuPerfil) {
+            linkMeuPerfil.hidden = !logado;
+            if (session?.user?.id) linkMeuPerfil.href = `perfil.html?id=${session.user.id}`;
+        }
         if (btnMenu) btnMenu.title = `${nome} — ${session?.user?.email || ""}`;
 
         const painelInicio = document.getElementById("painel-inicio");
@@ -468,10 +570,30 @@ const Auth = (() => {
     async function listarUsuarios() {
         await detectarColunaAtivo();
 
-        const { data, error } = await client
+        let { data, error } = await client
             .from("profiles")
             .select(camposPerfilSelect())
             .order("created_at", { ascending: true });
+
+        if (error && erroColunasPosicao(error) && colunasPosicaoDisponiveis !== false) {
+            colunasPosicaoDisponiveis = false;
+            ({ data, error } = await client
+                .from("profiles")
+                .select(camposPerfilSelect())
+                .order("created_at", { ascending: true }));
+        } else if (!error && colunasPosicaoDisponiveis == null) {
+            colunasPosicaoDisponiveis = true;
+        }
+
+        if (error && erroColunasPersonalizacao(error) && colunasPersonalizacaoDisponiveis !== false) {
+            colunasPersonalizacaoDisponiveis = false;
+            ({ data, error } = await client
+                .from("profiles")
+                .select(camposPerfilSelect())
+                .order("created_at", { ascending: true }));
+        } else if (!error && colunasPersonalizacaoDisponiveis == null) {
+            colunasPersonalizacaoDisponiveis = true;
+        }
 
         if (error) throw error;
         return (data || []).map((usuario) => normalizarAtivo({ ...usuario }));
@@ -649,6 +771,11 @@ const Auth = (() => {
                     toggleLabel.append(toggle, toggleTexto);
                 }
 
+                const btnPerfil = document.createElement("a");
+                btnPerfil.href = `perfil.html?id=${encodeURIComponent(usuario.id)}`;
+                btnPerfil.className = "btn btn-outline btn-sm usuario-btn-acao";
+                btnPerfil.textContent = "Ver perfil";
+
                 const btnSenha = document.createElement("button");
                 btnSenha.type = "button";
                 btnSenha.className = "btn btn-outline btn-sm usuario-btn-acao";
@@ -677,7 +804,7 @@ const Auth = (() => {
 
                 acoes.append(select);
                 if (toggleLabel) acoes.append(toggleLabel);
-                acoes.append(btnSenha, btnExcluir);
+                acoes.append(btnPerfil, btnSenha, btnExcluir);
                 item.append(avatar, info, acoes);
                 lista.appendChild(item);
             });
@@ -870,7 +997,8 @@ const Auth = (() => {
         fecharOverlayModal,
         atualizarUIModo,
         listarUsuarios,
-        renderizarListaUsuarios
+        renderizarListaUsuarios,
+        recarregarPerfil: recarregarPerfilSemBootstrap
     };
 })();
 

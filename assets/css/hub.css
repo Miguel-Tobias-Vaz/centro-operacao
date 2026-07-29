@@ -11,9 +11,24 @@
     z-index: 200;
     overflow: visible;
     border-bottom: 1px solid var(--cor-borda);
-    background: color-mix(in srgb, var(--cor-fundo) 78%, transparent);
+    background: color-mix(in srgb, var(--cor-fundo) 92%, transparent);
+}
+
+.hub-topbar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--cor-fundo) 50%, transparent);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
+}
+
+.hub-topbar > *,
+.hub-topbar .hub-topbar-inner {
+    position: relative;
+    z-index: 1;
 }
 
 .hub-topbar-inner {
@@ -442,14 +457,17 @@
     padding: 28px 28px 32px;
     border: 1px solid var(--cor-borda);
     border-radius: 18px;
-    background: color-mix(in srgb, var(--cor-superficie) 88%, transparent);
+    background: color-mix(in srgb, var(--cor-superficie) 96%, #000);
     box-shadow: none;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: none;
     animation: hub-reveal 0.5s ease both;
 }
 
 @keyframes hub-reveal {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .categoria-modulos:nth-child(2) { animation-delay: 0.05s; }
@@ -513,6 +531,7 @@
     border: 1px solid var(--cor-borda);
     border-radius: 14px;
     box-shadow: var(--sombra-card);
+    /* Sem backdrop-filter — congela GIFs no Chromium */
     transition:
         transform 0.25s ease,
         box-shadow 0.25s ease,
@@ -524,6 +543,12 @@
     transform: translateY(-6px);
     border-color: color-mix(in srgb, var(--cor-destaque) 55%, var(--cor-borda));
     box-shadow: var(--sombra-card-hover);
+}
+
+.card-modulo-grid.tem-gif:hover,
+.card-modulo-grid.tem-gif:focus-within {
+    /* Evitar transform no card com GIF — em alguns Chromium para a animação */
+    transform: none;
 }
 
 .card-modulo-grid-media {
@@ -549,9 +574,104 @@
     object-fit: cover;
     object-position: center;
     display: block;
-    transform: scale(1.02);
-    transition: transform 0.35s ease, filter 0.35s ease;
-    filter: saturate(1.05) contrast(1.04);
+}
+
+/*
+ * GIFs: Chromium congela animação se um ancestral tiver
+ * overflow:hidden + border-radius (ou filter/transform/backdrop-filter).
+ * Clipar no próprio <img>; libertar overflow nos contentores.
+ */
+.card-modulo-grid.tem-gif,
+.card-modulo-grid.tem-gif .card-modulo-grid-media {
+    overflow: visible;
+}
+
+.card-modulo-capa.is-gif,
+.modulo-avatar-img.is-gif,
+.perfil-avatar-wrap img.is-gif,
+.perfil-avatar-previa img.is-gif,
+.modulo-imagem-preview.is-gif,
+.auth-avatar-img.is-gif {
+    filter: none !important;
+    transform: none !important;
+    image-rendering: auto;
+}
+
+.card-modulo-capa.is-gif {
+    border-radius: 14px 14px 0 0;
+}
+
+img.is-gif.gif-vivo-fonte {
+    opacity: 0 !important;
+}
+
+.gif-vivo-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: inherit;
+    border: 0;
+    background: transparent;
+}
+
+.gif-vivo-iframe {
+    /* image document no iframe */
+    color-scheme: normal;
+}
+
+.card-modulo-grid-media .gif-vivo-canvas {
+    border-radius: 0;
+}
+
+.modulo-avatar .gif-vivo-canvas,
+.modulo-imagem-circulo .gif-vivo-canvas,
+.usuario-avatar-btn .gif-vivo-canvas,
+.auth-avatar-img + .gif-vivo-canvas {
+    border-radius: 50%;
+}
+
+.perfil-avatar-wrap,
+.perfil-avatar-previa,
+.modulo-imagem-circulo,
+.modulo-avatar,
+.usuario-avatar-btn,
+.card-modulo-grid-media {
+    position: relative;
+}
+
+.perfil-avatar-wrap .gif-vivo-canvas {
+    border-radius: 4px;
+}
+
+.perfil-avatar-previa .gif-vivo-canvas {
+    border-radius: 8px;
+}
+
+.perfil-fundo .gif-vivo-canvas,
+.perfil-fundo-gif + .gif-vivo-canvas {
+    border-radius: 0;
+    z-index: 0;
+}
+
+.modulo-avatar:has(img.is-gif),
+.modulo-imagem-circulo:has(img.is-gif),
+.usuario-avatar-btn:has(img.is-gif),
+.perfil-avatar-wrap:has(img.is-gif),
+.perfil-avatar-previa:has(img.is-gif) {
+    overflow: visible;
+}
+
+.modulo-avatar img.is-gif,
+.modulo-imagem-preview.is-gif {
+    border-radius: 50%;
+}
+
+.usuario-avatar-btn:has(img.is-gif):hover {
+    transform: none;
 }
 
 .card-modulo-grid.tem-capa .card-modulo-grid-media::after {
@@ -565,12 +685,6 @@
         transparent 70%
     );
     pointer-events: none;
-}
-
-.card-modulo-grid:hover .card-modulo-capa,
-.card-modulo-grid:focus-within .card-modulo-capa {
-    transform: scale(1.06);
-    filter: saturate(1.1) contrast(1.05) brightness(1.04);
 }
 
 .card-modulo-capa-fallback {

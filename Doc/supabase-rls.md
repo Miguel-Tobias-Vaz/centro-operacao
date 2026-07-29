@@ -24,10 +24,12 @@ Helpers (SECURITY DEFINER):
 
 | Operação | Quem |
 |----------|------|
-| SELECT | Próprio registo **ou** admin |
-| UPDATE | Só admin (role, ativo, nome de outros) |
+| SELECT | Próprio registo **ou** qualquer utilizador autenticado ativo (visitar perfis) |
+| UPDATE | Admin (tudo) **ou** o próprio utilizador ativo (personalização: nome, bio, cargo, avatar, fundo, cor, tema) — trigger bloqueia alteração de `role` / `ativo` / `email` por não-admin |
 | INSERT | Trigger `handle_new_user` em `auth.users` (não pelo client) |
 | DELETE | Indireto via `admin_excluir_usuario` (apaga `auth.users` → CASCADE) |
+
+Campos de personalização (migration `005` + `006` + `007`): `bio`, `cargo`, `avatar_url`, `fundo_url`, `cor_destaque`, `tema_perfil`, `barra_esq_url`, `barra_dir_url`, `barra_esq_cor`, `barra_dir_cor`, `meio_cor`, `anotacoes`.
 
 ### `categorias_modulo`, `modulos`, `publicacoes`
 
@@ -42,7 +44,7 @@ Anon **não** lê conteúdo do hub (é preciso login).
 
 | Operação | Quem |
 |----------|------|
-| SELECT | Só admin |
+| SELECT | Admin (tudo) **ou** utilizador ativo (apenas linhas com `usuario_id` — feed de perfil) |
 | INSERT | Utilizador autenticado ativo |
 
 ## Storage
@@ -50,14 +52,17 @@ Anon **não** lê conteúdo do hub (é preciso login).
 Buckets públicos (leitura via URL):
 
 - `publicacoes-arquivos` (máx. 10 MB)
-- `modulos-imagens` (máx. 2 MB)
+- `modulos-imagens` (máx. 8 MB) — ícones/capas; o cliente otimiza fotos para WebP
+- `perfis-midia` (máx. 8 MB) — avatars e fundos; o cliente otimiza fotos para WebP
+  - GIFs animados até 8 MB são mantidos sem recompressão (MIME corrigido no cliente)
+  - Imagens estáticas continuam com teto prático de ~3 MB antes da otimização
 
 | Operação | Quem |
 |----------|------|
 | SELECT | Público (getPublicUrl) |
-| INSERT / UPDATE / DELETE | `can_edit_content()` |
+| INSERT / UPDATE / DELETE | Conteúdo: `can_edit_content()`; perfis: dono no prefixo `{user_id}/` |
 
-Os campos `imagem_url` / `arquivo_url` guardam o **caminho** dentro do bucket, não a URL completa.
+Os campos `imagem_url` / `arquivo_url` / `avatar_url` / `fundo_url` guardam o **caminho** dentro do bucket, não a URL completa.
 
 ## O que a UI não substitui
 
@@ -68,7 +73,7 @@ Os campos `imagem_url` / `arquivo_url` guardam o **caminho** dentro do bucket, n
 ## Checklist após aplicar SQL
 
 1. Authentication → Providers: Email ligado.
-2. Correr `001` … `004` no SQL Editor.
+2. Correr `001` … `007` no SQL Editor.
 3. Criar o primeiro utilizador (signup ou painel).
 4. `SELECT public.promover_primeiro_admin();` (logado como esse user) **ou** UPDATE manual do role.
 5. Confirmar no Table Editor que RLS está **Enabled** em todas as tabelas acima.

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <title>Teste GIF vivo (DOM real)</title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/vida.css">
+  <link rel="stylesheet" href="/assets/css/hub.css">
+  <link rel="stylesheet" href="/assets/css/perfil.css">
+  <style>
+    /* Congeladores deliberados — nativo falha; canvas deve animar */
+    .congelador {
+      filter: blur(0.01px);
+      transform: translateZ(0);
+      backdrop-filter: blur(8px);
+      overflow: hidden;
+      border-radius: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="vida-ambiente" aria-hidden="true">
+    <div class="vida-gradiente"></div>
+    <div class="vida-orb vida-orb-a"></div>
+  </div>
+
+  <header class="header hub-topbar">
+    <div class="hub-topbar-inner">
+      <button type="button" class="usuario-avatar-btn modulo-avatar modulo-avatar-header">
+        <img class="auth-avatar-img is-gif" src="/scripts/fixtures/anim-teste.gif" alt="">
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="painel-explorar">
+      <div class="categorias-modulos">
+        <section class="categoria-modulos">
+          <div class="grid-modulos">
+            <article class="card-modulo-grid tem-capa tem-gif congelador" id="card-gif">
+              <div class="card-modulo-grid-media">
+                <img class="card-modulo-capa is-gif" id="capa-gif" src="/scripts/fixtures/anim-teste.gif" alt="">
+              </div>
+              <div class="card-modulo-grid-corpo">
+                <h3 class="card-modulo-nome">GIF vivo</h3>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="congelador" style="width:88px;height:88px;margin-top:24px" id="avatar-box">
+      <div class="modulo-avatar modulo-avatar-lg" style="width:100%;height:100%">
+        <img class="modulo-avatar-img is-gif" id="avatar-gif" src="/scripts/fixtures/anim-teste.gif" alt="">
+      </div>
+    </div>
+  </main>
+
+  <script src="/assets/js/gif-vivo.js"></script>
+</body>
+</html>

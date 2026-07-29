@@ -1,0 +1,820 @@
+/* Página de perfil — layout Steam (barras laterais + painel central) */
+
+.perfil-body {
+    --perfil-destaque: #2b8cff;
+    --perfil-meio-cor: #131722;
+    --perfil-vidro: color-mix(in srgb, var(--perfil-meio-cor) 82%, transparent);
+    --perfil-vidro-borda: color-mix(in srgb, var(--perfil-destaque) 22%, rgba(255, 255, 255, 0.08));
+    --perfil-fonte: #e8ecf4;
+    --perfil-fonte-suave: #9aa3b5;
+    --perfil-borda-suave: color-mix(in srgb, #fff 7%, transparent);
+    --perfil-fundo-base: #0a0c10;
+    --perfil-topbar-bg: color-mix(in srgb, #05070c 55%, transparent);
+    --perfil-sombra: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 18px 50px rgba(0, 0, 0, 0.45);
+    --perfil-aside-bg: color-mix(in srgb, #000 18%, transparent);
+    /* Largura clássica do content Steam (~948px) */
+    --perfil-largura-meio: 948px;
+    /* Sidebar interna Steam ~308px (~32% do painel) */
+    --perfil-largura-aside: 308px;
+    min-height: 100vh;
+    position: relative;
+    color: var(--perfil-fonte);
+}
+
+.perfil-body.perfil-tema-claro {
+    --perfil-meio-cor: #eef2f7;
+    --perfil-vidro: color-mix(in srgb, var(--perfil-meio-cor) 92%, #fff);
+    --perfil-vidro-borda: color-mix(in srgb, var(--perfil-destaque) 28%, rgba(15, 23, 42, 0.12));
+    --perfil-fonte: #121826;
+    --perfil-fonte-suave: #5b6578;
+    --perfil-borda-suave: color-mix(in srgb, #0f172a 10%, transparent);
+    --perfil-fundo-base: #e4eaf2;
+    --perfil-topbar-bg: color-mix(in srgb, #f4f7fb 82%, transparent);
+    --perfil-sombra: 0 0 0 1px rgba(15, 23, 42, 0.06), 0 16px 40px rgba(15, 23, 42, 0.12);
+    --perfil-aside-bg: color-mix(in srgb, #fff 55%, transparent);
+}
+
+.perfil-fundo {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 0 !important;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse 70% 50% at 20% 10%, color-mix(in srgb, var(--perfil-destaque) 28%, transparent), transparent 60%),
+        radial-gradient(ellipse 50% 40% at 90% 80%, color-mix(in srgb, var(--perfil-destaque) 14%, transparent), transparent 55%),
+        var(--perfil-fundo-base);
+    background-size: cover;
+    background-position: center;
+    pointer-events: none;
+}
+
+.perfil-fundo.tem-imagem {
+    background-color: #000;
+    background-image: none !important;
+}
+
+.perfil-fundo.tem-gif {
+    background-image: none !important;
+}
+
+.perfil-fundo-gif,
+.perfil-fundo-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    pointer-events: none;
+    z-index: 0;
+    filter: none !important;
+    transform: none !important;
+}
+
+/* Overlay leve — wallpaper Steam deve continuar visível nas laterais */
+.perfil-fundo.tem-imagem::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, #000 18%, transparent) 0%,
+        transparent 28%,
+        transparent 72%,
+        color-mix(in srgb, #000 28%, transparent) 100%
+    );
+}
+
+.perfil-body.perfil-tema-claro .perfil-fundo.tem-imagem::after {
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, #fff 22%, transparent) 0%,
+        transparent 30%,
+        transparent 70%,
+        color-mix(in srgb, #fff 18%, transparent) 100%
+    );
+}
+
+/* Com wallpaper: esconder orbs do hub e fundo opaco do body */
+.perfil-body.tem-wallpaper {
+    background-color: #000 !important;
+    background-image: none !important;
+}
+
+.perfil-body.tem-wallpaper .vida-ambiente {
+    display: none !important;
+}
+
+.perfil-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--perfil-topbar-bg);
+    border-bottom: 1px solid var(--perfil-borda-suave);
+}
+
+.perfil-topbar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.perfil-topbar > * {
+    position: relative;
+    z-index: 1;
+}
+
+.perfil-shell {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    min-height: calc(100vh - var(--header-altura, 60px));
+}
+
+/*
+ * Steam: wallpaper contínuo atrás; laterais só espaçam o painel central.
+ */
+.perfil-stage {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr)
+        minmax(0, var(--perfil-largura-meio))
+        minmax(0, 1fr);
+    align-items: stretch;
+    justify-content: center;
+    width: 100%;
+    min-height: calc(100vh - var(--header-altura, 60px));
+    padding: 0;
+    gap: 0;
+}
+
+.perfil-barra {
+    grid-row: 1;
+    position: relative;
+    min-height: 100%;
+    min-width: 0;
+    background: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.perfil-barra-esq {
+    grid-column: 1;
+}
+
+.perfil-barra-dir {
+    grid-column: 3;
+}
+
+.perfil-meio {
+    grid-column: 2;
+    min-width: 0;
+    width: 100%;
+    max-width: var(--perfil-largura-meio);
+    display: flex;
+    flex-direction: column;
+    justify-self: center;
+    padding: 16px 0 28px;
+}
+
+.perfil-painel {
+    flex: 1;
+    border: 1px solid var(--perfil-vidro-borda);
+    border-radius: 4px;
+    /* Vidro Steam: wallpaper visível através do painel */
+    background: color-mix(in srgb, var(--perfil-meio-cor) 78%, transparent);
+    box-shadow: var(--perfil-sombra);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    color: var(--perfil-fonte);
+}
+
+.perfil-body.perfil-tema-claro .perfil-painel {
+    background: color-mix(in srgb, var(--perfil-meio-cor) 82%, transparent);
+}
+
+.perfil-body.tem-wallpaper .perfil-painel {
+    background: color-mix(in srgb, var(--perfil-meio-cor) 72%, transparent);
+}
+
+.perfil-body.tem-wallpaper.perfil-tema-claro .perfil-painel {
+    background: color-mix(in srgb, var(--perfil-meio-cor) 78%, transparent);
+}
+
+.perfil-cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 22px 22px 18px;
+    border-bottom: 1px solid color-mix(in srgb, var(--perfil-destaque) 18%, var(--perfil-borda-suave));
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--perfil-destaque) 18%, transparent),
+        color-mix(in srgb, var(--perfil-meio-cor) 40%, transparent) 100%
+    );
+}
+
+.perfil-identidade {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    min-width: 0;
+    flex: 1;
+}
+
+.perfil-avatar-wrap {
+    width: 92px;
+    height: 92px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--perfil-destaque) 22%, var(--perfil-meio-cor));
+    border: 2px solid color-mix(in srgb, var(--perfil-destaque) 55%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--perfil-destaque) 12%, transparent);
+}
+
+.perfil-avatar-wrap:has(img.is-gif) {
+    overflow: visible;
+}
+
+.perfil-avatar-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.perfil-avatar-wrap img.is-gif {
+    border-radius: 4px;
+    filter: none !important;
+    transform: none !important;
+}
+
+.perfil-avatar-inicial {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--perfil-destaque);
+}
+
+.perfil-nome {
+    margin: 0 0 4px;
+    font-family: var(--font-display);
+    font-size: 1.65rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: var(--perfil-fonte);
+}
+
+.perfil-cargo {
+    margin: 0 0 8px;
+    color: var(--perfil-destaque);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.perfil-cargo:empty,
+.perfil-bio:empty {
+    display: none;
+}
+
+.perfil-bio {
+    margin: 0 0 12px;
+    color: var(--perfil-fonte-suave);
+    max-width: 36rem;
+    line-height: 1.45;
+}
+
+.perfil-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.perfil-badge {
+    display: inline-flex;
+    padding: 3px 9px;
+    border-radius: 3px;
+    border: 1px solid color-mix(in srgb, var(--perfil-destaque) 40%, transparent);
+    background: color-mix(in srgb, var(--perfil-destaque) 14%, transparent);
+    color: var(--perfil-fonte);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.perfil-cabecalho-acoes {
+    flex-shrink: 0;
+}
+
+.perfil-grid {
+    display: grid;
+    /* Steam: ~640px conteúdo + ~308px aside ≈ 68% / 32% */
+    grid-template-columns: minmax(0, 1fr) var(--perfil-largura-aside);
+    gap: 0;
+    flex: 1;
+    min-height: 360px;
+}
+
+.perfil-coluna-principal {
+    padding: 18px 20px 24px;
+    border-right: 1px solid var(--perfil-borda-suave);
+    min-width: 0;
+}
+
+.perfil-coluna-lateral {
+    padding: 18px 14px 24px;
+    background: var(--perfil-aside-bg);
+}
+
+.perfil-secao-cab {
+    margin-bottom: 14px;
+}
+
+.perfil-secao-cab h2,
+.perfil-resumo-bloco h3 {
+    margin: 0 0 4px;
+    font-family: var(--font-display);
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: var(--perfil-fonte);
+}
+
+.perfil-secao-sub {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--perfil-fonte-suave);
+}
+
+.perfil-atividade-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: min(360px, 42vh);
+    overflow-y: auto;
+    padding-right: 4px;
+    overscroll-behavior: contain;
+}
+
+.perfil-anotacoes {
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--perfil-borda-suave);
+}
+
+.perfil-anotacoes-texto {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 4px;
+    border: 1px solid var(--perfil-borda-suave);
+    background: color-mix(in srgb, var(--perfil-meio-cor) 55%, transparent);
+    color: var(--perfil-fonte);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow: visible;
+}
+
+.perfil-anotacoes-texto.is-vazio {
+    color: var(--perfil-fonte-suave);
+    font-style: italic;
+}
+
+.perfil-anotacoes-edicao textarea {
+    width: 100%;
+    min-height: 96px;
+    height: auto;
+    resize: none;
+    overflow: hidden;
+    padding: 12px 14px;
+    border-radius: 4px;
+    border: 1px solid color-mix(in srgb, var(--perfil-destaque) 35%, var(--perfil-borda-suave));
+    background: color-mix(in srgb, var(--perfil-meio-cor) 70%, transparent);
+    color: var(--perfil-fonte);
+    font: inherit;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    outline: none;
+    field-sizing: content;
+}
+
+.perfil-anotacoes-edicao textarea:focus {
+    border-color: var(--perfil-destaque);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--perfil-destaque) 18%, transparent);
+}
+
+.perfil-anotacoes-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.perfil-anotacoes-status {
+    margin-right: auto;
+    font-size: 0.8rem;
+    color: var(--perfil-fonte-suave);
+}
+
+.perfil-anotacoes-status.is-ok {
+    color: #3dd68c;
+}
+
+.perfil-anotacoes-status.is-erro {
+    color: #f07178;
+}
+
+.perfil-atividade-item {
+    display: grid;
+    grid-template-columns: 8px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: start;
+    padding: 11px 12px;
+    border: 1px solid var(--perfil-borda-suave);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--perfil-meio-cor) 55%, transparent);
+}
+
+.perfil-atividade-dot {
+    width: 8px;
+    height: 8px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: var(--perfil-destaque);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--perfil-destaque) 22%, transparent);
+}
+
+.perfil-atividade-acao {
+    margin: 0 0 2px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--perfil-fonte);
+}
+
+.perfil-atividade-detalhe {
+    margin: 0;
+    color: var(--perfil-fonte-suave);
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.perfil-atividade-data {
+    font-size: 0.72rem;
+    color: var(--perfil-fonte-suave);
+    white-space: nowrap;
+}
+
+.perfil-resumo-bloco {
+    margin-bottom: 16px;
+}
+
+.perfil-resumo-bloco h3 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--perfil-fonte-suave);
+    font-weight: 700;
+}
+
+.perfil-resumo-bloco p,
+.perfil-email {
+    margin: 0;
+    font-size: 0.9rem;
+    word-break: break-word;
+    color: var(--perfil-fonte);
+}
+
+.perfil-status.is-ativo {
+    color: #3dd68c;
+    font-weight: 600;
+}
+
+.perfil-status.is-inativo {
+    color: #f07178;
+    font-weight: 600;
+}
+
+.perfil-metricas {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.perfil-metricas li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 9px;
+    border-radius: 4px;
+    border: 1px solid var(--perfil-borda-suave);
+    background: color-mix(in srgb, var(--perfil-meio-cor) 50%, transparent);
+    font-size: 0.82rem;
+    color: var(--perfil-fonte);
+}
+
+.perfil-metricas strong {
+    color: var(--perfil-destaque);
+    font-variant-numeric: tabular-nums;
+}
+
+.perfil-aviso {
+    position: relative;
+    z-index: 1;
+    max-width: 520px;
+    margin: 48px auto;
+    padding: 20px 24px;
+    text-align: center;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background: var(--cor-superficie);
+    color: var(--cor-fonte-suave);
+}
+
+.perfil-edit-secao {
+    margin: 16px 0 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--cor-borda);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cor-fonte-suave);
+}
+
+.perfil-edit-secao:first-of-type {
+    margin-top: 4px;
+    padding-top: 0;
+    border-top: none;
+}
+
+.perfil-edit-linha {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.perfil-cor-campo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.modal-form .perfil-cor-campo input[type="color"] {
+    width: 48px;
+    height: 36px;
+    padding: 2px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    background: transparent;
+}
+
+.perfil-cor-valor {
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--cor-fonte-suave);
+    letter-spacing: 0.02em;
+}
+
+.perfil-upload-linha {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.perfil-avatar-previa-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 4px;
+}
+
+.perfil-avatar-previa {
+    width: 88px;
+    height: 88px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    border: 2px solid color-mix(in srgb, var(--perfil-destaque, var(--cor-destaque)) 45%, var(--cor-borda));
+    background: color-mix(in srgb, var(--perfil-destaque, var(--cor-destaque)) 16%, var(--cor-superficie));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--perfil-destaque, var(--cor-destaque)) 12%, transparent);
+}
+
+.perfil-avatar-previa:has(img.is-gif) {
+    overflow: visible;
+}
+
+.perfil-avatar-previa img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    pointer-events: none;
+}
+
+.perfil-avatar-previa img.is-gif {
+    border-radius: 8px;
+    filter: none !important;
+    transform: none !important;
+}
+
+.perfil-avatar-previa-inicial {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--perfil-destaque, var(--cor-destaque));
+}
+
+.perfil-avatar-previa-campos {
+    flex: 1;
+    min-width: 0;
+}
+
+.perfil-img-pos-bloco {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.perfil-img-pos-campos {
+    flex: 1;
+    min-width: 0;
+}
+
+.img-pos-previa {
+    flex-shrink: 0;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--perfil-destaque, var(--cor-destaque)) 35%, var(--cor-borda));
+    background-color: color-mix(in srgb, var(--cor-superficie) 80%, #000);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.img-pos-previa--largo {
+    width: 140px;
+    height: 72px;
+}
+
+.img-pos-dica {
+    margin: 0 0 10px;
+    font-size: 0.78rem;
+    color: var(--cor-fonte-suave);
+    line-height: 1.35;
+}
+
+.img-pos-arrastavel {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.img-pos-arrastavel.is-arrastando {
+    cursor: grabbing;
+}
+
+.perfil-upload-hint {
+    margin: 4px 0 12px;
+    font-size: 0.8rem;
+    color: var(--cor-fonte-suave);
+}
+
+.modal-perfil {
+    max-width: 560px;
+    max-height: min(90vh, 820px);
+    overflow: auto;
+}
+
+.modulo-avatar img.auth-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+}
+
+/* Meia tela: centro encolhe, laterais ficam estreitas mas presentes */
+@media (max-width: 1100px) {
+    .perfil-body {
+        --perfil-largura-meio: min(948px, 100%);
+        --perfil-largura-aside: 260px;
+    }
+}
+
+@media (max-width: 960px) {
+    .perfil-body {
+        --perfil-largura-aside: 220px;
+    }
+
+    .perfil-stage {
+        grid-template-columns:
+            minmax(24px, 0.35fr)
+            minmax(0, 1fr)
+            minmax(24px, 0.35fr);
+    }
+
+    .perfil-meio {
+        max-width: none;
+    }
+
+    .perfil-cabecalho {
+        padding: 16px;
+    }
+
+    .perfil-coluna-principal,
+    .perfil-coluna-lateral {
+        padding: 14px 12px 18px;
+    }
+}
+
+@media (max-width: 720px) {
+    .perfil-stage {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .perfil-barra {
+        display: none;
+    }
+
+    .perfil-meio {
+        grid-column: 1;
+        max-width: none;
+        padding: 0;
+    }
+
+    .perfil-painel {
+        border-radius: 0;
+        min-height: calc(100vh - var(--header-altura, 60px));
+    }
+
+    .perfil-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .perfil-coluna-principal {
+        border-right: none;
+        border-bottom: 1px solid color-mix(in srgb, #fff 6%, transparent);
+    }
+
+    .perfil-edit-linha {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .perfil-identidade {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .perfil-badges {
+        justify-content: center;
+    }
+
+    .perfil-cabecalho {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .perfil-cabecalho-acoes {
+        width: 100%;
+    }
+
+    .perfil-cabecalho-acoes .btn {
+        width: 100%;
+    }
+}

@@ -172,11 +172,15 @@ function obterCategoriasParaExibir() {
 }
 
 const TAMANHO_MAX_ARQUIVO = 10 * 1024 * 1024;
-const TAMANHO_MAX_IMAGEM_MODULO = 2 * 1024 * 1024;
+const TAMANHO_MAX_IMAGEM_MODULO = 3 * 1024 * 1024;
+const TAMANHO_MAX_GIF_MODULO = 8 * 1024 * 1024;
 
 let imagemModuloPendente = null;
 let imagemModuloPreviewUrl = null;
 let imagemModuloAtual = null;
+let imagemModuloPosEdit = "50% 50%";
+let imagemModuloPosAtual = "50% 50%";
+let panImagemModulo = null;
 let removerImagemModulo = false;
 let moduloFormSessao = 0;
 let imagemModuloSessaoId = null;
@@ -330,10 +334,24 @@ function inicialModulo(nome) {
     return (nome?.trim()?.charAt(0) || "?").toUpperCase();
 }
 
+function posicaoImagemDe(valor) {
+    return window.ImagemPosicao?.normalizar?.(valor) || "50% 50%";
+}
+
+function caminhoPareceGif(caminho) {
+    return /\.gif(\?|#|$)/i.test(String(caminho || ""));
+}
+
+function classeImgModulo(caminho, base = "modulo-avatar-img") {
+    return caminhoPareceGif(caminho) ? `${base} is-gif` : base;
+}
+
 function htmlAvatarModulo(modulo, tamanho = "") {
     const classe = tamanho ? `modulo-avatar ${tamanho}` : "modulo-avatar";
     if (moduloTemImagem(modulo)) {
-        return `<div class="${classe}"><img src="${obterUrlPublicaImagemModulo(modulo.imagem_url)}" alt="" class="modulo-avatar-img"></div>`;
+        const pos = posicaoImagemDe(modulo.imagem_pos);
+        const cls = classeImgModulo(modulo.imagem_url);
+        return `<div class="${classe}"><img src="${obterUrlPublicaImagemModulo(modulo.imagem_url)}" alt="" class="${cls}" style="object-position:${pos}"></div>`;
     }
     return `<div class="${classe}"><span class="modulo-avatar-inicial">${escaparHtml(inicialModulo(modulo.nome))}</span></div>`;
 }
@@ -342,7 +360,9 @@ function preencherAvatarElemento(el, modulo) {
     if (!el) return;
 
     if (moduloTemImagem(modulo)) {
-        el.innerHTML = `<img src="${obterUrlPublicaImagemModulo(modulo.imagem_url)}" alt="" class="modulo-avatar-img">`;
+        const pos = posicaoImagemDe(modulo.imagem_pos);
+        const cls = classeImgModulo(modulo.imagem_url);
+        el.innerHTML = `<img src="${obterUrlPublicaImagemModulo(modulo.imagem_url)}" alt="" class="${cls}" style="object-position:${pos}">`;
     } else {
         el.innerHTML = `<span class="modulo-avatar-inicial">${escaparHtml(inicialModulo(modulo.nome))}</span>`;
     }
@@ -358,6 +378,8 @@ function revogarPreviewImagemModulo() {
 function limparEstadoImagemModulo() {
     imagemModuloPendente = null;
     imagemModuloAtual = null;
+    imagemModuloPosAtual = "50% 50%";
+    imagemModuloPosEdit = "50% 50%";
     removerImagemModulo = false;
     imagemModuloSessaoId = null;
     revogarPreviewImagemModulo();
@@ -371,6 +393,46 @@ function resetarFormularioModulo() {
     limparEstadoImagemModulo();
 }
 
+function garantirPanImagemModulo() {
+    const dica = document.getElementById("modulo-imagem-pos-dica");
+    if (!btnPreviewImagemModulo || !window.ImagemPosicao) {
+        if (dica) dica.hidden = true;
+        return;
+    }
+    if (!imgPreviewModulo || imgPreviewModulo.hidden) {
+        btnPreviewImagemModulo.classList.remove("img-pos-arrastavel", "is-arrastando");
+        if (dica) dica.hidden = true;
+        return;
+    }
+    // GIFs: não ligar pan (object-position + drag pode interferir na animação em alguns browsers)
+    const ehGif = imgPreviewModulo.classList.contains("is-gif");
+    window.ImagemPosicao.aplicarImg(imgPreviewModulo, imagemModuloPosEdit);
+    if (ehGif) {
+        btnPreviewImagemModulo.classList.remove("img-pos-arrastavel", "is-arrastando");
+        if (dica) {
+            dica.hidden = false;
+            dica.textContent = "GIF animado · clique para trocar";
+        }
+        return;
+    }
+    if (!panImagemModulo) {
+        panImagemModulo = window.ImagemPosicao.ligarPan(btnPreviewImagemModulo, {
+            modo: "img",
+            posicao: imagemModuloPosEdit,
+            onChange: (p) => {
+                imagemModuloPosEdit = p;
+            }
+        });
+    } else {
+        panImagemModulo.setPos(imagemModuloPosEdit);
+        panImagemModulo.refresh();
+    }
+    if (dica) {
+        dica.hidden = false;
+        dica.textContent = "Arrasta para centralizar · clique para trocar";
+    }
+}
+
 function atualizarPreviewImagemModulo(src) {
     if (!imgPreviewModulo || !placeholderImagemModulo) return;
 
@@ -378,42 +440,83 @@ function atualizarPreviewImagemModulo(src) {
         imgPreviewModulo.src = src;
         imgPreviewModulo.hidden = false;
         placeholderImagemModulo.hidden = true;
+        const pendenteGif = window.ImagemOtimizar?.ehGif?.(imagemModuloPendente)
+            || caminhoPareceGif(imagemModuloPendente?.name)
+            || caminhoPareceGif(imagemModuloAtual)
+            || /\.gif/i.test(src);
+        imgPreviewModulo.classList.toggle("is-gif", !!pendenteGif);
         if (btnRemoverImagemModulo) btnRemoverImagemModulo.hidden = false;
+        garantirPanImagemModulo();
     } else {
         imgPreviewModulo.removeAttribute("src");
+        imgPreviewModulo.style.objectPosition = "";
+        imgPreviewModulo.classList.remove("is-gif");
         imgPreviewModulo.hidden = true;
         placeholderImagemModulo.hidden = false;
+        btnPreviewImagemModulo?.classList.remove("img-pos-arrastavel", "is-arrastando");
+        const dica = document.getElementById("modulo-imagem-pos-dica");
+        if (dica) dica.hidden = true;
     }
 }
 
-function selecionarImagemModulo(file) {
+async function selecionarImagemModulo(file) {
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-        alert("Selecione um arquivo de imagem (PNG, JPG, etc.).");
+    const mime = window.ImagemOtimizar?.mimeDe?.(file) || file.type || "";
+    if (!mime.startsWith("image/")) {
+        alert("Selecione um arquivo de imagem (PNG, JPG, WebP, GIF).");
         return;
     }
 
-    if (file.size > TAMANHO_MAX_IMAGEM_MODULO) {
-        alert("A imagem deve ter no máximo 2 MB.");
+    const ehGif = mime === "image/gif" || window.ImagemOtimizar?.ehGif?.(file);
+    const limite = ehGif ? TAMANHO_MAX_GIF_MODULO : TAMANHO_MAX_IMAGEM_MODULO;
+    if (file.size > limite) {
+        alert(ehGif
+            ? "O GIF deve ter no máximo 8 MB."
+            : "A imagem deve ter no máximo 3 MB.");
+        return;
+    }
+
+    let ficheiroFinal = file;
+    try {
+        if (window.ImagemOtimizar?.otimizar) {
+            const resultado = await window.ImagemOtimizar.otimizar(
+                file,
+                window.ImagemOtimizar.PRESETS.modulo
+            );
+            ficheiroFinal = resultado.file;
+        }
+    } catch (erro) {
+        alert(erro.message || "Não foi possível otimizar a imagem.");
         return;
     }
 
     revogarPreviewImagemModulo();
-    imagemModuloPendente = file;
+    imagemModuloPendente = ficheiroFinal;
     imagemModuloSessaoId = moduloFormSessao;
     removerImagemModulo = false;
-    imagemModuloPreviewUrl = URL.createObjectURL(file);
+    imagemModuloPosEdit = "50% 50%";
+    imagemModuloPreviewUrl = URL.createObjectURL(ficheiroFinal);
     atualizarPreviewImagemModulo(imagemModuloPreviewUrl);
 }
 
 async function enviarImagemModulo(moduloId, file) {
-    const ext = file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ".jpg";
+    const mime = window.ImagemOtimizar?.mimeDe?.(file) || file.type || "image/webp";
+    const ehGif = mime === "image/gif" || window.ImagemOtimizar?.ehGif?.(file);
+    const ext = ehGif
+        ? ".gif"
+        : file.name.includes(".")
+            ? file.name.slice(file.name.lastIndexOf("."))
+            : (mime === "image/webp" ? ".webp" : ".jpg");
     const caminho = `${moduloId}/${Date.now()}${ext}`;
 
     const { error } = await supabaseClient.storage
         .from(BUCKET_MODULOS_IMAGENS)
-        .upload(caminho, file, { upsert: true, cacheControl: "3600", contentType: file.type });
+        .upload(caminho, file, {
+            upsert: true,
+            cacheControl: "3600",
+            contentType: ehGif ? "image/gif" : mime
+        });
 
     if (error) throw error;
     return caminho;
@@ -431,7 +534,13 @@ function iniciarUploadImagemModulo() {
     if (uploadImagemModuloIniciado) return;
     uploadImagemModuloIniciado = true;
 
-    btnPreviewImagemModulo?.addEventListener("click", () => inputImagemModulo?.click());
+    btnPreviewImagemModulo?.addEventListener("click", (e) => {
+        if (btnPreviewImagemModulo.dataset.arrastou === "1") {
+            e.preventDefault();
+            return;
+        }
+        inputImagemModulo?.click();
+    });
 
     inputImagemModulo?.addEventListener("change", (e) => {
         const file = e.target.files?.[0];
@@ -441,6 +550,7 @@ function iniciarUploadImagemModulo() {
     btnRemoverImagemModulo?.addEventListener("click", () => {
         imagemModuloPendente = null;
         imagemModuloSessaoId = null;
+        imagemModuloPosEdit = "50% 50%";
         if (inputImagemModulo) inputImagemModulo.value = "";
         revogarPreviewImagemModulo();
         if (imagemModuloAtual) removerImagemModulo = true;
@@ -688,6 +798,7 @@ async function carregarDados() {
             ordem,
             categoria,
             imagem_url,
+            imagem_pos,
             created_at,
             publicacoes (
                 id,
@@ -702,14 +813,44 @@ async function carregarDados() {
             .order("ordem", { ascending: true })
             .order("created_at", { foreignTable: "publicacoes", ascending: true });
 
-        if (error) throw error;
+        let dadosModulos = data;
+        let erroModulos = error;
 
-        modulos = (data || []).map((modulo) => ({
+        if (erroModulos && /imagem_pos|42703|PGRST204/i.test(erroModulos.message || "")) {
+            const retry = await supabaseClient
+                .from("modulos")
+                .select(`
+            id,
+            nome,
+            ordem,
+            categoria,
+            imagem_url,
+            created_at,
+            publicacoes (
+                id,
+                titulo,
+                conteudo,
+                ordem,
+                arquivo_url,
+                arquivo_nome,
+                created_at
+            )
+        `)
+                .order("ordem", { ascending: true })
+                .order("created_at", { foreignTable: "publicacoes", ascending: true });
+            dadosModulos = retry.data;
+            erroModulos = retry.error;
+        }
+
+        if (erroModulos) throw erroModulos;
+
+        modulos = (dadosModulos || []).map((modulo) => ({
             id: modulo.id,
             nome: modulo.nome,
             ordem: modulo.ordem ?? 0,
             categoria: normalizarCategoria(modulo.categoria),
             imagem_url: modulo.imagem_url || null,
+            imagem_pos: posicaoImagemDe(modulo.imagem_pos),
             publicacoes: (modulo.publicacoes || []).sort(
                 (a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)
             )
@@ -804,6 +945,8 @@ function abrirModalModulo(id = null) {
 
         if (modulo.imagem_url) {
             imagemModuloAtual = modulo.imagem_url;
+            imagemModuloPosAtual = posicaoImagemDe(modulo.imagem_pos);
+            imagemModuloPosEdit = imagemModuloPosAtual;
             atualizarPreviewImagemModulo(obterUrlPublicaImagemModulo(modulo.imagem_url));
         }
     } else {
@@ -1091,16 +1234,20 @@ function criarCardModuloGrid(modulo) {
     `;
 
     const temImagem = moduloTemImagem(modulo);
+    const posCapa = posicaoImagemDe(modulo.imagem_pos);
+    const clsCapa = caminhoPareceGif(modulo.imagem_url) ? "card-modulo-capa is-gif" : "card-modulo-capa";
     const mediaHtml = temImagem
         ? `<img
-                class="card-modulo-capa"
+                class="${clsCapa}"
                 src="${obterUrlPublicaImagemModulo(modulo.imagem_url)}"
                 alt=""
-                loading="lazy"
+                ${caminhoPareceGif(modulo.imagem_url) ? "" : 'loading="lazy"'}
+                style="object-position:${posCapa}"
             >`
         : `<div class="card-modulo-capa-fallback">${htmlAvatarModulo(modulo, "modulo-avatar-lg")}</div>`;
 
     if (temImagem) card.classList.add("tem-capa");
+    if (caminhoPareceGif(modulo.imagem_url)) card.classList.add("tem-gif");
 
     const matchTopo = obterMatchBuscaTopo(modulo, termoBuscaTopo.trim().toLowerCase());
     const dicaConteudo = matchTopo?.tipo === "conteudo"
@@ -1658,7 +1805,11 @@ async function salvarModulo(e) {
         }
 
         let imagemUrl = imagemAtual && !removerImagem ? imagemAtual : null;
+        const posicaoFinal = imagemUrl
+            ? posicaoImagemDe(panImagemModulo?.getPos?.() || imagemModuloPosEdit)
+            : "50% 50%";
         const mudouImagem = removerImagem || !!imagemPendente;
+        const mudouPosicao = !!imagemUrl && posicaoFinal !== posicaoImagemDe(imagemModuloPosAtual);
 
         if (removerImagem && imagemAtual) {
             await excluirImagemModuloStorage(imagemAtual);
@@ -1670,11 +1821,22 @@ async function salvarModulo(e) {
             imagemUrl = await enviarImagemModulo(moduloId, imagemPendente);
         }
 
-        if (mudouImagem) {
-            const { error: erroImagem } = await supabaseClient
+        if (mudouImagem || mudouPosicao) {
+            const payloadImg = {
+                imagem_url: imagemUrl,
+                imagem_pos: imagemUrl ? posicaoFinal : "50% 50%"
+            };
+            let { error: erroImagem } = await supabaseClient
                 .from("modulos")
-                .update({ imagem_url: imagemUrl })
+                .update(payloadImg)
                 .eq("id", moduloId);
+
+            if (erroImagem && /imagem_pos|42703|PGRST204/i.test(erroImagem.message || "")) {
+                ({ error: erroImagem } = await supabaseClient
+                    .from("modulos")
+                    .update({ imagem_url: imagemUrl })
+                    .eq("id", moduloId));
+            }
 
             if (erroImagem) throw erroImagem;
         }

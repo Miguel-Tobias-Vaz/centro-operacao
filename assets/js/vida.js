@@ -28,7 +28,6 @@
         // e ficavam com opacity:0 sem nunca receber .revelar-visivel.
         const seletores = [
             ".inicio-card",
-            ".categoria-modulos",
             ".card-publicacao",
             ".admin-card",
             ".panel-tratamento",

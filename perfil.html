@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="assets/icone/Icone.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/vida.css">
+    <link rel="stylesheet" href="assets/css/hub.css">
+    <link rel="stylesheet" href="assets/css/perfil.css">
+    <title>Perfil — Central OPTO</title>
+</head>
+<body class="perfil-body">
+    <div class="perfil-fundo" id="perfil-fundo" aria-hidden="true"></div>
+
+    <header class="header hub-topbar perfil-topbar">
+        <div class="hub-topbar-inner">
+            <a href="index.html" class="hub-logo" title="Voltar ao hub">
+                <img src="assets/icone/Icone.png" alt="">
+                <span class="hub-logo-texto">Central OPTO <span>Suporte</span></span>
+            </a>
+
+            <div class="hub-topbar-acoes container-buttons">
+                <a href="index.html" class="hub-icon-btn" title="Hub" aria-label="Voltar ao hub">⌂</a>
+                <button type="button" id="tema" class="hub-icon-btn" aria-label="Alternar tema" title="Alternar tema">◐</button>
+
+                <div id="auth-header" class="auth-header">
+                    <button type="button" id="btn-entrar" class="btn btn-outline btn-sm auth-so-deslogado">Entrar</button>
+                    <div id="auth-logado" class="auth-logado auth-so-logado" hidden>
+                        <div class="menu-usuario-wrap">
+                            <button
+                                type="button"
+                                id="btn-menu-usuario"
+                                class="usuario-avatar-btn"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                aria-label="Menu da conta"
+                            >
+                                <span class="modulo-avatar modulo-avatar-sm" id="auth-usuario-avatar">
+                                    <span class="modulo-avatar-inicial" id="auth-usuario-inicial">?</span>
+                                </span>
+                            </button>
+                            <div id="menu-usuario" class="menu-usuario" hidden>
+                                <p class="menu-usuario-nome" id="auth-usuario-nome"></p>
+                                <p class="menu-usuario-email" id="auth-usuario-email"></p>
+                                <a href="perfil.html" class="menu-usuario-item" id="link-meu-perfil">Meu perfil</a>
+                                <a href="admin.html" id="link-admin" class="menu-usuario-item" hidden>Administração</a>
+                                <button type="button" id="btn-sair" class="menu-usuario-item menu-usuario-sair">Sair</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="perfil-shell" id="perfil-shell" hidden>
+        <div class="perfil-stage">
+            <aside class="perfil-barra perfil-barra-esq" id="perfil-barra-esq" aria-hidden="true"></aside>
+
+            <section class="perfil-meio" id="perfil-meio">
+                <div class="perfil-painel">
+                    <header class="perfil-cabecalho">
+                        <div class="perfil-identidade">
+                            <div class="perfil-avatar-wrap" id="perfil-avatar-wrap">
+                                <span class="perfil-avatar-inicial" id="perfil-avatar-inicial">?</span>
+                            </div>
+                            <div class="perfil-identidade-texto">
+                                <h1 class="perfil-nome" id="perfil-nome">—</h1>
+                                <p class="perfil-cargo" id="perfil-cargo"></p>
+                                <p class="perfil-bio" id="perfil-bio"></p>
+                                <div class="perfil-badges">
+                                    <span class="perfil-badge" id="perfil-role-badge">editor</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="perfil-cabecalho-acoes">
+                            <button type="button" class="btn btn-primario btn-sm" id="btn-editar-perfil" hidden>
+                                Editar perfil
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="perfil-grid">
+                        <section class="perfil-coluna-principal" aria-labelledby="perfil-atividade-titulo">
+                            <div class="perfil-anotacoes" id="perfil-anotacoes-bloco">
+                                <div class="perfil-secao-cab">
+                                    <h2 id="perfil-anotacoes-titulo">Anotações</h2>
+                                    <p class="perfil-secao-sub" id="perfil-anotacoes-sub">Notas do perfil</p>
+                                </div>
+                                <div id="perfil-anotacoes-leitura" class="perfil-anotacoes-texto" hidden></div>
+                                <div id="perfil-anotacoes-edicao" class="perfil-anotacoes-edicao" hidden>
+                                    <label class="sr-only" for="perfil-anotacoes-input">Anotações do perfil</label>
+                                    <textarea
+                                        id="perfil-anotacoes-input"
+                                        rows="4"
+                                        maxlength="2000"
+                                        placeholder="Escreva anotações, lembretes ou avisos para a equipa…"
+                                    ></textarea>
+                                    <div class="perfil-anotacoes-acoes">
+                                        <span class="perfil-anotacoes-status" id="perfil-anotacoes-status" aria-live="polite"></span>
+                                        <button type="button" class="btn btn-primario btn-sm" id="btn-guardar-anotacoes">
+                                            Guardar anotações
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="perfil-secao-cab">
+                                <h2 id="perfil-atividade-titulo">Atividade recente</h2>
+                                <p class="perfil-secao-sub" id="perfil-atividade-sub">Ações no hub</p>
+                            </div>
+                            <div id="perfil-atividade-lista" class="perfil-atividade-lista"></div>
+                        </section>
+
+                        <aside class="perfil-coluna-lateral" aria-label="Resumo">
+                            <div class="perfil-resumo-bloco">
+                                <h3>Estado</h3>
+                                <p class="perfil-status" id="perfil-status">—</p>
+                            </div>
+                            <div class="perfil-resumo-bloco">
+                                <h3>Na equipa desde</h3>
+                                <p id="perfil-desde">—</p>
+                            </div>
+                            <div class="perfil-resumo-bloco">
+                                <h3>Contacto</h3>
+                                <p class="perfil-email" id="perfil-email">—</p>
+                            </div>
+                            <div class="perfil-resumo-bloco">
+                                <h3>Resumo de atividade</h3>
+                                <ul class="perfil-metricas" id="perfil-metricas">
+                                    <li><span>Total</span><strong id="metrica-total">0</strong></li>
+                                    <li><span>Módulos</span><strong id="metrica-modulos">0</strong></li>
+                                    <li><span>Publicações</span><strong id="metrica-publicacoes">0</strong></li>
+                                </ul>
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="perfil-barra perfil-barra-dir" id="perfil-barra-dir" aria-hidden="true"></aside>
+        </div>
+    </main>
+
+    <p class="perfil-aviso" id="perfil-aviso" hidden></p>
+
+    <div id="modal-overlay" class="modal-overlay" hidden>
+        <div id="modal" class="modal modal-perfil" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+            <div class="modal-cabecalho">
+                <h2 id="modal-titulo"></h2>
+                <button type="button" id="modal-fechar" class="btn-modal-fechar" aria-label="Fechar">×</button>
+            </div>
+
+            <form id="form-login" class="modal-form" hidden>
+                <label for="login-email">E-mail</label>
+                <input type="email" id="login-email" required autocomplete="username" placeholder="seu@email.com">
+
+                <label for="login-senha">Senha</label>
+                <input type="password" id="login-senha" required autocomplete="current-password" placeholder="••••••••">
+
+                <p id="login-erro" class="login-erro" hidden></p>
+                <button type="button" id="btn-recuperar-senha" class="btn-link-login">Esqueci minha senha</button>
+
+                <div class="modal-acoes">
+                    <button type="button" class="btn btn-secundario" data-acao="cancelar">Cancelar</button>
+                    <button type="submit" class="btn btn-primario">Entrar</button>
+                </div>
+            </form>
+
+            <form id="form-editar-perfil" class="modal-form" hidden>
+                <label for="perfil-edit-nome">Nome</label>
+                <input type="text" id="perfil-edit-nome" required maxlength="80" placeholder="O seu nome">
+
+                <label for="perfil-edit-cargo">Cargo / função</label>
+                <input type="text" id="perfil-edit-cargo" maxlength="80" placeholder="Ex.: Suporte, Editor de conteúdo">
+
+                <label for="perfil-edit-bio">Bio</label>
+                <textarea id="perfil-edit-bio" rows="3" maxlength="280" placeholder="Uma linha sobre o seu trabalho na equipa"></textarea>
+
+                <p class="perfil-edit-secao">Aparência geral</p>
+                <div class="perfil-edit-linha">
+                    <div>
+                        <label for="perfil-edit-cor">Cor de destaque</label>
+                        <div class="perfil-cor-campo">
+                            <input type="color" id="perfil-edit-cor" value="#2b8cff">
+                            <span class="perfil-cor-valor" id="perfil-edit-cor-valor">#2b8cff</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="perfil-edit-tema">Tema do perfil</label>
+                        <select id="perfil-edit-tema" class="modal-select">
+                            <option value="escuro">Escuro</option>
+                            <option value="claro">Claro</option>
+                        </select>
+                        <p class="campo-ajuda" style="margin-top:6px">Define o aspeto da página do teu perfil. Também podes alternar com ◐ no topo.</p>
+                    </div>
+                </div>
+
+                <label for="perfil-edit-avatar">Avatar</label>
+                <div class="perfil-avatar-previa-wrap">
+                    <div class="perfil-avatar-previa" id="perfil-avatar-previa" aria-hidden="true" title="Arrasta para reposicionar">
+                        <span class="perfil-avatar-previa-inicial" id="perfil-avatar-previa-inicial">?</span>
+                    </div>
+                    <div class="perfil-avatar-previa-campos">
+                        <div class="perfil-upload-linha">
+                            <input type="file" id="perfil-edit-avatar" accept="image/png,image/jpeg,image/webp,image/gif">
+                            <button type="button" class="btn btn-outline btn-sm" id="btn-remover-avatar" hidden>Remover</button>
+                        </div>
+                        <p class="perfil-upload-hint" id="perfil-avatar-nome"></p>
+                        <p class="img-pos-dica" id="perfil-avatar-pos-dica" hidden>Arrasta a prévia para centralizar</p>
+                        <p class="img-pos-dica">Fotos → WebP automático · GIF até 8&nbsp;MB (sem recompressão)</p>
+                    </div>
+                </div>
+
+                <label for="perfil-edit-fundo">Fundo da página (wallpaper)</label>
+                <div class="perfil-img-pos-bloco">
+                    <div class="img-pos-previa img-pos-previa--largo" id="perfil-fundo-previa" hidden title="Arrasta para reposicionar"></div>
+                    <div class="perfil-img-pos-campos">
+                        <div class="perfil-upload-linha">
+                            <input type="file" id="perfil-edit-fundo" accept="image/png,image/jpeg,image/webp,image/gif">
+                            <button type="button" class="btn btn-outline btn-sm" id="btn-remover-fundo" hidden>Remover</button>
+                        </div>
+                        <p class="perfil-upload-hint" id="perfil-fundo-nome"></p>
+                        <p class="img-pos-dica" id="perfil-fundo-pos-dica" hidden>Arrasta a prévia para reposicionar</p>
+                    </div>
+                </div>
+
+                <p class="perfil-edit-secao">Painel</p>
+                <label for="perfil-edit-meio-cor">Tom do painel central</label>
+                <div class="perfil-cor-campo">
+                    <input type="color" id="perfil-edit-meio-cor" value="#131722">
+                    <span class="perfil-cor-valor" id="perfil-edit-meio-cor-valor">#131722</span>
+                </div>
+                <p class="campo-ajuda" style="margin-top:6px">O painel fica semi-transparente sobre o wallpaper (estilo Steam).</p>
+
+                <p class="login-erro" id="perfil-edit-erro" hidden></p>
+
+                <div class="modal-acoes">
+                    <button type="button" class="btn btn-secundario" id="perfil-edit-cancelar">Cancelar</button>
+                    <button type="submit" class="btn btn-primario">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" hidden>
+        <p>Carregando...</p>
+    </div>
+
+    <div id="erro-config" class="erro-config" hidden>
+        <p>Configure o Supabase em <code>config.js</code> com a URL e a chave anon do seu projeto.</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="config.js"></script>
+    <script src="assets/js/ferramenta-tema.js"></script>
+    <script src="assets/js/vida.js"></script>
+    <script src="assets/js/logs.js"></script>
+    <script src="assets/js/imagem-posicao.js"></script>
+    <script src="assets/js/imagem-otimizar.js"></script>
+    <script src="assets/js/gif-vivo.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/perfil.js"></script>
+</body>
+</html>
