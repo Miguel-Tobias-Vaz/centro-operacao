@@ -377,7 +377,7 @@
     color: #fff;
 }
 
-/* Layout categories + aside (aside só em ecrãs largos) */
+/* Layout categories + aside (aside na margem, sem deslocar o centro) */
 .hub-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -390,13 +390,29 @@
 }
 
 @media (min-width: 1400px) {
+    .app-layout.hub-app {
+        /* Espaço para categorias centradas + ações na calha direita */
+        max-width: min(1480px, calc(100% - 32px));
+    }
+
     .hub-grid {
-        grid-template-columns: minmax(0, 1fr) 200px;
+        grid-template-columns:
+            minmax(0, 1fr)
+            minmax(0, 1000px)
+            minmax(0, 1fr);
         gap: 20px;
+    }
+
+    .hub-grid > .categorias-modulos {
+        grid-column: 2;
     }
 
     .hub-aside {
         display: block;
+        grid-column: 3;
+        justify-self: start;
+        width: 200px;
+        max-width: 100%;
         position: sticky;
         top: calc(var(--header-altura) + 16px);
         padding: 12px;
