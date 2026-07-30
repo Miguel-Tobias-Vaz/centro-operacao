@@ -16,8 +16,10 @@ Ordem de execução no **SQL Editor** (projeto novo):
 | 10 | `010_gif_limite_8mb.sql` | Limite Storage 8 MB (GIFs maiores) |
 | 11 | `011_gif_limite_15mb.sql` | Limite Storage 15 MB (GIFs de fundo/perfil) |
 | 12 | `012_insignias.sql` | Catálogo de insígnias + atribuição por admin ao perfil |
+| 13 | `013_insignias_ordem.sql` | Ordem de exibição das insígnias em cada perfil (legado; preferir ordem do catálogo em 014) |
+| 14 | `014_missoes_insignias.sql` | Ordem global do catálogo + tabela de missões por insígnia |
 
-Os ficheiros `migration_*.sql` antigos são equivalentes parciais; preferir a numeração `001`–`012`.
+Os ficheiros `migration_*.sql` antigos são equivalentes parciais; preferir a numeração `001`–`014`.
 
 Documentação de políticas: [`Doc/supabase-rls.md`](../Doc/supabase-rls.md).
 Roadmap de perfis: [`Doc/perfil-roadmap.md`](../Doc/perfil-roadmap.md).

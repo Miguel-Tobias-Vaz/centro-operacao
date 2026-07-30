@@ -6,6 +6,7 @@ const backdrop = document.getElementById("admin-sidebar-backdrop");
 const TITULOS = {
     dashboard: ["Dashboard", "Resumo da operação e atividade recente"],
     usuarios: ["Utilizadores", "Crie contas, permissões e controle de acesso"],
+    insignias: ["Insígnias", "Catálogo, quem tem cada uma e missões"],
     atividade: ["Atividade", "Quem fez o quê — filtre por data, utilizador e tipo"],
     config: ["Configuração", "Supabase e variáveis do projeto"]
 };
@@ -85,6 +86,13 @@ function mostrarPainel(id) {
     if (id === "config") atualizarPainelConfig();
     if (id === "dashboard") atualizarDashboard();
     if (id === "usuarios") window.Auth?.renderizarListaUsuarios?.("lista-usuarios");
+    if (id === "insignias") window.AdminInsignias?.iniciarPainel?.();
+
+    if (id === "insignias") {
+        if (location.hash !== "#insignias") history.replaceState(null, "", "#insignias");
+    } else if (location.hash === "#insignias") {
+        history.replaceState(null, "", location.pathname + location.search);
+    }
 }
 
 function lerFiltrosLogs() {
@@ -410,7 +418,8 @@ async function iniciar() {
         await atualizarDashboard();
         await atualizarLogs();
         await atualizarPainelConfig();
-        mostrarPainel("dashboard");
+        const painelInicial = location.hash === "#insignias" ? "insignias" : "dashboard";
+        mostrarPainel(painelInicial);
     } finally {
         mostrarLoading(false);
         atualizarIcones();

@@ -32,6 +32,10 @@
                     <span>Utilizadores</span>
                     <span id="badge-usuarios" class="admin-nav-badge" hidden>0</span>
                 </button>
+                <button type="button" class="admin-nav-item" data-painel="insignias">
+                    <i data-lucide="award"></i>
+                    <span>Insígnias</span>
+                </button>
                 <button type="button" class="admin-nav-item" data-painel="atividade">
                     <i data-lucide="activity"></i>
                     <span>Atividade</span>
@@ -245,6 +249,114 @@
                     </section>
                 </section>
 
+                <!-- Insígnias -->
+                <section id="painel-insignias" class="admin-painel" hidden data-titulo="Insígnias" data-subtitulo="Catálogo, quem tem cada uma e missões">
+                    <div class="insig-painel-grid">
+                        <section class="admin-card">
+                            <div class="admin-card-cabecalho">
+                                <h2 class="admin-card-titulo">Catálogo</h2>
+                                <button type="button" class="btn btn-outline btn-sm" id="insig-btn-nova">＋ Nova</button>
+                            </div>
+                            <p class="admin-descricao-secao">Cria e edita insígnias. Clica numa para atribuir e ver missões.</p>
+
+                            <form id="form-insig-catalogo" class="insignia-editor" hidden>
+                                <input type="hidden" id="insig-edit-id" value="">
+                                <p class="insignia-editor-titulo" id="insig-edit-titulo">Nova insígnia</p>
+                                <div class="insignia-editor-corpo">
+                                    <button type="button" class="insignia-drop" id="insig-painel-drop" aria-label="Escolher ícone">
+                                        <img id="insig-painel-previa" class="insignia-drop-img" src="" alt="" hidden>
+                                        <span class="insignia-drop-placeholder" id="insig-painel-placeholder">
+                                            <span class="insignia-drop-plus">＋</span>
+                                            <span>Ícone</span>
+                                        </span>
+                                    </button>
+                                    <input type="file" id="insig-edit-icone" class="sr-only" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml">
+                                    <div class="insignia-editor-campos">
+                                        <label for="insig-edit-nome">Nome</label>
+                                        <input type="text" id="insig-edit-nome" maxlength="80" required placeholder="Ex.: Troféu">
+                                        <label for="insig-edit-desc">Descrição <span class="label-opcional">(opcional)</span></label>
+                                        <input type="text" id="insig-edit-desc" maxlength="240" placeholder="Aparece no popup">
+                                    </div>
+                                </div>
+                                <p id="insig-edit-erro" class="login-erro" hidden></p>
+                                <div class="insignia-editor-acoes">
+                                    <button type="button" class="btn btn-secundario btn-sm" id="insig-edit-cancelar">Cancelar</button>
+                                    <button type="submit" class="btn btn-primario btn-sm" id="insig-edit-guardar">Criar</button>
+                                </div>
+                            </form>
+
+                            <div id="insig-catalogo-lista" class="insig-catalogo-lista"></div>
+                        </section>
+
+                        <section class="admin-card">
+                            <h2 class="admin-card-titulo">Atribuir</h2>
+                            <p class="admin-descricao-secao">Escolhe a insígnia e marca quem a deve ter.</p>
+                            <label class="insig-field-label" for="insig-atribuir-select">Insígnia</label>
+                            <select id="insig-atribuir-select" class="modal-select"></select>
+                            <div id="insig-atribuir-resumo" class="insig-atribuir-resumo"></div>
+                            <label class="insig-field-label" for="insig-atribuir-busca">Pesquisar pessoas</label>
+                            <input type="search" id="insig-atribuir-busca" placeholder="Nome ou e-mail…">
+                            <div id="insig-atribuir-lista" class="insig-atribuir-lista"></div>
+                            <p id="insig-atribuir-erro" class="login-erro" hidden></p>
+                            <p id="insig-atribuir-ok" class="insig-ok" hidden></p>
+                            <div class="form-admin-acoes">
+                                <button type="button" class="btn btn-primario" id="insig-atribuir-guardar">Guardar quem tem</button>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="admin-card">
+                        <h2 class="admin-card-titulo">Ordem no perfil</h2>
+                        <p class="admin-descricao-secao">Escolhe a pessoa e ordena as insígnias como aparecem no perfil dela.</p>
+                        <label class="insig-field-label" for="insig-ordem-user">Pessoa</label>
+                        <select id="insig-ordem-user" class="modal-select"></select>
+                        <div id="insig-ordem-lista" class="insig-ordem-lista"></div>
+                        <p id="insig-ordem-erro" class="login-erro" hidden></p>
+                        <p id="insig-ordem-ok" class="insig-ok" hidden></p>
+                    </section>
+
+                    <section class="admin-card">
+                        <div class="admin-card-cabecalho">
+                            <h2 class="admin-card-titulo">Missões</h2>
+                            <div class="insig-missoes-toolbar">
+                                <select id="insig-missoes-filtro" class="modal-select" title="Filtrar">
+                                    <option value="selecionada">Da insígnia selecionada</option>
+                                    <option value="todas">Todas</option>
+                                </select>
+                                <button type="button" class="btn btn-outline btn-sm" id="insig-btn-nova-missao">＋ Missão</button>
+                            </div>
+                        </div>
+                        <p class="admin-descricao-secao">Texto de “como se ganha” ligado a uma insígnia. A atribuição continua no bloco Atribuir.</p>
+
+                        <form id="form-missao" class="form-admin form-missao" hidden>
+                            <p class="insignia-editor-titulo" id="missao-edit-titulo">Nova missão</p>
+                            <div class="form-admin-grid">
+                                <div>
+                                    <label for="missao-edit-nome">Nome</label>
+                                    <input type="text" id="missao-edit-nome" maxlength="120" required placeholder="Ex.: Primeira publicação">
+                                </div>
+                                <div>
+                                    <label for="missao-edit-insignia">Insígnia</label>
+                                    <select id="missao-edit-insignia" class="modal-select" required></select>
+                                </div>
+                            </div>
+                            <label for="missao-edit-desc">Descrição</label>
+                            <textarea id="missao-edit-desc" rows="2" maxlength="500" placeholder="Como o membro ganha esta insígnia…"></textarea>
+                            <label class="usuario-toggle" for="missao-edit-ativo">
+                                <input type="checkbox" id="missao-edit-ativo" checked>
+                                <span>Missão ativa</span>
+                            </label>
+                            <p id="missao-edit-erro" class="login-erro" hidden></p>
+                            <div class="insignia-editor-acoes">
+                                <button type="button" class="btn btn-secundario btn-sm" id="missao-edit-cancelar">Cancelar</button>
+                                <button type="submit" class="btn btn-primario btn-sm" id="missao-edit-guardar">Criar</button>
+                            </div>
+                        </form>
+
+                        <div id="insig-missoes-lista" class="insig-missoes-lista"></div>
+                    </section>
+                </section>
+
                 <!-- Configuração -->
                 <section id="painel-config" class="admin-painel" hidden data-titulo="Configuração" data-subtitulo="Supabase e variáveis do projeto">
                     <section class="admin-card">
@@ -340,49 +452,6 @@
         </div>
     </div>
 
-    <div id="modal-insignias-overlay" class="modal-overlay" hidden>
-        <div class="modal modal-grande" role="dialog" aria-modal="true" aria-labelledby="modal-insignias-titulo">
-            <div class="modal-cabecalho">
-                <h2 id="modal-insignias-titulo">Insígnias</h2>
-                <button type="button" id="modal-insignias-fechar" class="btn-modal-fechar" aria-label="Fechar">×</button>
-            </div>
-            <p class="modal-ajuda" id="modal-insignias-sub">Escolhe as insígnias deste utilizador.</p>
-
-            <div class="insignias-admin-toolbar">
-                <button type="button" class="btn btn-outline btn-sm" id="modal-insignias-nova">Nova insígnia</button>
-            </div>
-
-            <form id="form-insignia-catalogo" class="insignia-admin-form" hidden>
-                <input type="hidden" id="insignia-edit-id" value="">
-                <label for="insignia-edit-nome">Nome</label>
-                <input type="text" id="insignia-edit-nome" maxlength="80" required placeholder="Ex.: Troféu de ouro">
-
-                <label for="insignia-edit-desc">Descrição (opcional)</label>
-                <input type="text" id="insignia-edit-desc" maxlength="240" placeholder="Texto no popup">
-
-                <label for="insignia-edit-icone">Ícone (PNG pixel art, etc.)</label>
-                <input type="file" id="insignia-edit-icone" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml">
-                <p class="campo-ajuda" id="insignia-edit-icone-ajuda">Obrigatório ao criar. Ao editar, deixa vazio para manter o atual.</p>
-                <div class="insignia-admin-form-previa" id="insignia-edit-previa-wrap" hidden>
-                    <img id="insignia-edit-previa" src="" alt="">
-                </div>
-
-                <p id="insignia-edit-erro" class="login-erro" hidden></p>
-                <div class="modal-acoes insignia-admin-form-acoes">
-                    <button type="button" class="btn btn-secundario" id="insignia-edit-cancelar">Cancelar</button>
-                    <button type="submit" class="btn btn-primario" id="insignia-edit-guardar">Guardar insígnia</button>
-                </div>
-            </form>
-
-            <div id="modal-insignias-lista" class="insignias-admin-lista"></div>
-            <p id="modal-insignias-erro" class="login-erro" hidden></p>
-            <div class="modal-acoes">
-                <button type="button" class="btn btn-secundario" id="modal-insignias-cancelar">Cancelar</button>
-                <button type="button" class="btn btn-primario" id="modal-insignias-guardar">Guardar atribuições</button>
-            </div>
-        </div>
-    </div>
-
     <div id="loading" class="loading" hidden><p>Carregando...</p></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -394,6 +463,7 @@
     <script src="assets/js/imagem-posicao.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/insignias.js"></script>
+    <script src="assets/js/admin-insignias.js"></script>
     <script src="assets/js/admin.js"></script>
 </body>
 </html>

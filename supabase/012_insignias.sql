@@ -1,6 +1,3 @@
--- Insígnias de perfil (catálogo + atribuição por admin)
--- Requer is_admin() (001 ou 005)
-
 CREATE TABLE IF NOT EXISTS public.insignias (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     slug text NOT NULL UNIQUE,
