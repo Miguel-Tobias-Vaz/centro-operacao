@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- Contorno -->
+  <path fill="#1a2744" d="M4 1h8v1H4zm-1 1h1v1H3zm9 0h1v1h-1zM2 3h1v4H2zm11 0h1v4h-1zM3 7h1v1H3zm9 0h1v1h-1zM4 8h1v1H4zm7 0h1v1h-1zM5 9h6v1H5zm2 1h2v1H7zm1 1h1v2H8zm-1 2h3v1H7zm-1 1h5v1H6z"/>
+  <!-- Ouro -->
+  <path fill="#f5c542" d="M4 2h8v1H4zm1 1h6v4H5zM4 3h1v4H4zm7 0h1v4h-1zM5 7h2v1H5zm4 0h2v1H9zM6 8h4v1H6zM7 10h2v1H7zM7 13h2v1H7z"/>
+  <!-- Brilho -->
+  <path fill="#fff6c2" d="M5 3h2v1H5zm0 1h1v2H5z"/>
+  <!-- Asa esq -->
+  <path fill="#f5c542" d="M3 3h1v3H3z"/>
+  <path fill="#e09a20" d="M3 5h1v1H3z"/>
+  <!-- Asa dir -->
+  <path fill="#f5c542" d="M12 3h1v3h-1z"/>
+  <path fill="#e09a20" d="M12 5h1v1h-1z"/>
+  <!-- Louros -->
+  <path fill="#3d9e4f" d="M5 11h1v1H5zm9-0h0zm1 0h0zM4 12h1v1H4zm7 0h1v1h-1z"/>
+  <path fill="#3d9e4f" d="M10 11h1v1h-1zM11 12h1v1h-1z"/>
+  <!-- Base -->
+  <path fill="#1a2744" d="M6 14h4v1H6z"/>
+  <path fill="#f5c542" d="M7 14h2v1H7z"/>
+</svg>

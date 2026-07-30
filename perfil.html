@@ -25,6 +25,7 @@
 
             <div class="hub-topbar-acoes container-buttons">
                 <a href="index.html" class="hub-icon-btn" title="Hub" aria-label="Voltar ao hub">⌂</a>
+                <a href="equipe.html" class="hub-icon-btn" title="Equipe" aria-label="Equipe">👥</a>
                 <button type="button" id="tema" class="hub-icon-btn" aria-label="Alternar tema" title="Alternar tema">◐</button>
 
                 <div id="auth-header" class="auth-header">
@@ -47,6 +48,7 @@
                                 <p class="menu-usuario-nome" id="auth-usuario-nome"></p>
                                 <p class="menu-usuario-email" id="auth-usuario-email"></p>
                                 <a href="perfil.html" class="menu-usuario-item" id="link-meu-perfil">Meu perfil</a>
+                                <a href="equipe.html" class="menu-usuario-item">Equipe</a>
                                 <a href="admin.html" id="link-admin" class="menu-usuario-item" hidden>Administração</a>
                                 <button type="button" id="btn-sair" class="menu-usuario-item menu-usuario-sair">Sair</button>
                             </div>
@@ -120,6 +122,12 @@
                             <div class="perfil-resumo-bloco">
                                 <h3>Estado</h3>
                                 <p class="perfil-status" id="perfil-status">—</p>
+                            </div>
+                            <div class="perfil-resumo-bloco">
+                                <h3>Insígnias</h3>
+                                <div id="perfil-insignias" class="perfil-insignias" aria-live="polite">
+                                    <p class="perfil-insignias-vazio">Sem insígnias</p>
+                                </div>
                             </div>
                             <div class="perfil-resumo-bloco">
                                 <h3>Na equipa desde</h3>
@@ -247,6 +255,15 @@
         </div>
     </div>
 
+    <div id="modal-insignia-overlay" class="modal-overlay perfil-insignia-overlay" hidden>
+        <div class="modal perfil-insignia-modal" role="dialog" aria-modal="true" aria-labelledby="modal-insignia-nome">
+            <button type="button" id="modal-insignia-fechar" class="btn-modal-fechar" aria-label="Fechar">×</button>
+            <img id="modal-insignia-img" class="perfil-insignia-modal-img" src="" alt="">
+            <h2 id="modal-insignia-nome" class="perfil-insignia-modal-nome"></h2>
+            <p id="modal-insignia-desc" class="perfil-insignia-modal-desc" hidden></p>
+        </div>
+    </div>
+
     <div id="loading" class="loading" hidden>
         <p>Carregando...</p>
     </div>
@@ -264,6 +281,7 @@
     <script src="assets/js/imagem-otimizar.js"></script>
     <script src="assets/js/gif-vivo.js"></script>
     <script src="assets/js/auth.js"></script>
+    <script src="assets/js/insignias.js"></script>
     <script src="assets/js/perfil.js"></script>
 </body>
 </html>

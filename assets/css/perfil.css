@@ -518,6 +518,93 @@
     font-weight: 600;
 }
 
+.perfil-insignias {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 56px;
+}
+
+.perfil-insignias-vazio {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--perfil-fonte-suave);
+}
+
+.perfil-insignia-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--perfil-destaque) 35%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--perfil-meio-cor, #131722) 70%, transparent);
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.perfil-insignia-btn:hover,
+.perfil-insignia-btn:focus-visible {
+    transform: translateY(-2px) scale(1.06);
+    border-color: var(--perfil-destaque);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--perfil-destaque) 28%, transparent);
+    outline: none;
+}
+
+.perfil-insignia-btn img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+}
+
+.perfil-insignia-overlay {
+    z-index: 120;
+}
+
+.perfil-insignia-modal {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    max-width: 320px;
+    padding: 28px 24px 24px;
+    text-align: center;
+}
+
+.perfil-insignia-modal .btn-modal-fechar {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+}
+
+.perfil-insignia-modal-img {
+    width: 128px;
+    height: 128px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.perfil-insignia-modal-nome {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--cor-fonte);
+}
+
+.perfil-insignia-modal-desc {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--cor-fonte-suave);
+    line-height: 1.4;
+}
+
 .perfil-metricas {
     list-style: none;
     margin: 0;

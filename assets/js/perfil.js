@@ -265,6 +265,77 @@
         preencherAvatarPerfil(perfil);
         aplicarTemaVisual(perfil);
         renderizarAnotacoes(perfil);
+        renderizarInsignias(perfil.id);
+    }
+
+    function fecharPopupInsignia() {
+        const overlay = document.getElementById("modal-insignia-overlay");
+        if (overlay) overlay.hidden = true;
+    }
+
+    function abrirPopupInsignia(insignia) {
+        const overlay = document.getElementById("modal-insignia-overlay");
+        const img = document.getElementById("modal-insignia-img");
+        const nome = document.getElementById("modal-insignia-nome");
+        const desc = document.getElementById("modal-insignia-desc");
+        if (!overlay || !img || !nome) return;
+
+        const src = window.Insignias?.urlIcone?.(insignia.icone_path) || insignia.icone_path;
+        img.src = src;
+        img.alt = insignia.nome || "Insígnia";
+        nome.textContent = insignia.nome || "Insígnia";
+
+        const textoDesc = String(insignia.descricao || "").trim();
+        if (desc) {
+            if (textoDesc) {
+                desc.hidden = false;
+                desc.textContent = textoDesc;
+            } else {
+                desc.hidden = true;
+                desc.textContent = "";
+            }
+        }
+
+        overlay.hidden = false;
+    }
+
+    async function renderizarInsignias(perfilId) {
+        const box = document.getElementById("perfil-insignias");
+        if (!box) return;
+
+        box.replaceChildren();
+        const vazio = document.createElement("p");
+        vazio.className = "perfil-insignias-vazio";
+        vazio.textContent = "A carregar…";
+        box.appendChild(vazio);
+
+        const lista = await window.Insignias?.listarDoPerfil?.(perfilId) || [];
+        box.replaceChildren();
+
+        if (!lista.length) {
+            const msg = document.createElement("p");
+            msg.className = "perfil-insignias-vazio";
+            msg.textContent = "Sem insígnias";
+            box.appendChild(msg);
+            return;
+        }
+
+        lista.forEach((ins) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "perfil-insignia-btn";
+            btn.title = ins.nome || "Insígnia";
+            btn.setAttribute("aria-label", ins.nome || "Insígnia");
+
+            const img = document.createElement("img");
+            img.src = window.Insignias?.urlIcone?.(ins.icone_path) || ins.icone_path;
+            img.alt = "";
+            img.decoding = "async";
+            btn.appendChild(img);
+
+            btn.addEventListener("click", () => abrirPopupInsignia(ins));
+            box.appendChild(btn);
+        });
     }
 
     function ajustarAlturaAnotacoes() {
@@ -947,6 +1018,16 @@
         document.getElementById("form-editar-perfil")?.addEventListener("submit", guardarPerfil);
         document.getElementById("btn-guardar-anotacoes")?.addEventListener("click", guardarAnotacoes);
         document.getElementById("perfil-anotacoes-input")?.addEventListener("input", ajustarAlturaAnotacoes);
+
+        document.getElementById("modal-insignia-fechar")?.addEventListener("click", fecharPopupInsignia);
+        document.getElementById("modal-insignia-overlay")?.addEventListener("click", (e) => {
+            if (e.target?.id === "modal-insignia-overlay") fecharPopupInsignia();
+        });
+        document.addEventListener("keydown", (e) => {
+            if (e.key !== "Escape") return;
+            const overlay = document.getElementById("modal-insignia-overlay");
+            if (overlay && !overlay.hidden) fecharPopupInsignia();
+        });
 
         document.getElementById("perfil-edit-avatar")?.addEventListener("change", async (e) => {
             const bruto = e.target.files?.[0] || null;

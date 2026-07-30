@@ -3158,7 +3158,7 @@ body:not(.tema-claro) .login-erro {
     justify-content: flex-end;
     gap: 8px;
     flex-shrink: 0;
-    max-width: 360px;
+    max-width: 420px;
 }
 
 .usuario-toggle {

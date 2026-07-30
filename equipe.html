@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="assets/icone/Icone.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/vida.css">
+    <link rel="stylesheet" href="assets/css/hub.css">
+    <link rel="stylesheet" href="assets/css/equipe.css">
+    <title>Equipe — Central OPTO</title>
+</head>
+<body class="equipe-body">
+    <header class="header hub-topbar">
+        <div class="hub-topbar-inner">
+            <a href="index.html" class="hub-logo" title="Voltar ao hub">
+                <img src="assets/icone/Icone.png" alt="">
+                <span class="hub-logo-texto">Central OPTO <span>Suporte</span></span>
+            </a>
+
+            <label class="hub-busca-topo equipe-busca-topo" for="equipe-busca">
+                <span class="hub-busca-topo-icone" aria-hidden="true">⌕</span>
+                <input
+                    id="equipe-busca"
+                    type="search"
+                    placeholder="Pesquisar por nome ou cargo…"
+                    autocomplete="off"
+                    aria-label="Pesquisar membros da equipe"
+                >
+            </label>
+
+            <div class="hub-topbar-acoes container-buttons">
+                <a href="index.html" class="hub-icon-btn" title="Hub" aria-label="Voltar ao hub">⌂</a>
+                <a href="equipe.html" class="hub-icon-btn is-ativo" title="Equipe" aria-label="Equipe" aria-current="page">👥</a>
+                <button type="button" id="tema" class="hub-icon-btn" aria-label="Alternar tema" title="Alternar tema">◐</button>
+
+                <div id="auth-header" class="auth-header">
+                    <button type="button" id="btn-entrar" class="btn btn-outline btn-sm auth-so-deslogado">Entrar</button>
+                    <div id="auth-logado" class="auth-logado auth-so-logado" hidden>
+                        <div class="menu-usuario-wrap">
+                            <button
+                                type="button"
+                                id="btn-menu-usuario"
+                                class="usuario-avatar-btn"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                aria-label="Menu da conta"
+                            >
+                                <span class="modulo-avatar modulo-avatar-sm" id="auth-usuario-avatar">
+                                    <span class="modulo-avatar-inicial" id="auth-usuario-inicial">?</span>
+                                </span>
+                            </button>
+                            <div id="menu-usuario" class="menu-usuario" hidden>
+                                <p class="menu-usuario-nome" id="auth-usuario-nome"></p>
+                                <p class="menu-usuario-email" id="auth-usuario-email"></p>
+                                <a href="perfil.html" class="menu-usuario-item" id="link-meu-perfil">Meu perfil</a>
+                                <a href="equipe.html" class="menu-usuario-item">Equipe</a>
+                                <a href="admin.html" id="link-admin" class="menu-usuario-item" hidden>Administração</a>
+                                <button type="button" id="btn-sair" class="menu-usuario-item menu-usuario-sair">Sair</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="equipe-main">
+        <div class="equipe-painel">
+            <header class="equipe-cabecalho">
+                <div>
+                    <h1>Equipe</h1>
+                    <p class="equipe-sub" id="equipe-sub">Membros da Central OPTO</p>
+                </div>
+                <p class="equipe-contagem" id="equipe-contagem" aria-live="polite"></p>
+            </header>
+
+            <label class="equipe-busca-painel" for="equipe-busca-painel">
+                <span aria-hidden="true">⌕</span>
+                <input
+                    id="equipe-busca-painel"
+                    type="search"
+                    placeholder="Pesquisar por nome ou cargo…"
+                    autocomplete="off"
+                    aria-label="Pesquisar membros da equipe"
+                >
+            </label>
+
+            <div id="equipe-lista" class="equipe-lista" role="list"></div>
+            <p id="equipe-vazio" class="equipe-vazio" hidden>Nenhum membro encontrado.</p>
+            <p id="equipe-aviso" class="equipe-aviso" hidden></p>
+        </div>
+    </main>
+
+    <div id="modal-overlay" class="modal-overlay" hidden>
+        <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+            <div class="modal-cabecalho">
+                <h2 id="modal-titulo">Entrar</h2>
+                <button type="button" id="modal-fechar" class="btn-modal-fechar" aria-label="Fechar">×</button>
+            </div>
+            <form id="form-login" class="modal-form">
+                <label for="login-email">E-mail</label>
+                <input type="email" id="login-email" required autocomplete="username" placeholder="seu@email.com">
+                <label for="login-senha">Senha</label>
+                <input type="password" id="login-senha" required autocomplete="current-password" placeholder="••••••••">
+                <p id="login-erro" class="login-erro" hidden></p>
+                <button type="button" id="btn-recuperar-senha" class="btn-link-login">Esqueci minha senha</button>
+                <div class="modal-acoes">
+                    <button type="button" class="btn btn-secundario" data-acao="cancelar">Cancelar</button>
+                    <button type="submit" class="btn btn-primario">Entrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" hidden>
+        <p>Carregando...</p>
+    </div>
+
+    <div id="erro-config" class="erro-config" hidden>
+        <p>Configure o Supabase em <code>config.js</code> com a URL e a chave anon do seu projeto.</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="config.js"></script>
+    <script src="assets/js/ferramenta-tema.js"></script>
+    <script src="assets/js/vida.js"></script>
+    <script src="assets/js/logs.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/equipe.js"></script>
+</body>
+</html>

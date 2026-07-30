@@ -792,3 +792,118 @@ body:not(.tema-claro) .login-ok {
         font-size: 1.35rem;
     }
 }
+
+/* Modal: atribuir / gerir insígnias */
+.insignias-admin-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin: 4px 0 10px;
+}
+
+.insignia-admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 12px;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-sm);
+    background: var(--cor-superficie, var(--cor-fundo));
+}
+
+.insignia-admin-form label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--cor-fonte-suave);
+}
+
+.insignia-admin-form input[type="text"],
+.insignia-admin-form input[type="file"] {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.insignia-admin-form-previa {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0;
+}
+
+.insignia-admin-form-previa img {
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.insignia-admin-form-acoes {
+    margin-top: 4px;
+}
+
+.insignias-admin-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: min(50vh, 360px);
+    overflow: auto;
+    margin: 8px 0 12px;
+    padding: 2px;
+}
+
+.insignia-admin-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-sm);
+    background: var(--cor-fundo);
+}
+
+.insignia-admin-item:hover {
+    border-color: var(--cor-destaque);
+}
+
+.insignia-admin-check {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+    cursor: pointer;
+    user-select: none;
+}
+
+.insignia-admin-check input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--cor-destaque);
+    flex-shrink: 0;
+}
+
+.insignia-admin-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    flex-shrink: 0;
+}
+
+.insignia-admin-nome {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--cor-fonte);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.insignia-admin-item-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex-shrink: 0;
+}

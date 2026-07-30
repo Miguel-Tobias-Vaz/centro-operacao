@@ -49,6 +49,10 @@
                     <i data-lucide="monitor"></i>
                     <span>Ver site</span>
                 </a>
+                <a href="equipe.html" class="admin-nav-item admin-nav-link">
+                    <i data-lucide="users"></i>
+                    <span>Equipe</span>
+                </a>
             </div>
 
             <button type="button" id="admin-sidebar-toggle" class="admin-sidebar-toggle" aria-label="Recolher menu">
@@ -92,6 +96,7 @@
                                     <p class="menu-usuario-nome" id="auth-usuario-nome"></p>
                                     <p class="menu-usuario-email" id="auth-usuario-email"></p>
                                     <a href="perfil.html" class="menu-usuario-item" id="link-meu-perfil">Meu perfil</a>
+                                    <a href="equipe.html" class="menu-usuario-item">Equipe</a>
                                     <button type="button" id="btn-sair" class="menu-usuario-item menu-usuario-sair">Sair</button>
                                 </div>
                             </div>
@@ -335,6 +340,49 @@
         </div>
     </div>
 
+    <div id="modal-insignias-overlay" class="modal-overlay" hidden>
+        <div class="modal modal-grande" role="dialog" aria-modal="true" aria-labelledby="modal-insignias-titulo">
+            <div class="modal-cabecalho">
+                <h2 id="modal-insignias-titulo">Insígnias</h2>
+                <button type="button" id="modal-insignias-fechar" class="btn-modal-fechar" aria-label="Fechar">×</button>
+            </div>
+            <p class="modal-ajuda" id="modal-insignias-sub">Escolhe as insígnias deste utilizador.</p>
+
+            <div class="insignias-admin-toolbar">
+                <button type="button" class="btn btn-outline btn-sm" id="modal-insignias-nova">Nova insígnia</button>
+            </div>
+
+            <form id="form-insignia-catalogo" class="insignia-admin-form" hidden>
+                <input type="hidden" id="insignia-edit-id" value="">
+                <label for="insignia-edit-nome">Nome</label>
+                <input type="text" id="insignia-edit-nome" maxlength="80" required placeholder="Ex.: Troféu de ouro">
+
+                <label for="insignia-edit-desc">Descrição (opcional)</label>
+                <input type="text" id="insignia-edit-desc" maxlength="240" placeholder="Texto no popup">
+
+                <label for="insignia-edit-icone">Ícone (PNG pixel art, etc.)</label>
+                <input type="file" id="insignia-edit-icone" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml">
+                <p class="campo-ajuda" id="insignia-edit-icone-ajuda">Obrigatório ao criar. Ao editar, deixa vazio para manter o atual.</p>
+                <div class="insignia-admin-form-previa" id="insignia-edit-previa-wrap" hidden>
+                    <img id="insignia-edit-previa" src="" alt="">
+                </div>
+
+                <p id="insignia-edit-erro" class="login-erro" hidden></p>
+                <div class="modal-acoes insignia-admin-form-acoes">
+                    <button type="button" class="btn btn-secundario" id="insignia-edit-cancelar">Cancelar</button>
+                    <button type="submit" class="btn btn-primario" id="insignia-edit-guardar">Guardar insígnia</button>
+                </div>
+            </form>
+
+            <div id="modal-insignias-lista" class="insignias-admin-lista"></div>
+            <p id="modal-insignias-erro" class="login-erro" hidden></p>
+            <div class="modal-acoes">
+                <button type="button" class="btn btn-secundario" id="modal-insignias-cancelar">Cancelar</button>
+                <button type="button" class="btn btn-primario" id="modal-insignias-guardar">Guardar atribuições</button>
+            </div>
+        </div>
+    </div>
+
     <div id="loading" class="loading" hidden><p>Carregando...</p></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -345,6 +393,7 @@
     <script src="assets/js/logs.js"></script>
     <script src="assets/js/imagem-posicao.js"></script>
     <script src="assets/js/auth.js"></script>
+    <script src="assets/js/insignias.js"></script>
     <script src="assets/js/admin.js"></script>
 </body>
 </html>

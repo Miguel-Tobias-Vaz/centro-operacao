@@ -15,8 +15,9 @@ Ordem de execução no **SQL Editor** (projeto novo):
 | 9 | `009_imagens_qualidade.sql` | Limite Storage 3 MB para mídia de perfil/módulos |
 | 10 | `010_gif_limite_8mb.sql` | Limite Storage 8 MB (GIFs maiores) |
 | 11 | `011_gif_limite_15mb.sql` | Limite Storage 15 MB (GIFs de fundo/perfil) |
+| 12 | `012_insignias.sql` | Catálogo de insígnias + atribuição por admin ao perfil |
 
-Os ficheiros `migration_*.sql` antigos são equivalentes parciais; preferir a numeração `001`–`011`.
+Os ficheiros `migration_*.sql` antigos são equivalentes parciais; preferir a numeração `001`–`012`.
 
 Documentação de políticas: [`Doc/supabase-rls.md`](../Doc/supabase-rls.md).
 Roadmap de perfis: [`Doc/perfil-roadmap.md`](../Doc/perfil-roadmap.md).

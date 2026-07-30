@@ -120,6 +120,10 @@ const Auth = (() => {
         return session;
     }
 
+    function getClient() {
+        return client;
+    }
+
     function getPerfil() {
         return perfil;
     }
@@ -776,6 +780,16 @@ const Auth = (() => {
                 btnPerfil.className = "btn btn-outline btn-sm usuario-btn-acao";
                 btnPerfil.textContent = "Ver perfil";
 
+                const btnInsignias = document.createElement("button");
+                btnInsignias.type = "button";
+                btnInsignias.className = "btn btn-outline btn-sm usuario-btn-acao";
+                btnInsignias.textContent = "Insígnias";
+                btnInsignias.addEventListener("click", () => {
+                    abrirModalInsigniasUsuario(usuario).catch((erro) => {
+                        alert(erro.message || "Não foi possível abrir as insígnias.");
+                    });
+                });
+
                 const btnSenha = document.createElement("button");
                 btnSenha.type = "button";
                 btnSenha.className = "btn btn-outline btn-sm usuario-btn-acao";
@@ -804,7 +818,7 @@ const Auth = (() => {
 
                 acoes.append(select);
                 if (toggleLabel) acoes.append(toggleLabel);
-                acoes.append(btnPerfil, btnSenha, btnExcluir);
+                acoes.append(btnPerfil, btnInsignias, btnSenha, btnExcluir);
                 item.append(avatar, info, acoes);
                 lista.appendChild(item);
             });
@@ -813,6 +827,286 @@ const Auth = (() => {
             msg.className = "login-erro";
             msg.textContent = `Erro ao carregar usuários: ${erro.message}`;
             lista.appendChild(msg);
+        }
+    }
+
+    let insigniasModalUsuario = null;
+    let insigniasIdsSelecionados = new Set();
+
+    function mostrarErroInsignias(msg) {
+        const erroEl = document.getElementById("modal-insignias-erro");
+        if (!erroEl) return;
+        if (!msg) {
+            erroEl.hidden = true;
+            erroEl.textContent = "";
+            return;
+        }
+        erroEl.textContent = msg;
+        erroEl.hidden = false;
+    }
+
+    function mostrarErroFormInsignia(msg) {
+        const erroEl = document.getElementById("insignia-edit-erro");
+        if (!erroEl) return;
+        if (!msg) {
+            erroEl.hidden = true;
+            erroEl.textContent = "";
+            return;
+        }
+        erroEl.textContent = msg;
+        erroEl.hidden = false;
+    }
+
+    function fecharFormInsigniaCatalogo() {
+        const form = document.getElementById("form-insignia-catalogo");
+        if (form) {
+            form.hidden = true;
+            form.reset();
+        }
+        const idEl = document.getElementById("insignia-edit-id");
+        if (idEl) idEl.value = "";
+        const wrap = document.getElementById("insignia-edit-previa-wrap");
+        const img = document.getElementById("insignia-edit-previa");
+        if (wrap) wrap.hidden = true;
+        if (img) img.removeAttribute("src");
+        mostrarErroFormInsignia("");
+        const ajuda = document.getElementById("insignia-edit-icone-ajuda");
+        if (ajuda) ajuda.textContent = "Obrigatório ao criar. Ao editar, deixa vazio para manter o atual.";
+    }
+
+    function abrirFormInsigniaCatalogo(insignia = null) {
+        const form = document.getElementById("form-insignia-catalogo");
+        if (!form) return;
+        form.hidden = false;
+        mostrarErroFormInsignia("");
+
+        const idEl = document.getElementById("insignia-edit-id");
+        const nomeEl = document.getElementById("insignia-edit-nome");
+        const descEl = document.getElementById("insignia-edit-desc");
+        const ficheiroEl = document.getElementById("insignia-edit-icone");
+        const wrap = document.getElementById("insignia-edit-previa-wrap");
+        const img = document.getElementById("insignia-edit-previa");
+        const ajuda = document.getElementById("insignia-edit-icone-ajuda");
+        const btn = document.getElementById("insignia-edit-guardar");
+
+        if (idEl) idEl.value = insignia?.id || "";
+        if (nomeEl) nomeEl.value = insignia?.nome || "";
+        if (descEl) descEl.value = insignia?.descricao || "";
+        if (ficheiroEl) ficheiroEl.value = "";
+
+        if (insignia?.icone_path && img && wrap) {
+            img.src = window.Insignias.urlIcone(insignia.icone_path);
+            wrap.hidden = false;
+        } else if (wrap) {
+            wrap.hidden = true;
+        }
+
+        if (ajuda) {
+            ajuda.textContent = insignia
+                ? "Deixa vazio para manter o ícone atual."
+                : "Obrigatório ao criar (PNG pixel art recomendado).";
+        }
+        if (btn) btn.textContent = insignia ? "Atualizar insígnia" : "Criar insígnia";
+        nomeEl?.focus();
+    }
+
+    function fecharModalInsigniasUsuario() {
+        const overlay = document.getElementById("modal-insignias-overlay");
+        if (overlay) overlay.hidden = true;
+        insigniasModalUsuario = null;
+        insigniasIdsSelecionados = new Set();
+        fecharFormInsigniaCatalogo();
+        mostrarErroInsignias("");
+    }
+
+    function sincronizarSelecaoDaLista() {
+        const listaEl = document.getElementById("modal-insignias-lista");
+        if (!listaEl) return;
+        insigniasIdsSelecionados = new Set(
+            [...listaEl.querySelectorAll("input[type=checkbox]:checked")]
+                .map((el) => el.value)
+                .filter(Boolean)
+        );
+    }
+
+    async function renderizarListaInsigniasModal() {
+        const listaEl = document.getElementById("modal-insignias-lista");
+        if (!listaEl || !insigniasModalUsuario) return;
+
+        listaEl.replaceChildren();
+        const carregando = document.createElement("p");
+        carregando.className = "lista-vazia";
+        carregando.textContent = "A carregar…";
+        listaEl.appendChild(carregando);
+
+        const catalogo = await window.Insignias.listarCatalogo();
+        listaEl.replaceChildren();
+
+        const comId = (catalogo || []).filter((ins) => ins.id);
+        if (!comId.length) {
+            const vazio = document.createElement("p");
+            vazio.className = "lista-vazia";
+            vazio.textContent = "Nenhuma insígnia ainda. Cria a primeira com «Nova insígnia».";
+            listaEl.appendChild(vazio);
+            return;
+        }
+
+        comId.forEach((ins) => {
+            const row = document.createElement("div");
+            row.className = "insignia-admin-item";
+
+            const label = document.createElement("label");
+            label.className = "insignia-admin-check";
+
+            const check = document.createElement("input");
+            check.type = "checkbox";
+            check.value = ins.id;
+            check.checked = insigniasIdsSelecionados.has(ins.id);
+            check.addEventListener("change", sincronizarSelecaoDaLista);
+
+            const img = document.createElement("img");
+            img.src = window.Insignias.urlIcone(ins.icone_path);
+            img.alt = "";
+            img.className = "insignia-admin-icon";
+
+            const texto = document.createElement("span");
+            texto.className = "insignia-admin-nome";
+            texto.textContent = ins.nome || ins.slug || "Insígnia";
+
+            label.append(check, img, texto);
+
+            const acoes = document.createElement("div");
+            acoes.className = "insignia-admin-item-acoes";
+
+            const btnEditar = document.createElement("button");
+            btnEditar.type = "button";
+            btnEditar.className = "btn btn-outline btn-sm";
+            btnEditar.textContent = "Editar";
+            btnEditar.addEventListener("click", () => abrirFormInsigniaCatalogo(ins));
+
+            const btnExcluir = document.createElement("button");
+            btnExcluir.type = "button";
+            btnExcluir.className = "btn btn-outline btn-sm usuario-btn-excluir";
+            btnExcluir.textContent = "Excluir";
+            btnExcluir.addEventListener("click", () => {
+                excluirInsigniaCatalogo(ins).catch(() => {});
+            });
+
+            acoes.append(btnEditar, btnExcluir);
+            row.append(label, acoes);
+            listaEl.appendChild(row);
+        });
+    }
+
+    async function abrirModalInsigniasUsuario(usuario) {
+        if (!exigirAdmin()) return;
+        if (!window.Insignias) {
+            throw new Error("Módulo de insígnias não carregado. Atualiza a página.");
+        }
+
+        const overlay = document.getElementById("modal-insignias-overlay");
+        const listaEl = document.getElementById("modal-insignias-lista");
+        const titulo = document.getElementById("modal-insignias-titulo");
+        const sub = document.getElementById("modal-insignias-sub");
+        if (!overlay || !listaEl) {
+            throw new Error("Modal de insígnias não encontrado nesta página.");
+        }
+
+        insigniasModalUsuario = usuario;
+        fecharFormInsigniaCatalogo();
+        mostrarErroInsignias("");
+        if (titulo) titulo.textContent = "Insígnias";
+        if (sub) {
+            sub.textContent = `Atribui, cria, edita ou exclui insígnias · ${usuario.nome || usuario.email}`;
+        }
+
+        overlay.hidden = false;
+        insigniasIdsSelecionados = await window.Insignias.idsDoPerfil(usuario.id);
+        await renderizarListaInsigniasModal();
+    }
+
+    async function guardarFormInsigniaCatalogo(e) {
+        e?.preventDefault?.();
+        if (!exigirAdmin() || !window.Insignias) return;
+
+        const id = document.getElementById("insignia-edit-id")?.value || "";
+        const nome = document.getElementById("insignia-edit-nome")?.value?.trim() || "";
+        const descricao = document.getElementById("insignia-edit-desc")?.value?.trim() || "";
+        const ficheiro = document.getElementById("insignia-edit-icone")?.files?.[0] || null;
+        const btn = document.getElementById("insignia-edit-guardar");
+
+        mostrarErroFormInsignia("");
+        if (!nome) {
+            mostrarErroFormInsignia("Indica um nome.");
+            return;
+        }
+        if (!id && !ficheiro) {
+            mostrarErroFormInsignia("Escolhe um ícone para a nova insígnia.");
+            return;
+        }
+
+        if (btn) btn.disabled = true;
+        try {
+            if (id) {
+                await window.Insignias.atualizarInsignia(id, { nome, descricao, ficheiro });
+                window.LogsAtividade?.registrar("Editar insígnia", nome, "usuario");
+            } else {
+                const criada = await window.Insignias.criarInsignia({ nome, descricao, ficheiro });
+                if (criada?.id) insigniasIdsSelecionados.add(criada.id);
+                window.LogsAtividade?.registrar("Criar insígnia", nome, "usuario");
+            }
+            fecharFormInsigniaCatalogo();
+            await renderizarListaInsigniasModal();
+        } catch (erro) {
+            mostrarErroFormInsignia(erro.message || "Erro ao guardar a insígnia.");
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    async function excluirInsigniaCatalogo(ins) {
+        if (!exigirAdmin() || !window.Insignias || !ins?.id) return;
+        const ok = window.confirm(
+            `Excluir a insígnia «${ins.nome || "sem nome"}»?\nSerá removida de todos os perfis.`
+        );
+        if (!ok) return;
+
+        mostrarErroInsignias("");
+        try {
+            await window.Insignias.excluirInsignia(ins.id);
+            insigniasIdsSelecionados.delete(ins.id);
+            window.LogsAtividade?.registrar("Excluir insígnia", ins.nome || ins.id, "usuario");
+            if (document.getElementById("insignia-edit-id")?.value === ins.id) {
+                fecharFormInsigniaCatalogo();
+            }
+            await renderizarListaInsigniasModal();
+        } catch (erro) {
+            mostrarErroInsignias(erro.message || "Erro ao excluir.");
+        }
+    }
+
+    async function guardarInsigniasUsuario() {
+        if (!exigirAdmin() || !insigniasModalUsuario || !window.Insignias) return;
+
+        sincronizarSelecaoDaLista();
+        const ids = [...insigniasIdsSelecionados];
+        const btn = document.getElementById("modal-insignias-guardar");
+
+        if (btn) btn.disabled = true;
+        mostrarErroInsignias("");
+
+        try {
+            await window.Insignias.definirDoPerfil(insigniasModalUsuario.id, ids);
+            window.LogsAtividade?.registrar(
+                "Atribuir insígnias",
+                `${insigniasModalUsuario.nome || insigniasModalUsuario.email}: ${ids.length} selecionada(s)`,
+                "usuario"
+            );
+            fecharModalInsigniasUsuario();
+        } catch (erro) {
+            mostrarErroInsignias(erro.message || "Erro ao guardar atribuições.");
+        } finally {
+            if (btn) btn.disabled = false;
         }
     }
 
@@ -943,6 +1237,30 @@ const Auth = (() => {
         document.querySelectorAll("[data-acao='cancelar']").forEach((btn) => {
             btn.addEventListener("click", fecharOverlayModal);
         });
+
+        document.getElementById("modal-insignias-fechar")?.addEventListener("click", fecharModalInsigniasUsuario);
+        document.getElementById("modal-insignias-cancelar")?.addEventListener("click", fecharModalInsigniasUsuario);
+        document.getElementById("modal-insignias-guardar")?.addEventListener("click", () => {
+            guardarInsigniasUsuario().catch(() => {});
+        });
+        document.getElementById("modal-insignias-overlay")?.addEventListener("click", (e) => {
+            if (e.target?.id === "modal-insignias-overlay") fecharModalInsigniasUsuario();
+        });
+        document.getElementById("modal-insignias-nova")?.addEventListener("click", () => {
+            abrirFormInsigniaCatalogo(null);
+        });
+        document.getElementById("insignia-edit-cancelar")?.addEventListener("click", fecharFormInsigniaCatalogo);
+        document.getElementById("form-insignia-catalogo")?.addEventListener("submit", (e) => {
+            guardarFormInsigniaCatalogo(e).catch(() => {});
+        });
+        document.getElementById("insignia-edit-icone")?.addEventListener("change", (e) => {
+            const file = e.target.files?.[0];
+            const wrap = document.getElementById("insignia-edit-previa-wrap");
+            const img = document.getElementById("insignia-edit-previa");
+            if (!file || !img || !wrap) return;
+            img.src = URL.createObjectURL(file);
+            wrap.hidden = false;
+        });
     }
 
     async function iniciar(supabaseClient) {
@@ -987,6 +1305,7 @@ const Auth = (() => {
     return {
         iniciar,
         getSession,
+        getClient,
         getPerfil,
         podeEditar,
         ehAdmin,
