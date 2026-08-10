@@ -64,6 +64,11 @@ async function garantirDicionarioAcentos(url) {
     return DICIONARIO_PROMESSA;
 }
 
+/** True se o dicionário remoto carregou com entradas (falha → Map vazio). */
+function dicionarioAcentosDisponivel() {
+    return !!(DICIONARIO_ACENTOS && DICIONARIO_ACENTOS.size > 0);
+}
+
 function tituloApartirDeMinusculas(s) {
     if (!s) return s;
     return s.charAt(0).toUpperCase() + s.slice(1);
@@ -200,15 +205,47 @@ function tokenMaiusculoLiteral(token) {
     return limpo === limpo.toUpperCase();
 }
 
-/** Sigla curta (2–6 letras) ou entrada do set SIGLAS. */
-function tokenPareceSiglaCurta(token) {
+/**
+ * Sigla curta (2–6 letras) ou entrada do set SIGLAS.
+ * @param {string} token
+ * @param {boolean} [soConhecidas] se true, só SIGLAS / padrão pontuado (ALL CAPS).
+ */
+function tokenPareceSiglaCurta(token, soConhecidas) {
     const limpo = String(token || "").replace(/\./g, "");
     if (!limpo) return false;
     const chave = foldAscii(limpo);
     if (SIGLAS.has(chave)) return true;
+    if (/^(?:[A-Za-zÀ-ü]\.){2,6}$/.test(token)) return true;
+    if (soConhecidas) return false;
     if (limpo.length >= 2 && limpo.length <= 6 && /^[A-Za-zÀ-ü]+$/.test(limpo)) {
         return tokenMaiusculoLiteral(limpo);
     }
+    return false;
+}
+
+/** Tipos documentais após ordinal (segundo aditivo, terceira portaria…). */
+const TIPOS_DOCUMENTAIS_APOS_ORDINAL = new Set([
+    "aditivo", "aditivos", "termo", "termos", "contrato", "contratos",
+    "portaria", "portarias", "decreto", "decretos", "oficio", "oficios",
+    "despacho", "despachos", "edital", "editais", "ata", "atas",
+    "parecer", "pareceres", "resolucao", "resolucoes", "lei", "leis",
+    "anexo", "anexos", "parte", "partes", "volume", "volumes",
+    "alteracao", "alteracoes", "apostila", "apostilas", "minuta", "minutas"
+]);
+
+/**
+ * "segundo"/"segunda" como ordinal (não preposição), ex.: Segundo Aditivo.
+ * @param {string} chave foldAscii do token
+ * @param {string[]} [tokensOriginais]
+ * @param {number} indice
+ */
+function ehOrdinalComoSubstantivo(chave, tokensOriginais, indice) {
+    if (chave !== "segundo" && chave !== "segunda") return false;
+    const prox = tokensOriginais?.[indice + 1];
+    if (!prox) return false;
+    const proxFold = foldAscii(prox);
+    if (TIPOS_DOCUMENTAIS_APOS_ORDINAL.has(proxFold)) return true;
+    if (ehNumeroOuCodigo(prox) || ehRomano(prox)) return true;
     return false;
 }
 
@@ -274,20 +311,18 @@ function isSiglaDE(contexto, posicao) {
             return true;
         }
     } else {
-        // Tudo maiúsculo: só admin ou entre siglas curtas
+        // Tudo maiúsculo: só admin ou entre siglas conhecidas (não qualquer 2–6 letras)
         if (DE_SIGLA_SEGUINTES.has(depoisFold)) return true;
         if (
-            tokenPareceSiglaCurta(antes) &&
-            (tokenPareceSiglaCurta(depois) || DE_SIGLA_SEGUINTES.has(depoisFold))
+            tokenPareceSiglaCurta(antes, true) &&
+            (tokenPareceSiglaCurta(depois, true) || DE_SIGLA_SEGUINTES.has(depoisFold))
         ) {
             return true;
         }
-        // Ex.: XX DE YY com ambas siglas curtas
-        if (tokenPareceSiglaCurta(antes) && tokenPareceSiglaCurta(depois)) {
+        if (tokenPareceSiglaCurta(antes, true) && tokenPareceSiglaCurta(depois, true)) {
             return true;
         }
-        // DE no início + admin (já coberto) ou DE + sigla curta após outra sigla na cadeia
-        if (!antesFold && tokenPareceSiglaCurta(depois) && DE_SIGLA_SEGUINTES.has(depoisFold)) {
+        if (!antesFold && tokenPareceSiglaCurta(depois, true) && DE_SIGLA_SEGUINTES.has(depoisFold)) {
             return true;
         }
     }
@@ -319,8 +354,12 @@ function capitalizarPalavra(palavra, indice, total, tokensOriginais, opcoes) {
 
     // 1) Conectivos no meio — sempre minúsculos (antes de sigla/léxico/dict)
     // Em texto livre, "menos" costuma ser nome próprio (ex.: Menos É Mais).
+    // "segundo" + tipo documental → ordinal (Segundo Aditivo), não preposição.
+    const ordinalSubstantivo = ehOrdinalComoSubstantivo(chave, tokensOriginais, indice);
     const tratarComoConectivo =
-        ehConectivo(chave) && !(modoTexto && chave === "menos");
+        ehConectivo(chave) &&
+        !(modoTexto && chave === "menos") &&
+        !ordinalSubstantivo;
 
     if (tratarComoConectivo && conectivoNoMeioDoTitulo(indice, total, iniciosFrase, modoTexto)) {
         if (chave === "e") {
@@ -425,6 +464,7 @@ function aplicarRegrasTitulo(palavras, tokensOriginais, opcoes) {
         if (!modoTexto && tokensOriginais && isSiglaDE(tokensOriginais, i)) return "DE";
         const chave = foldAscii(p);
         if (modoTexto && chave === "menos") return p;
+        if (ehOrdinalComoSubstantivo(chave, tokensOriginais, i)) return p;
         if (ehConectivo(chave) && conectivoNoMeioDoTitulo(i, total, iniciosFrase, modoTexto)) {
             if (chave === "e") {
                 const orig = tokensOriginais?.[i] || p;
@@ -609,6 +649,10 @@ function removerNumerosIniciais(tokens) {
 
 function normalizarNomeArquivo(nome) {
     const bruto = limparInvisiveis(nome).trim();
+    // Caminho acidental: delega para não colapsar "/" na sanitização
+    if (/[/\\]/.test(bruto)) {
+        return normalizarCaminho(bruto);
+    }
     const ultimoPonto = bruto.lastIndexOf(".");
     const ext = ultimoPonto >= 0 ? bruto.slice(ultimoPonto).toLowerCase() : "";
     let stem = ultimoPonto >= 0 ? bruto.slice(0, ultimoPonto).trim() : bruto;

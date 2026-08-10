@@ -570,21 +570,24 @@ const LEXICO_PT = {
     decimo: "Décimo"
 };
 
-/** Siglas preservadas em maiúsculas (chave foldAscii). */
+/**
+ * Siglas preservadas em maiúsculas (chave foldAscii).
+ * Evitar palavras comuns (fonte, bolsa, me, sa…) — geram CAPS falso.
+ */
 const SIGLAS = new Set([
     "cpf", "cnpj", "rg", "cnh", "pis", "pasep", "nit",
     "tce", "tcu", "mpf", "mpe", "stf", "stj", "trf", "tj",
     "cfm", "crm", "crea", "cau", "oab", "crc",
-    "inss", "fgts", "irrf", "iss", "icms", "ipi", "pis", "cofins",
+    "inss", "fgts", "irrf", "iss", "icms", "ipi", "cofins",
     "sicom", "siafi", "siconv", "pncp", "comprasnet", "bb", "cef",
     "pdf", "doc", "docx", "xls", "xlsx", "csv", "xml", "html", "url",
-    "api", "http", "https", "cpf", "mei", "epp", "ltda", "sa", "me",
-    "ug", "uo", "pi", "nd", "ptres", "fonte",
-    "rpps", "rgps", "sus", "suas", "bolsa",
+    "api", "http", "https", "mei", "epp", "ltda",
+    "ug", "uo", "ptres",
+    "rpps", "rgps", "sus", "suas",
     "covid", "covid19", "sars",
     "km", "m2", "m3", "kg", "ha",
-    "n", "nº", "nr", "art", "inc", "par", "cap",
-    "id", "cpf", "cnpj"
+    "nº", "nr", "art", "inc", "par", "cap",
+    "id"
 ]);
 
 /**

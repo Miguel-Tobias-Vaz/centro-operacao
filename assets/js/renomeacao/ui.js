@@ -23,6 +23,7 @@ const tabelaCorpo = document.getElementById("tabela-corpo");
 const resumo = document.getElementById("resumo");
 const metaResultado = document.getElementById("meta-resultado");
 const btnDownload = document.getElementById("btn-download");
+const avisoDicionarioEl = document.getElementById("aviso-dicionario");
 
 /** @type {{ nome: string, rel: string, blob: Blob, origem: string, excluido?: boolean }[]} */
 let fila = [];
@@ -48,6 +49,18 @@ function formatBytes(n) {
 function mostrarErro(msg) {
     erroEl.hidden = !msg;
     erroEl.textContent = msg || "";
+}
+
+function mostrarAvisoDicionario(mostrar) {
+    if (!avisoDicionarioEl) return;
+    if (mostrar) {
+        avisoDicionarioEl.hidden = false;
+        avisoDicionarioEl.textContent =
+            "Acentos limitados ao léxico local (dicionário indisponível). Nomes ainda são normalizados.";
+    } else {
+        avisoDicionarioEl.hidden = true;
+        avisoDicionarioEl.textContent = "";
+    }
 }
 
 function revogarDownloadsIndividuais() {
@@ -153,6 +166,7 @@ function limparResultado() {
     revogarDownload();
     esconderProgresso();
     mostrarErro("");
+    mostrarAvisoDicionario(false);
 }
 
 function limparTudo() {
@@ -219,25 +233,33 @@ async function coletarDeEntry(entry, prefixo = "") {
 
 /**
  * Coleta arquivos de um drop (pastas inclusive). Fallback para FileList.
+ * Importante: webkitGetAsEntry() e a cópia de .files devem ser síncronos
+ * antes de qualquer await — no Chrome/Edge a lista do DataTransfer
+ * invalida após o handler do drop fazer yield (só o 1º arquivo entrava).
  * @param {DataTransfer} dataTransfer
  * @returns {Promise<{ file: File, rel: string }[]>}
  */
 async function coletarDoDataTransfer(dataTransfer) {
-    const items = dataTransfer && dataTransfer.items ? [...dataTransfer.items] : [];
-    const comEntry = items.filter((it) => it.kind === "file" && typeof it.webkitGetAsEntry === "function");
+    const filesFallback =
+        dataTransfer && dataTransfer.files ? [...dataTransfer.files] : [];
 
-    if (comEntry.length) {
+    const items = dataTransfer && dataTransfer.items ? [...dataTransfer.items] : [];
+    const entries = [];
+    for (const item of items) {
+        if (item.kind !== "file" || typeof item.webkitGetAsEntry !== "function") continue;
+        const entry = item.webkitGetAsEntry();
+        if (entry) entries.push(entry);
+    }
+
+    if (entries.length) {
         const coletados = [];
-        for (const item of comEntry) {
-            const entry = item.webkitGetAsEntry();
-            if (!entry) continue;
+        for (const entry of entries) {
             coletados.push(...(await coletarDeEntry(entry)));
         }
         if (coletados.length) return coletados;
     }
 
-    const files = dataTransfer && dataTransfer.files ? [...dataTransfer.files] : [];
-    return files.map((file) => ({
+    return filesFallback.map((file) => ({
         file,
         rel: (file.webkitRelativePath || file.name).replace(/\\/g, "/")
     }));
@@ -340,6 +362,7 @@ async function renomear() {
     try {
         setProgresso(0, 1, "Carregando dicionário de acentos…");
         await garantirDicionarioAcentos();
+        mostrarAvisoDicionario(!dicionarioAcentosDisponivel());
 
         const tokens = [];
         for (const item of ativos) {
@@ -538,6 +561,11 @@ async function normalizarTextoUi(opcoes = {}) {
 
     try {
         await garantirDicionarioAcentos();
+        if (!silencioso && !dicionarioAcentosDisponivel()) {
+            mostrarErroTexto(
+                "Acentos limitados ao léxico local (dicionário indisponível)."
+            );
+        }
         preaquecerCorrecoes(tokensDoTexto(bruto));
 
         const corrigido = normalizarTextoLivre(bruto);

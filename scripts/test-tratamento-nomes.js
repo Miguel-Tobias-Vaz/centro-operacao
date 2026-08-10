@@ -66,11 +66,23 @@ assertEq("minuta (1).pdf", "Minuta.pdf");
 assertEq("proposta_copia_2.pdf", "Proposta 2.pdf");
 
 console.log("\n— Artigos e preposições —");
-// Em ALL CAPS, "DE" + palavra curta pode ser tratado como sigla administrativa
-assertEq("ATA_DE_PRECO.pdf", "Ata DE Preço.pdf");
+assertEq("ATA_DE_PRECO.pdf", "Ata de Preço.pdf");
 assertEq("termo_de_referencia.pdf", "Termo de Referência.pdf");
 assertEq("registro_de_precos.pdf", "Registro de Preços.pdf");
+assertEq("DE_FISCAL_contrato.docx", "DE Fiscal Contrato.docx");
 
+console.log("\n— Siglas sem falso positivo —");
+assertEq("fonte_recurso.pdf", "Fonte Recurso.pdf");
+assertEq("bolsa_familia.pdf", "Bolsa Familia.pdf");
+assertEq("PORTARIA_SEGUNDO_ADITIVO.pdf", "Portaria Segundo Aditivo.pdf");
+assertEq("segundo_a_lei.pdf", "Segundo a Lei.pdf");
+
+console.log("\n— Caminho acidental em normalizarNomeArquivo —");
+assertEq(
+    "DOCUMENTOS_ASSINADOS/edital_ass.pdf",
+    "Documentos/Edital.pdf",
+    "path com / delega a normalizarCaminho"
+);
 console.log("\n— Dicionário ampliado (léxico local, sem acentos-pt.gz) —");
 assertEq("AVERBACAO_CONTRATO.pdf", "Averbacao Contrato.pdf");
 assertEq("empenho_orcamentario.pdf", "Empenho Orçamentário.pdf");
