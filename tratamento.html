@@ -13,11 +13,23 @@
             margin: 0 auto;
             padding: 1.5rem 1.25rem 3rem;
         }
+        .renomear-titulo {
+            margin: 0 0 0.5rem;
+            text-align: center;
+            font-family: var(--font-display);
+            font-size: clamp(1.45rem, 2.4vw, 1.75rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            color: var(--cor-fonte);
+        }
         .renomear-lead {
-            margin: 0 0 1.25rem;
+            margin: 0 0 1.35rem;
             color: var(--cor-fonte-suave);
             font-size: 0.95rem;
+            line-height: 1.55;
         }
+        .renomear-lead.centro { text-align: center; max-width: 38rem; margin-left: auto; margin-right: auto; }
         .renomear-modos {
             display: flex;
             flex-wrap: wrap;
@@ -32,17 +44,23 @@
             max-width: 100%;
         }
         .renomear-modo-btn {
-            padding: 8px 16px;
+            min-height: 2.75rem;
+            padding: 0.55rem 1.1rem;
             border: none;
             border-radius: var(--raio-sm, 8px);
             background: transparent;
             color: var(--cor-fonte-suave);
             font-family: inherit;
-            font-size: 0.88rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
+            transition: background 0.15s, color 0.15s;
         }
         .renomear-modo-btn:hover { color: var(--cor-fonte); }
+        .renomear-modo-btn:focus-visible {
+            outline: 2px solid var(--cor-borda-foco);
+            outline-offset: 2px;
+        }
         .renomear-modo-btn.ativo {
             background: color-mix(in srgb, var(--cor-destaque) 18%, var(--cor-superficie));
             color: var(--cor-destaque);
@@ -65,6 +83,9 @@
             background: color-mix(in srgb, var(--cor-destaque) 8%, var(--vidro-fundo-card));
             outline: none;
         }
+        .renomear-dropzone:focus-visible {
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-borda-foco) 28%, transparent);
+        }
         .renomear-dropzone.arrasto {
             border-color: var(--cor-destaque);
             background: color-mix(in srgb, var(--cor-destaque) 12%, var(--vidro-fundo-card));
@@ -86,13 +107,19 @@
         }
         .renomear-painel-titulo h2 {
             margin: 0;
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: 600;
+            letter-spacing: -0.01em;
         }
         .renomear-meta {
             font-size: 0.85rem;
             color: var(--cor-fonte-suave);
         }
+        .renomear-meta.centro {
+            margin-top: 0.55rem;
+            text-align: center;
+        }
+        .renomear-meta.dica { margin-top: 0.5rem; }
         .renomear-lista {
             list-style: none;
             margin: 0;
@@ -114,8 +141,8 @@
         }
         .renomear-lista li:last-child { border-bottom: none; }
         .renomear-lista li.excluido {
-            background: color-mix(in srgb, #c44 14%, var(--cor-superficie));
-            opacity: 0.72;
+            background: var(--cor-erro-fundo);
+            opacity: 0.78;
         }
         .renomear-lista li.excluido .nome {
             text-decoration: line-through;
@@ -132,14 +159,15 @@
             flex-shrink: 0;
             color: var(--cor-fonte-suave);
             font-size: 0.8rem;
+            font-variant-numeric: tabular-nums;
         }
         .renomear-lista-acao {
             flex-shrink: 0;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 2rem;
-            height: 2rem;
+            width: 2.75rem;
+            height: 2.75rem;
             padding: 0;
             border: 1px solid transparent;
             border-radius: 6px;
@@ -149,14 +177,20 @@
             transition: background 0.15s, border-color 0.15s, color 0.15s;
         }
         .renomear-lista-acao:hover {
-            background: color-mix(in srgb, #c44 12%, var(--cor-superficie));
-            border-color: color-mix(in srgb, #c44 40%, transparent);
-            color: #c44;
+            background: var(--cor-erro-fundo);
+            border-color: var(--cor-erro-borda);
+            color: var(--cor-erro);
         }
         .renomear-lista-acao.restaurar:hover {
-            background: color-mix(in srgb, #1b7a4e 12%, var(--cor-superficie));
-            border-color: color-mix(in srgb, #1b7a4e 40%, transparent);
-            color: #1b7a4e;
+            background: var(--cor-sucesso-fundo);
+            border-color: var(--cor-sucesso-borda);
+            color: var(--cor-sucesso);
+        }
+        .renomear-lista-acao:focus-visible,
+        .renomear-edit-item:focus-visible,
+        .renomear-dl-item:focus-visible {
+            outline: 2px solid var(--cor-borda-foco);
+            outline-offset: 2px;
         }
         .renomear-lista-acao svg {
             width: 1.05rem;
@@ -168,6 +202,7 @@
             flex-wrap: wrap;
             gap: 0.6rem;
             margin-top: 1rem;
+            align-items: center;
         }
         .renomear-progresso { margin-top: 1.25rem; }
         .renomear-barra {
@@ -180,9 +215,11 @@
         .renomear-barra > span {
             display: block;
             height: 100%;
-            width: 0%;
+            width: 100%;
+            transform: scaleX(0);
+            transform-origin: left center;
             background: var(--cor-destaque);
-            transition: width 0.15s linear;
+            transition: transform 0.15s linear;
         }
         .renomear-progresso-texto {
             margin-top: 0.4rem;
@@ -192,18 +229,18 @@
         .renomear-erro {
             margin-top: 1rem;
             padding: 0.75rem 0.9rem;
-            border: 1px solid #e2b4b4;
-            background: #fdf5f5;
-            color: #a33;
+            border: 1px solid var(--cor-erro-borda);
+            background: var(--cor-erro-fundo);
+            color: var(--cor-erro);
             border-radius: 5px;
             font-size: 0.9rem;
         }
         .renomear-aviso {
             margin-top: 1rem;
             padding: 0.75rem 0.9rem;
-            border: 1px solid #e2d4a8;
-            background: #fdfaf0;
-            color: #7a6510;
+            border: 1px solid var(--cor-aviso-borda);
+            background: var(--cor-aviso-fundo);
+            color: var(--cor-aviso);
             border-radius: 5px;
             font-size: 0.9rem;
         }
@@ -213,8 +250,10 @@
             font-size: 0.9rem;
             color: var(--cor-fonte-suave);
         }
+        .renomear-tabela-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .renomear-tabela {
             width: 100%;
+            min-width: 28rem;
             border-collapse: collapse;
             font-size: 0.9rem;
             border: 1px solid var(--cor-borda);
@@ -241,32 +280,71 @@
             color: var(--cor-fonte-suave);
             white-space: nowrap;
         }
-        .renomear-tabela .alterado .novo { color: #1b7a4e; font-weight: 600; }
+        .renomear-tabela .alterado .novo { color: var(--cor-sucesso); font-weight: 600; }
         .renomear-tabela .igual .novo { color: var(--cor-fonte-suave); }
-        .renomear-tabela .acao-dl {
-            width: 2.75rem;
-            text-align: center;
-            padding-left: 0.35rem;
-            padding-right: 0.35rem;
+        .renomear-novo-celula {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.35rem;
         }
+        .renomear-novo-texto {
+            flex: 1;
+            min-width: 0;
+            word-break: break-word;
+            padding-top: 0.45rem;
+        }
+        .renomear-novo-celula.editando {
+            align-items: center;
+        }
+        .renomear-novo-input {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
+            padding: 0.45rem 0.55rem;
+            border: 1px solid var(--cor-destaque);
+            border-radius: 5px;
+            background: var(--vidro-fundo-card);
+            color: var(--cor-fonte);
+            font: inherit;
+            font-weight: 600;
+            box-sizing: border-box;
+        }
+        .renomear-novo-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--cor-destaque) 25%, transparent);
+        }
+        .renomear-tabela .acao-dl {
+            width: 3.25rem;
+            text-align: center;
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
+            vertical-align: middle;
+        }
+        .renomear-edit-item,
         .renomear-dl-item {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 2rem;
-            height: 2rem;
+            width: 2.75rem;
+            height: 2.75rem;
+            flex-shrink: 0;
             border-radius: 6px;
             color: var(--cor-destaque);
             background: transparent;
             border: 1px solid transparent;
             text-decoration: none;
+            cursor: pointer;
+            padding: 0;
+            font: inherit;
             transition: background 0.15s, border-color 0.15s, color 0.15s;
         }
+        .renomear-edit-item:hover,
         .renomear-dl-item:hover {
             background: color-mix(in srgb, var(--cor-destaque) 12%, var(--cor-superficie));
             border-color: color-mix(in srgb, var(--cor-destaque) 35%, transparent);
             color: var(--cor-destaque);
         }
+        .renomear-edit-item svg,
         .renomear-dl-item svg {
             width: 1.05rem;
             height: 1.05rem;
@@ -274,12 +352,17 @@
         }
         .renomear-acoes #btn-download[hidden] { display: none !important; }
         .btn-sucesso-renomear {
-            background: #1b7a4e;
+            background: var(--cor-sucesso);
             color: #fff;
             border: none;
             margin-left: auto;
+            min-height: 2.75rem;
         }
         .btn-sucesso-renomear:hover { filter: brightness(0.95); }
+        .btn-sucesso-renomear:focus-visible {
+            outline: 2px solid var(--cor-borda-foco);
+            outline-offset: 2px;
+        }
         .renomear-texto-area {
             width: 100%;
             min-height: 140px;
@@ -297,6 +380,7 @@
         .renomear-texto-area:focus {
             outline: none;
             border-color: var(--cor-destaque);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-borda-foco) 22%, transparent);
         }
         .renomear-texto-saida {
             margin-top: 1rem;
@@ -317,17 +401,50 @@
             font-size: 0.85rem;
             font-weight: 600;
         }
+        .renomear-texto-label.resultado { margin-top: 1.25rem; }
         .renomear-link-pasta {
             border: none;
             background: none;
-            padding: 0;
+            padding: 0.35rem 0.25rem;
+            min-height: 2.75rem;
             font: inherit;
             font-size: 0.85rem;
             color: var(--cor-destaque);
             text-decoration: underline;
+            text-underline-offset: 0.15em;
             cursor: pointer;
         }
         .renomear-link-pasta:hover { filter: brightness(1.08); }
+        .renomear-link-pasta:focus-visible {
+            outline: 2px solid var(--cor-borda-foco);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+        @media (max-width: 560px) {
+            .renomear-wrap { padding: 1.1rem 1rem 2.5rem; }
+            .renomear-painel-titulo {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+            .renomear-acoes .btn-sucesso-renomear {
+                margin-left: 0;
+                width: 100%;
+                text-align: center;
+            }
+            .renomear-tabela { min-width: 22rem; font-size: 0.85rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .renomear-dropzone,
+            .renomear-modo-btn,
+            .renomear-lista li,
+            .renomear-lista-acao,
+            .renomear-edit-item,
+            .renomear-dl-item,
+            .renomear-barra > span {
+                transition: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -344,17 +461,17 @@
     </header>
 
     <main class="renomear-wrap">
-        <h2 class="logo" style="font-size:1.25rem;margin:0 0 0.35rem;text-align:center">Normalizar</h2>
-        <p class="renomear-lead" style="text-align:center">
+        <h2 class="renomear-titulo">Normalizar</h2>
+        <p class="renomear-lead centro">
             Padronize nomes de arquivos ou texto colado (Title Case, acentos e conectivos).
         </p>
 
         <nav class="renomear-modos" aria-label="Modo de normalização">
-            <button type="button" id="modo-arquivos" class="renomear-modo-btn ativo">Arquivos</button>
-            <button type="button" id="modo-texto" class="renomear-modo-btn">Texto</button>
+            <button type="button" id="modo-arquivos" class="renomear-modo-btn ativo" aria-pressed="true">Arquivos</button>
+            <button type="button" id="modo-texto" class="renomear-modo-btn" aria-pressed="false">Texto</button>
         </nav>
 
-        <div id="painel-arquivos" class="renomear-modo-painel ativo">
+        <div id="painel-arquivos" class="renomear-modo-painel ativo" role="region" aria-label="Normalizar arquivos">
             <p class="renomear-lead">
                 Normalize nomes de documentos. Aceita arquivos soltos, pastas ou um .ZIP / .RAM.
             </p>
@@ -363,10 +480,12 @@
                 <p><strong>Arraste arquivos ou pastas aqui</strong> ou clique para selecionar</p>
                 <p class="hint">PDF, DOCX, XLSX, imagens e outros · pasta (sem ZIP) · ou um arquivo .ZIP / .RAM</p>
                 <input class="renomear-file-input" id="file-input" type="file" multiple
-                    accept=".zip,.ram,.pdf,.doc,.docx,.odt,.rtf,.xls,.xlsx,.ods,.csv,.ppt,.pptx,.odp,.png,.jpg,.jpeg,.webp,.gif,.tif,.tiff,.bmp,.txt">
-                <input class="renomear-file-input" id="folder-input" type="file" webkitdirectory directory multiple>
+                    accept=".zip,.ram,.pdf,.doc,.docx,.odt,.rtf,.xls,.xlsx,.ods,.csv,.ppt,.pptx,.odp,.png,.jpg,.jpeg,.webp,.gif,.tif,.tiff,.bmp,.txt"
+                    aria-hidden="true" tabindex="-1">
+                <input class="renomear-file-input" id="folder-input" type="file" webkitdirectory directory multiple
+                    aria-hidden="true" tabindex="-1">
             </div>
-            <p class="renomear-meta" style="margin-top:0.55rem;text-align:center">
+            <p class="renomear-meta centro">
                 <button type="button" class="renomear-link-pasta" id="btn-selecionar-pasta">Selecionar pasta</button>
             </p>
 
@@ -383,13 +502,15 @@
                 </div>
             </div>
 
-            <div class="renomear-progresso" id="progresso" hidden>
+            <div class="renomear-progresso" id="progresso" hidden
+                role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                aria-labelledby="progresso-texto">
                 <div class="renomear-barra"><span id="barra-fill"></span></div>
                 <p class="renomear-progresso-texto" id="progresso-texto">Processando…</p>
             </div>
 
-            <div class="renomear-erro" id="erro" hidden></div>
-            <div class="renomear-aviso" id="aviso-dicionario" hidden></div>
+            <div class="renomear-erro" id="erro" hidden role="alert"></div>
+            <div class="renomear-aviso" id="aviso-dicionario" hidden role="status" aria-live="polite"></div>
 
             <div class="renomear-resultado" id="resultado" hidden>
                 <div class="renomear-painel-titulo">
@@ -397,7 +518,7 @@
                     <span class="renomear-meta" id="meta-resultado"></span>
                 </div>
                 <p class="renomear-resumo" id="resumo"></p>
-                <div style="overflow-x:auto">
+                <div class="renomear-tabela-wrap">
                     <table class="renomear-tabela">
                         <thead>
                             <tr>
@@ -413,7 +534,7 @@
             </div>
         </div>
 
-        <div id="painel-texto" class="renomear-modo-painel">
+        <div id="painel-texto" class="renomear-modo-painel" role="region" aria-label="Normalizar texto">
             <p class="renomear-lead">
                 Cole um texto em maiúsculas (Ctrl+V) e obtenha a versão corrigida com acentos e Title Case.
                 O dicionário de acentos é carregado automaticamente.
@@ -432,13 +553,13 @@
                 <button type="button" class="btn btn-outline" id="btn-limpar-texto">Limpar</button>
                 <button type="button" class="btn btn-outline" id="btn-copiar-texto" hidden>Copiar resultado</button>
             </div>
-            <p class="renomear-meta" style="margin-top:0.5rem">Dica: Ctrl+Enter normaliza · após colar, o resultado atualiza sozinho.</p>
+            <p class="renomear-meta dica">Dica: Ctrl+Enter normaliza · após colar, o resultado atualiza sozinho.</p>
 
-            <div class="renomear-erro" id="erro-texto" hidden></div>
+            <div class="renomear-erro" id="erro-texto" hidden role="alert"></div>
 
             <div id="texto-resultado-wrap" hidden>
-                <p class="renomear-texto-label" style="margin-top:1.25rem">Texto corrigido</p>
-                <div class="renomear-texto-saida" id="texto-saida" tabindex="0" role="status" aria-live="polite"></div>
+                <p class="renomear-texto-label resultado" id="texto-resultado-label">Texto corrigido</p>
+                <div class="renomear-texto-saida" id="texto-saida" tabindex="0" role="status" aria-live="polite" aria-labelledby="texto-resultado-label"></div>
             </div>
         </div>
     </main>

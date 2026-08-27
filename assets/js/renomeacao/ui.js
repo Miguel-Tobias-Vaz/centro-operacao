@@ -30,9 +30,14 @@ let fila = [];
 let downloadUrl = null;
 /** @type {string[]} */
 let downloadUrlsIndividuais = [];
+/** @type {{ original: string, novo: string, mudou: boolean, blob: Blob }[]} */
+let linhasResultado = [];
 
 const ICONE_DOWNLOAD =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+
+const ICONE_LAPIS =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 
 const ICONE_LIXEIRA =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
@@ -102,13 +107,15 @@ function alternarExclusao(indice) {
 function setProgresso(atual, total, texto) {
     progresso.hidden = false;
     const pct = total ? Math.round((atual / total) * 100) : 0;
-    barraFill.style.width = pct + "%";
+    barraFill.style.transform = "scaleX(" + pct / 100 + ")";
+    progresso.setAttribute("aria-valuenow", String(pct));
     progressoTexto.textContent = texto || atual + " / " + total;
 }
 
 function esconderProgresso() {
     progresso.hidden = true;
-    barraFill.style.width = "0%";
+    barraFill.style.transform = "scaleX(0)";
+    progresso.setAttribute("aria-valuenow", "0");
 }
 
 function renderLista() {
@@ -163,10 +170,176 @@ function renderLista() {
 function limparResultado() {
     resultado.hidden = true;
     tabelaCorpo.replaceChildren();
+    linhasResultado = [];
     revogarDownload();
     esconderProgresso();
     mostrarErro("");
     mostrarAvisoDicionario(false);
+}
+
+function pastaDoCaminho(caminho) {
+    const norm = String(caminho || "").replace(/\\/g, "/");
+    const barra = norm.lastIndexOf("/");
+    return barra >= 0 ? norm.slice(0, barra + 1) : "";
+}
+
+function sanitizarNomeArquivoManual(nome) {
+    return String(nome || "")
+        .replace(/[\\/:*?"<>|]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/^\.+/, "")
+        .slice(0, 200);
+}
+
+function atualizarResumoResultado() {
+    const alterados = linhasResultado.filter((row) => row.mudou).length;
+    resumo.textContent = alterados
+        ? alterados + " nome(s) ajustado(s) de " + linhasResultado.length + " arquivo(s)."
+        : "Nomes já estavam padronizados (" + linhasResultado.length + " arquivo(s)).";
+    metaResultado.textContent = linhasResultado.length + " arquivo(s)";
+}
+
+async function regenerarZipResultado() {
+    const saida = new JSZip();
+    for (const row of linhasResultado) {
+        saida.file(row.novo, await row.blob.arrayBuffer());
+    }
+    const blob = await saida.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 }
+    });
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    downloadUrl = URL.createObjectURL(blob);
+    btnDownload.href = downloadUrl;
+    btnDownload.download = "arquivos_renomeados.zip";
+    btnDownload.hidden = false;
+}
+
+function iniciarEdicaoNome(indice, tdNovo) {
+    const row = linhasResultado[indice];
+    if (!row || tdNovo.querySelector("input")) return;
+
+    const pasta = pastaDoCaminho(row.novo);
+    const nomeAtual = basenameCaminho(row.novo);
+    const wrap = document.createElement("div");
+    wrap.className = "renomear-novo-celula editando";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "renomear-novo-input";
+    input.value = nomeAtual;
+    input.setAttribute("aria-label", "Editar novo nome");
+    input.spellcheck = false;
+
+    let finalizado = false;
+    const cancelar = () => {
+        if (finalizado) return;
+        finalizado = true;
+        renderTabelaResultado();
+    };
+    const confirmar = async () => {
+        if (finalizado) return;
+        finalizado = true;
+        const limpo = sanitizarNomeArquivoManual(input.value);
+        if (!limpo) {
+            mostrarErro("Informe um nome válido para o arquivo.");
+            renderTabelaResultado();
+            return;
+        }
+        const usados = new Set(
+            linhasResultado
+                .filter((_, i) => i !== indice)
+                .map((item) => item.novo)
+        );
+        const caminho = nomeUnico(pasta + limpo, usados);
+        row.novo = caminho;
+        row.mudou = caminho !== row.original;
+        mostrarErro("");
+        atualizarResumoResultado();
+        renderTabelaResultado();
+        try {
+            await regenerarZipResultado();
+        } catch (e) {
+            mostrarErro(e.message || "Falha ao atualizar o ZIP.");
+        }
+    };
+
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            confirmar();
+        } else if (e.key === "Escape") {
+            e.preventDefault();
+            cancelar();
+        }
+    });
+    input.addEventListener("blur", () => {
+        confirmar();
+    });
+
+    wrap.appendChild(input);
+    tdNovo.replaceChildren(wrap);
+    input.focus();
+    input.select();
+}
+
+function renderTabelaResultado() {
+    revogarDownloadsIndividuais();
+    tabelaCorpo.replaceChildren();
+
+    linhasResultado.forEach((row, indice) => {
+        const tr = document.createElement("tr");
+        tr.className = row.mudou ? "alterado" : "igual";
+
+        const td1 = document.createElement("td");
+        td1.textContent = row.original;
+
+        const tdSeta = document.createElement("td");
+        tdSeta.className = "seta";
+        tdSeta.textContent = "→";
+
+        const td2 = document.createElement("td");
+        td2.className = "novo";
+        const wrap = document.createElement("div");
+        wrap.className = "renomear-novo-celula";
+
+        const texto = document.createElement("span");
+        texto.className = "renomear-novo-texto";
+        texto.textContent = row.novo;
+
+        const btnEditar = document.createElement("button");
+        btnEditar.type = "button";
+        btnEditar.className = "renomear-edit-item";
+        btnEditar.title = "Editar nome";
+        btnEditar.setAttribute("aria-label", "Editar nome de " + basenameCaminho(row.novo));
+        btnEditar.innerHTML = ICONE_LAPIS;
+        btnEditar.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            iniciarEdicaoNome(indice, td2);
+        });
+
+        wrap.append(texto, btnEditar);
+        td2.appendChild(wrap);
+
+        const tdDl = document.createElement("td");
+        tdDl.className = "acao-dl";
+        const urlItem = URL.createObjectURL(row.blob);
+        downloadUrlsIndividuais.push(urlItem);
+        const link = document.createElement("a");
+        link.className = "renomear-dl-item";
+        link.href = urlItem;
+        link.download = basenameCaminho(row.novo);
+        link.title = "Baixar " + basenameCaminho(row.novo);
+        link.setAttribute("aria-label", "Baixar " + basenameCaminho(row.novo));
+        link.innerHTML = ICONE_DOWNLOAD;
+        tdDl.appendChild(link);
+
+        tr.append(td1, tdSeta, td2, tdDl);
+        tabelaCorpo.appendChild(tr);
+    });
 }
 
 function limparTudo() {
@@ -376,7 +549,6 @@ async function renomear() {
         const usados = new Set();
         const saida = new JSZip();
         const linhas = [];
-        let alterados = 0;
 
         for (let i = 0; i < ativos.length; i += 1) {
             const item = ativos[i];
@@ -391,12 +563,10 @@ async function renomear() {
             const bytes = await item.blob.arrayBuffer();
             saida.file(caminho, bytes);
 
-            const mudou = caminho !== original;
-            if (mudou) alterados += 1;
             linhas.push({
                 original,
                 novo: caminho,
-                mudou,
+                mudou: caminho !== original,
                 blob: item.blob
             });
 
@@ -416,40 +586,9 @@ async function renomear() {
         btnDownload.download = "arquivos_renomeados.zip";
         btnDownload.hidden = false;
 
-        tabelaCorpo.replaceChildren();
-        for (const row of linhas) {
-            const tr = document.createElement("tr");
-            tr.className = row.mudou ? "alterado" : "igual";
-            const td1 = document.createElement("td");
-            td1.textContent = row.original;
-            const tdSeta = document.createElement("td");
-            tdSeta.className = "seta";
-            tdSeta.textContent = "→";
-            const td2 = document.createElement("td");
-            td2.className = "novo";
-            td2.textContent = row.novo;
-
-            const tdDl = document.createElement("td");
-            tdDl.className = "acao-dl";
-            const urlItem = URL.createObjectURL(row.blob);
-            downloadUrlsIndividuais.push(urlItem);
-            const link = document.createElement("a");
-            link.className = "renomear-dl-item";
-            link.href = urlItem;
-            link.download = basenameCaminho(row.novo);
-            link.title = "Baixar " + basenameCaminho(row.novo);
-            link.setAttribute("aria-label", "Baixar " + basenameCaminho(row.novo));
-            link.innerHTML = ICONE_DOWNLOAD;
-            tdDl.appendChild(link);
-
-            tr.append(td1, tdSeta, td2, tdDl);
-            tabelaCorpo.appendChild(tr);
-        }
-
-        resumo.textContent = alterados
-            ? alterados + " nome(s) ajustado(s) de " + linhas.length + " arquivo(s)."
-            : "Nomes já estavam padronizados (" + linhas.length + " arquivo(s)).";
-        metaResultado.textContent = linhas.length + " arquivo(s)";
+        linhasResultado = linhas;
+        renderTabelaResultado();
+        atualizarResumoResultado();
         resultado.hidden = false;
     } catch (e) {
         mostrarErro(e.message || "Falha ao renomear.");
@@ -530,6 +669,8 @@ function alternarModoRenomear(modo) {
     painelTexto?.classList.toggle("ativo", !ehArquivos);
     btnModoArquivos?.classList.toggle("ativo", ehArquivos);
     btnModoTexto?.classList.toggle("ativo", !ehArquivos);
+    btnModoArquivos?.setAttribute("aria-pressed", ehArquivos ? "true" : "false");
+    btnModoTexto?.setAttribute("aria-pressed", ehArquivos ? "false" : "true");
 }
 
 function mostrarErroTexto(msg) {
